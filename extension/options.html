@@ -1,28 +1,35 @@
 <html>
 <head>
   <link rel="stylesheet" href="css/kickstart.css" type="text/css" media="all">
+  <link href='css/no-theme/jquery-ui-1.10.3.custom.min.css' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
   <style>
     body {
-      font-family: Arial;
+      font-family: 'Noto Sans', Arial;
+      font-size: 0.9em;
       padding: 15px 20px;
     }
     h6 {
+      font-family: 'Orbitron', Arial;
       display: inline-block;
       margin: 2px 8px;
     }
     label {
       display: inline-block;
       vertical-align: top;
-      margin: 5px 12px;
+      margin: 7px 12px;
     }
     button.addKeyConfig {
       margin: 5px;
+    }
+    select.kbdtype {
+      float: right;
     }
     div.configSetView {
       margin-top: 10px;
     }
     div.innerframe {
-      vertical-align: top;
       padding: 5px;
       border-radius: 3px;
       background-color: #f3f7fc;
@@ -35,11 +42,12 @@
       color: #0070FF;
     }
     div.radioCaption {
-      padding: 1px 2px;
+      padding: 1px 4px 1px 2px;
       border-radius: 2px;
     }
     input[type='radio'] {
       margin-right: 3px;
+      margin-bottom: 2px;
       box-shadow: none;
     }
     input.disShortcut {
@@ -63,15 +71,16 @@
     i.icon-remove:hover {
       color: #666;
     }
-    .bold {
+    .hilite {
       background: #99DDFF;
     }
   </style>
-  <title>Flex shortcut key</title>
+  <title>Shortcut Exchanger</title>
 </head>
 <body>
   <div class="outerframe">
-    <h6>Flex keyboard shortcut</h6>
+    <h6>Shortcut Exchanger</h6>
+    <select class="kbdtype"></select>
     <button class="addKeyConfig">Add config</button>
     <!--<button class="save">Save</button>-->
     <div class="configSetView"></div>
@@ -79,6 +88,7 @@
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery-2.0.0.min.js"></script>
   <script src="lib/backbone-min.js"></script>
+  <script src="lib/jquery-ui-1.10.3.custom.min.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

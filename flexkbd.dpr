@@ -110,8 +110,7 @@ var
   buf: array [0..1000] of Char;
   messages, modifiersList: string;
   pipename: string;
-  bytesRead, scanCode, vkCode, I: Cardinal;
-  keylo: HKL;
+  bytesRead, scanCode, I: Cardinal;
 begin
   if (code < 0) then begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
@@ -122,8 +121,6 @@ begin
   if AnsiEndsText('chrome.exe', buf)  then begin
     Result:= 1;
     scanCode:= Hiword(wPrm and $00000000FFFFFFFF);
-    //keylo:= GetKeyboardLayout(0);
-    //vkCode:= MapVirtualKeyEx(scanCode, 1, keylo);
     GetKeyboardState(KeyState);
     if (scanCode > 32767) then // Not Key down
       Exit;
@@ -134,7 +131,6 @@ begin
         modifiersList:= modifiersList + '+Alt'
       else
         modifiersList:= 'Alt';
-      //vkCode:= MapVirtualKeyEx(scanCode - $2000, 1, keylo);
       scanCode:= scanCode - $2000;
     end;
     if ((KeyState[VK_SHIFT] and 128) <> 0) then      // Shift
@@ -154,12 +150,6 @@ begin
         Exit;
     end;
     messages:= Trim(modifiersList) + ',' + IntToStr(scanCode);
-    //vkCode:= 1;
-    //if (modifiersList = '') or (vkCode in [0, VK_SHIFT, VK_CONTROL, VK_MENU]) then begin
-    //  Exit;
-    //end else begin
-    //  clientArgs:= IntToStr(vkCode) + ',' + Trim(modifiersList);
-    //end;
     pipename:= '\\.\pipe\flexkbd';
     CallNamedPipe(PChar(pipename), PAnsiChar(messages), length(messages), nil, 0, bytesRead, NMPWAIT_NOWAIT);
   end else begin
@@ -196,8 +186,12 @@ begin
 end;
 
 procedure TMyClass.setKeyConfig(const params: array of Variant);
+var
+  I: Integer;
 begin
+  for I:= 0 to Length(params) - 1 do begin
 
+  end;
 end;
 
 // コンフィグモード開始
