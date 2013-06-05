@@ -1,0 +1,24 @@
+{
+  "manifest_version": 2,
+  "name": "Flex keyboard with SHS context menu",
+  "version": "0.1.0",
+  "description": "Chromeショートカットキー回避と選択テキストのコンテキストメニューからSuperHighlightSearchを呼び出す",
+  "icons": {
+     "48": "images/keyboard.png"
+  },
+  "background": {
+    "page": "background.html",
+    "persistent": true
+  },
+  "plugins": [
+    { "path": "flexkbd.dll" }
+  ],
+  "web_accessible_resources": ["kbdagent.js"],
+  "options_page": "options.html",
+  "content_security_policy": "script-src 'unsafe-eval' 'self'; object-src 'self';",
+  "permissions": [
+    "tabs",
+    "contextMenus",
+    "*://*/*"
+  ]
+}

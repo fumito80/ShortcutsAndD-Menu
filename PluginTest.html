@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<HTML>
+<HEAD>
+
+<TITLE>Delphi NS Plugin Example</TITLE>
+
+
+</HEAD>
+<BODY>
+<H2>Example of a Delphi NS plugin</H2>
+<HR>
+<EMBED id="embed1" TYPE="application/x-delphi-demo-plugin" ALIGN=CENTER WIDTH=400 HEIGHT=300>
+<P>
+
+<script>
+var embed1 = document.getElementById('embed1');
+</script>
+
+<br>
+
+<form name="formname">
+<input type=button value="Show Value" onclick='alert("Value=" + embed1.value);'>
+<input type=button value="Inc Value" onclick='embed1.value=parseInt(embed1.value) + 1;'>
+<input type=button value="Move button" onclick='embed1.MoveButton(2);'>
+</form>
+
+</BODY>
+</HTML>

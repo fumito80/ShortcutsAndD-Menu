@@ -1,0 +1,84 @@
+<html>
+<head>
+  <link rel="stylesheet" href="css/kickstart.css" type="text/css" media="all">
+  <style>
+    body {
+      font-family: Arial;
+      padding: 15px 20px;
+    }
+    h6 {
+      display: inline-block;
+      margin: 2px 8px;
+    }
+    label {
+      display: inline-block;
+      vertical-align: top;
+      margin: 5px 12px;
+    }
+    button.addKeyConfig {
+      margin: 5px;
+    }
+    div.configSetView {
+      margin-top: 10px;
+    }
+    div.innerframe {
+      vertical-align: top;
+      padding: 5px;
+      border-radius: 3px;
+      background-color: #f3f7fc;
+      background-color: #EEEEEE;
+      border: 1px solid #d2dbed;
+      margin: 8px;
+    }
+    div.targetCaption {
+      font-weight: bold;
+      color: #0070FF;
+    }
+    div.radioCaption {
+      padding: 1px 2px;
+      border-radius: 2px;
+    }
+    input[type='radio'] {
+      margin-right: 3px;
+      box-shadow: none;
+    }
+    input.disShortcut {
+      margin-top: 5px;
+    }
+    input.newShortcut {
+      margin-top: 3px;
+    }
+    i.icon-double-angle-right {
+      vertical-align: middle;
+      position: relative;
+      font-size: 20px;
+      margin: 12px;
+      color: #000;
+    }
+    i.icon-remove {
+      float: right;
+      cursor: pointer;
+      color: #ccc;
+    }
+    i.icon-remove:hover {
+      color: #666;
+    }
+    .bold {
+      background: #99DDFF;
+    }
+  </style>
+  <title>Flex shortcut key</title>
+</head>
+<body>
+  <div class="outerframe">
+    <h6>Flex keyboard shortcut</h6>
+    <button class="addKeyConfig">Add config</button>
+    <!--<button class="save">Save</button>-->
+    <div class="configSetView"></div>
+  </div>
+  <script src="lib/underscore-min.js"></script>
+  <script src="lib/jquery-2.0.0.min.js"></script>
+  <script src="lib/backbone-min.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
