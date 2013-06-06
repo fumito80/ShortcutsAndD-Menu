@@ -120,7 +120,7 @@
       }
       return input$.val(chars.join(" + "));
     },
-    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n</div>")
+    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n</div>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -166,8 +166,8 @@
       return this.collection.remove(model);
     },
     onClickAddKeyConfig: function(event) {
-      if (this.collection.length >= 15) {
-        $("#tiptip_content").text("Registration up to a maximum of 15.");
+      if (this.collection.length >= 20) {
+        $("#tiptip_content").text("Registration up to a maximum of 20.");
         $(event.currentTarget).tipTip({
           defaultPosition: "right"
         });

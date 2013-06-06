@@ -115,12 +115,12 @@ KeyConfigView = Backbone.View.extend
       </label>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="sendDom">Simulate keydown event
+          <input type="radio" name="options" class="options" value="disabled">Disabled
         </div>
       </label>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="disabled">Disabled
+          <input type="radio" name="options" class="options" value="sendDom">Simulate keydown event
         </div>
       </label>
     </div>
@@ -169,8 +169,8 @@ KeyConfigSetView = Backbone.View.extend
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
-    if @collection.length >= 15
-      $("#tiptip_content").text("Registration up to a maximum of 15.")
+    if @collection.length >= 20
+      $("#tiptip_content").text("Registration up to a maximum of 20.")
       $(event.currentTarget).tipTip(defaultPosition: "right")
       return
     @collection.add new KeyConfig({})

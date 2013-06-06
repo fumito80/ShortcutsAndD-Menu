@@ -129,10 +129,10 @@ var
     Inc(KeyInputCount);
     SetLength(KeyInputs, KeyInputCount);
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
-    //Write2EventLog('FlexKbd', IntToStr(scanCode));
+    Write2EventLog('FlexKbd', IntToStr(scanCode));
     with  KeyInputs[KeyInputCount - 1].ki  do
     begin
-      wVk:= MapVirtualKey(scanCode, 1);
+      wVk:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
       wScan := scanCode;
       dwFlags := KEYEVENTF_EXTENDEDKEY;
       dwFlags := Flags or dwFlags;
@@ -168,8 +168,10 @@ begin
 
   if configMode then begin
     Result:= True;
-    browser.Invoke('pluginEvent', ['kbdEvent', scans]);
+    browser.Invoke('pluginEvent', ['configKeyEvent', scans]);
   end else begin
+    Write2EventLog('FlexKbd', scans);
+    Write2EventLog('FlexKbd', keyConfigList.CommaText);
     index:= keyConfigList.IndexOf(scans);
     if index > -1 then begin
       Result:= True;
@@ -177,8 +179,8 @@ begin
       if keyConfig.mode = 'assignOther' then begin
         MakeKeyInputs(keyConfig.newScans, 0);
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
-      end else begin // sendDom
-        browser.Invoke('pluginEvent', ['sendDom', scans]);
+      end else if keyConfig.mode = 'sendDom' then begin
+        browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end;
     end;
   end;
@@ -267,7 +269,6 @@ var
   paramsList, paramList: TStringList;
   target, mode, test: string;
   scan: Cardinal;
-  //ctrl, alt, shift, meta: Boolean;
   scans: TArrayCardinal;
   procedure AddScan(scan: Cardinal);
   begin
@@ -282,6 +283,7 @@ begin
   keyConfigList.Clear;
   try
     for I:= 0 to paramsList.Count - 1 do begin
+      SetLength(scans, 0);
       paramList.Delimiter:= ';';
       paramList.DelimitedText:= paramsList.Strings[I];
       target:= paramList.Strings[0];

@@ -30,12 +30,44 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
     flexkbd.StartConfigMode()  
+
+sendKeyEventToDom = (keyEvent, tabId) ->
+  local = fk.getConfig()
+  keys = fk.getKeyCodes()[local.config.kbdtype].keys
+  modifiers = parseInt(keyEvent.substring(0, 2), 16)
+  scanCode = keyEvent.substring(2)
+  keyIdentifiers = keys[scanCode]
+  if shift = (modifiers & 4) isnt 0
+    keyIdentifier = keyIdentifiers[1] || keyIdentifiers[0]
+  else
+    keyIdentifier = keyIdentifiers[0]
+  chrome.tabs.sendMessage tabId,
+    action: "keyEvent"
+    keyIdentifier: keyIdentifier
+    ctrl:  (modifiers & 1) isnt 0
+    alt:   (modifiers & 2) isnt 0
+    shift: shift
+    meta:  (modifiers & 8) isnt 0
+
+preSendKeyEvent = (keyEvent) ->
+  chrome.tabs.query {active: true}, (tabs) ->
+    tabId = tabs[0].id
+    chrome.tabs.sendMessage tabId, action: "askAlive", (resp) ->
+      if resp is "hello"
+        sendKeyEventToDom(keyEvent, tabId)
+      else
+        chrome.tabs.executeScript tabId,
+          file: "kbdagent.js"
+          allFrames: true
+          (resp) ->
+            sendKeyEventToDom(keyEvent, tabId)
   
 setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
     keyConfigSet.forEach (item) ->
-      sendData.push item.disShortcut + ";" + item.newShortcut + ";" + item.option
+      if (item.disShortcut)
+        sendData.push item.disShortcut + ";" + item.newShortcut + ";" + item.option
     flexkbd.SetKeyConfig sendData.join("|")
   
 fk.saveConfig = (saveData) ->
@@ -54,13 +86,15 @@ fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
 
 window.pluginEvent = (action, value) ->
+  #console.log action + ": " + value
   switch action
     when "log"
       console.log value
-    when "kbdEvent"
+    when "configKeyEvent"
       sendMessage
         action: "kbdEvent"
         value: value
-      #console.log value
+    when "sendToDom"
+      preSendKeyEvent value
 
 setConfigPlugin fk.getConfig().keyConfigSet
