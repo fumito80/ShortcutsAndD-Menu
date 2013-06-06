@@ -118,10 +118,10 @@ function TKeyHookTh.VaridateKeyEvent(wPrm: UInt64): Boolean;
 var
   KeyState: TKeyboardState;
   scans: string;
-  scanCode, vkCode: Cardinal;
+  scanCode: Cardinal;
   modifierFlags: Byte;
   keyConfig: TKeyConfig;
-  index: Integer;
+  scanCodeRept, index, I: Integer;
   KeyInputs: array of TInput;
   KeyInputCount: Integer;
   procedure  KeybdInput(scanCode: Cardinal; Flags: DWord);
@@ -129,7 +129,7 @@ var
     Inc(KeyInputCount);
     SetLength(KeyInputs, KeyInputCount);
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
-    Write2EventLog('FlexKbd', IntToStr(scanCode));
+    //Write2EventLog('FlexKbd', IntToStr(scanCode));
     with  KeyInputs[KeyInputCount - 1].ki  do
     begin
       wVk:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
@@ -150,10 +150,10 @@ var
 begin
   Result:= False;
   scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
-  GetKeyState(0);
-  GetKeyboardState(KeyState);
   if (scanCode > 32767) then // Not Key down
     Exit;
+  GetKeyState(0);
+  GetKeyboardState(KeyState);
   modifierFlags:= 0;
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_CONTROL] and 128) <> 0) * 1);
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * 2);
@@ -161,17 +161,28 @@ begin
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * 8);
   if (modifierFlags and 2) = 2 then
     scanCode:= scanCode - $2000;
-  vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
-  if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
+  //vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
+  //if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
+  scanCodeRept:= scanCode - $4000;
+  if scanCodeRept > 0 then
+    scanCode:= scanCodeRept;
+  if (modifierFlags = 0) then
     Exit;
+  for I := 0 to 7 do begin
+    if scanCode = modifiersCode[I] then
+      Exit;
+  end;
+
   scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
+
+  //Write2EventLog('FlexKbd', IntToStr(scanCode) + ': ' + scans);
 
   if configMode then begin
     Result:= True;
     browser.Invoke('pluginEvent', ['configKeyEvent', scans]);
   end else begin
-    Write2EventLog('FlexKbd', scans);
-    Write2EventLog('FlexKbd', keyConfigList.CommaText);
+    //Write2EventLog('FlexKbd', scans);
+    //Write2EventLog('FlexKbd', keyConfigList.CommaText);
     index:= keyConfigList.IndexOf(scans);
     if index > -1 then begin
       Result:= True;

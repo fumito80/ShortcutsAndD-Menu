@@ -97,6 +97,7 @@
     setKbdValue: function(input$, value) {
       var chars, keyIdenfiers, modifiers, scanCode;
       if (!value) {
+        input$.val("");
         return;
       }
       modifiers = parseInt(value.substring(0, 2), 16);
@@ -120,7 +121,7 @@
       }
       return input$.val(chars.join(" + "));
     },
-    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n</div>")
+    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign another shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n</div>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -149,7 +150,7 @@
     },
     render: function(keyConfigSet) {
       this.collection.set(keyConfigSet);
-      return this.$("button.addKeyConfig").focus();
+      return this.$el.focus();
     },
     onAddRender: function(model) {
       var keyConfigView, newChild, t, taskView;
@@ -224,9 +225,10 @@
           return fk.saveConfig(keyConfigSetView.getSaveData());
       }
     });
-    return $(window).on("unload", function() {
+    $(window).on("unload", function() {
       return fk.saveConfig(keyConfigSetView.getSaveData());
     });
+    return $("span.beta").text("\u03B2");
   });
 
 }).call(this);

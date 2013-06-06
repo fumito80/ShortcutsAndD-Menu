@@ -84,6 +84,7 @@ KeyConfigView = Backbone.View.extend
   # Object Method
   setKbdValue: (input$, value) ->
     if !value
+      input$.val ""
       return
     modifiers = parseInt(value.substring(0, 2), 16)
     scanCode = value.substring(2)
@@ -109,18 +110,18 @@ KeyConfigView = Backbone.View.extend
       <i class="icon-double-angle-right"></i>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="assignOther">Assign other shortcut key
+          <input type="radio" name="options" class="options" value="assignOther">Assign another shortcut key
         </div>
         <input type="text" class="newShortcut" readonly>
       </label>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="disabled">Disabled
+          <input type="radio" name="options" class="options" value="sendDom">Simulate keydown event
         </div>
       </label>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="sendDom">Simulate keydown event
+          <input type="radio" name="options" class="options" value="disabled">Disabled
         </div>
       </label>
     </div>
@@ -151,7 +152,7 @@ KeyConfigSetView = Backbone.View.extend
   
   render: (keyConfigSet) ->
     @collection.set keyConfigSet
-    @$("button.addKeyConfig").focus()
+    @$el.focus()
   
   onAddRender: (model) ->
     taskView = undefined
@@ -215,3 +216,5 @@ $ ->
   
   $(window).on "unload", ->
     fk.saveConfig keyConfigSetView.getSaveData()
+  
+  $("span.beta").text("\u03B2")
