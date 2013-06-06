@@ -83,17 +83,22 @@ KeyConfigView = Backbone.View.extend
   
   # Object Method
   setKbdValue: (input$, value) ->
-    modif = (splited = value.split("#"))[0]
-    if key = keys[splited[1]]
-      if /Shift/.test(modif) and key[1]
-        input$.val modif + " + " + key[1]
-      else if key[0]
-        input$.val modif + " + " + key[0]
-      else
-        input$.val ""
+    if !value
+      return
+    modifiers = parseInt(value.substring(0, 2), 16)
+    scanCode = value.substring(2)
+    keyIdenfiers = keys[scanCode]
+    chars = []
+    chars.push "Ctrl" if modifiers & 1
+    chars.push "Alt"  if modifiers & 2
+    chars.push "Meta" if modifiers & 8
+    if modifiers & 4
+      chars.push "Shift"
+      chars.push keyIdenfiers[1] || keyIdenfiers[0]
     else
-      input$.val ""
-  
+      chars.push keyIdenfiers[0]
+    input$.val chars.join(" + ")
+    
   template: _.template """
     <div class="innerframe">
       <i class="icon-remove" title="Remove"></i>

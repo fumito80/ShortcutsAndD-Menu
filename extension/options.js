@@ -95,19 +95,30 @@
       return this.trigger("removeConfig", this.model);
     },
     setKbdValue: function(input$, value) {
-      var key, modif, splited;
-      modif = (splited = value.split("#"))[0];
-      if (key = keys[splited[1]]) {
-        if (/Shift/.test(modif) && key[1]) {
-          return input$.val(modif + " + " + key[1]);
-        } else if (key[0]) {
-          return input$.val(modif + " + " + key[0]);
-        } else {
-          return input$.val("");
-        }
-      } else {
-        return input$.val("");
+      var chars, keyIdenfiers, modifiers, scanCode;
+      if (!value) {
+        return;
       }
+      modifiers = parseInt(value.substring(0, 2), 16);
+      scanCode = value.substring(2);
+      keyIdenfiers = keys[scanCode];
+      chars = [];
+      if (modifiers & 1) {
+        chars.push("Ctrl");
+      }
+      if (modifiers & 2) {
+        chars.push("Alt");
+      }
+      if (modifiers & 8) {
+        chars.push("Meta");
+      }
+      if (modifiers & 4) {
+        chars.push("Shift");
+        chars.push(keyIdenfiers[1] || keyIdenfiers[0]);
+      } else {
+        chars.push(keyIdenfiers[0]);
+      }
+      return input$.val(chars.join(" + "));
     },
     template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n</div>")
   });

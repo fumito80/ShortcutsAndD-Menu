@@ -19,10 +19,12 @@ type
     constructor Create(pipeHandle: THandle; browser: IBrowserObject; keyConfigList: TStringList; configMode: Boolean);
   end;
 
+  TArrayCardinal = array of Cardinal;
   TKeyConfig = class
   public
-    new, mode: string;
-    constructor Create(new, mode: string);
+    mode: string;
+    newScans: TArrayCardinal;
+    constructor Create(mode: string; newScans: TArrayCardinal);
   end;
 
   TMyClass = class(TPlugin)
@@ -46,6 +48,7 @@ type
     destructor Destroy; override;
   published
     // 設定を反映 & コンフィグモード終了兼監視モード開始
+    procedure SetKeyConfig0(const params: array of Variant);
     procedure SetKeyConfig(const params: array of Variant);
     // コンフィグモード開始
     procedure StartConfigMode;
@@ -94,10 +97,10 @@ begin
   inherited;
 end;
 
-constructor TKeyConfig.Create(new, mode: string);
+constructor TKeyConfig.Create(mode: string; newScans: TArrayCardinal);
 begin
-  Self.new:= new;
   Self.mode:= mode;
+  Self.newScans:= newScans;
 end;
 
 constructor TKeyHookTh.Create(pipeHandle: THandle; browser: IBrowserObject; keyConfigList: TStringList; configMode: Boolean);
@@ -114,8 +117,36 @@ end;
 function TKeyHookTh.VaridateKeyEvent(wPrm: UInt64): Boolean;
 var
   KeyState: TKeyboardState;
-  shortcut, modifiersList: string;
-  scanCode, vkCode, I: Cardinal;
+  scans: string;
+  scanCode, vkCode: Cardinal;
+  modifierFlags: Byte;
+  keyConfig: TKeyConfig;
+  index: Integer;
+  KeyInputs: array of TInput;
+  KeyInputCount: Integer;
+  procedure  KeybdInput(scanCode: Cardinal; Flags: DWord);
+  begin
+    Inc(KeyInputCount);
+    SetLength(KeyInputs, KeyInputCount);
+    KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
+    //Write2EventLog('FlexKbd', IntToStr(scanCode));
+    with  KeyInputs[KeyInputCount - 1].ki  do
+    begin
+      wVk:= MapVirtualKey(scanCode, 1);
+      wScan := scanCode;
+      dwFlags := KEYEVENTF_EXTENDEDKEY;
+      dwFlags := Flags or dwFlags;
+      time := 0;
+      dwExtraInfo := 0;
+    end;
+  end;
+  procedure MakeKeyInputs(scans: TArrayCardinal; index: Integer);
+  begin
+    KeybdInput(scans[index], 0);
+    if (index + 1) < Length(scans) then
+      MakeKeyInputs(scans, index + 1);
+    KeybdInput(scans[index], KEYEVENTF_KEYUP);
+  end;
 begin
   Result:= False;
   scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
@@ -123,36 +154,34 @@ begin
   GetKeyboardState(KeyState);
   if (scanCode > 32767) then // Not Key down
     Exit;
-  if ((KeyState[VK_CONTROL] and 128) <> 0) then    // Cntrol
-    modifiersList:= 'Ctrl';
-  if ((KeyState[VK_MENU] and 128) <> 0) then begin // Alt
-    if modifiersList <> '' then
-      modifiersList:= modifiersList + ' + Alt'
-    else
-      modifiersList:= 'Alt';
+  modifierFlags:= 0;
+  modifierFlags:= modifierFlags or (Ord((KeyState[VK_CONTROL] and 128) <> 0) * 1);
+  modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * 2);
+  modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * 4);
+  modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * 8);
+  if (modifierFlags and 2) = 2 then
     scanCode:= scanCode - $2000;
-  end;
-  if ((KeyState[VK_SHIFT] and 128) <> 0) then      // Shift
-    if modifiersList <> '' then
-      modifiersList:= modifiersList + ' + Shift'
-    else
-      modifiersList:= 'Shift';
-  if ((KeyState[VK_LWIN] and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0) then // Win
-    if modifiersList <> '' then
-      modifiersList:= modifiersList + ' + Meta'
-    else
-      modifiersList:= 'Meta';
   vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
-  if (modifiersList = '') or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
+  if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
     Exit;
-  for I:= 0 to 7 do begin
-    if scanCode = modifiersCode[I] then
-      Exit;
+  scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
+
+  if configMode then begin
+    Result:= True;
+    browser.Invoke('pluginEvent', ['kbdEvent', scans]);
+  end else begin
+    index:= keyConfigList.IndexOf(scans);
+    if index > -1 then begin
+      Result:= True;
+      keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
+      if keyConfig.mode = 'assignOther' then begin
+        MakeKeyInputs(keyConfig.newScans, 0);
+        SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
+      end else begin // sendDom
+        browser.Invoke('pluginEvent', ['sendDom', scans]);
+      end;
+    end;
   end;
-  shortcut:= Trim(modifiersList) + '#' + IntToStr(scanCode);
-  browser.Invoke('pluginEvent', ['kbdEvent', shortcut]);
-  if configMode then
-    Result:= True
 end;
 
 procedure TKeyHookTh.Execute;
@@ -227,22 +256,48 @@ begin
   //browser.Invoke('pluginEvent', ['UHOOOO!']);
 end;
 
+procedure TMyClass.SetKeyConfig0(const params: array of Variant);
+begin
+  ReconfigKeyHook;
+end;
+
 procedure TMyClass.SetKeyConfig(const params: array of Variant);
 var
-  I: Integer;
+  modifiers, I: Byte;
   paramsList, paramList: TStringList;
+  target, mode, test: string;
+  scan: Cardinal;
+  //ctrl, alt, shift, meta: Boolean;
+  scans: TArrayCardinal;
+  procedure AddScan(scan: Cardinal);
+  begin
+    SetLength(scans, Length(scans) + 1);
+    scans[Length(scans) - 1]:= scan;
+  end;
 begin
   paramsList:= TStringList.Create;
   paramsList.Delimiter:= '|';
   paramsList.DelimitedText:= params[0];
   paramList:= TStringList.Create;
-  paramList.Delimiter:= ';';
   keyConfigList.Clear;
   try
     for I:= 0 to paramsList.Count - 1 do begin
+      paramList.Delimiter:= ';';
       paramList.DelimitedText:= paramsList.Strings[I];
-      keyConfigList.AddObject(paramList.Strings[0], TKeyConfig.Create(paramList.Strings[1], paramList.Strings[2]));
-      //Write2EventLog('FlexKbd', TKeyConfig(keyConfigList.Objects[I]).mode);
+      target:= paramList.Strings[0];
+      mode:= paramList.Strings[2];
+      test:= paramList.Strings[1];
+
+      modifiers:= StrToInt('$' + LeftBStr(test, 2));
+      if (modifiers and 1) <> 0 then AddScan(29);
+      if (modifiers and 2) <> 0 then AddScan(56);
+      if (modifiers and 4) <> 0 then AddScan(42);
+      if (modifiers and 8) <> 0 then AddScan(347);
+
+      scan:= StrToInt(Copy(test, 3, 10));
+      AddScan(scan);
+
+      keyConfigList.AddObject(target, TKeyConfig.Create(mode, scans));
     end;
   finally
     paramsList.Free;

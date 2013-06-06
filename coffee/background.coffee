@@ -1,51 +1,18 @@
 window.fk = {}
-
 flexkbd = document.getElementById("flexkbd")
-
-#sendMessageSync = (message) ->
-#  dfd = $.Deferred();
-#  chrome.tabs.query {active: true}, (tabs) ->
-#    chrome.tabs.sendMessage tabs[0].id, message, (resp) ->
-#      dfd.resolve(resp);
-#  dfd.promise()
-
-portOtoB = undefined
-chrome.runtime.onConnect.addListener (port) ->
-  if port.name is "OtoB"
-    portOtoB = port
-    portOtoB.onMessage.addListener (msg) ->
-      msg.joke is "Knock knock"
-    #
-    portOtoB.onDisconnect.addListener ->
-      portCtoB.onMessage.removeListener onMessageHandler
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
     chrome.tabs.sendMessage tabs[0].id, message
 
-kickSHS = (shortcut) ->
-  flexkbd.KeyEvent shortcut
+#keydown = ->
+#  flexkbd.KeyEvent()
 
-chrome.commands.getAll (commands) ->
-  commands.forEach (command) ->
-    if command.name is "_execute_browser_action"
-      chrome.contextMenus.create
-        title: "「%s」をページ内検索"
-        type: "normal"
-        contexts: ["selection"]
-        onclick: kickSHS(command.shortcut)
-
-keydown = ->
-  flexkbd.KeyEvent()
-
-#chrome.tabs.getSelected(null, function(tab) {
-#  chrome.tabs.executeScript(tab.id, {file: "DomKeyEvent.js"});
-#});
-chrome.contextMenus.create
-  title: "「%s」をページ内検索"
-  type: "normal"
-  contexts: ["selection"]
-  onclick: keydown
+#chrome.contextMenus.create
+#  title: "「%s」をページ内検索"
+#  type: "normal"
+#  contexts: ["selection"]
+#  onclick: keydown
 
 # オプションページ表示時切り替え
 optionTabId = null
@@ -86,8 +53,6 @@ fk.getKeyCodes = ->
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
 
-setConfigPlugin fk.getConfig().keyConfigSet
-
 window.pluginEvent = (action, value) ->
   switch action
     when "log"
@@ -97,3 +62,5 @@ window.pluginEvent = (action, value) ->
         action: "kbdEvent"
         value: value
       #console.log value
+
+setConfigPlugin fk.getConfig().keyConfigSet
