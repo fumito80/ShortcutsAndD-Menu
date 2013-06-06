@@ -4,6 +4,7 @@ keys = null
 Config = Backbone.Model.extend({})
 
 KeyConfig = Backbone.Model.extend
+  idAttribute: "disShortcut"
   defaults:
     disShortcut: ""
     newShortcut: ""
@@ -12,10 +13,10 @@ KeyConfig = Backbone.Model.extend
 KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
 
 KeyConfigView = Backbone.View.extend
-  # Backbone Specified
+  # Backbone Buitin Events
   events:
     "click input[type='radio']": "onClickRadio"
-    "click i.icon-remove": "onClickRemove"
+    "click i.icon-remove"      : "onClickRemove"
     "keydown input.disShortcut": "onKeydownDisSC"
   
   initialize: (options) ->
@@ -28,9 +29,12 @@ KeyConfigView = Backbone.View.extend
 
   render: (kbdtype) ->
     @setElement @template(@model.toJSON())
-    @$("input[value='#{@model.get("option")}']")
+    option = @model.get("option")
+    @$("input[value='#{option}']")
       .attr("checked", "checked")
       .parent().addClass("hilite")
+    unless option is "assignOther"
+      @$("input.newShortcut").addClass("disabled")
     @onChangeKbd kbdtype
     @
   
@@ -45,10 +49,19 @@ KeyConfigView = Backbone.View.extend
     input$ = @$("input:text:focus")
     if input$.length > 0
       @setKbdValue input$, value
+      if input$[0].className is "disShortcut"
+        if @model.id isnt value && @model.collection.findWhere(disShortcut: value)
+          $("#tiptip_content").text("\"#{input$.val()}\" is a already exists.")
+          @setKbdValue input$, @model.id
+          input$.tipTip()
+          return
+        else if (newShortcut$ = @$("input.newShortcut")).val() is ""
+          @setKbdValue newShortcut$, value
+          @model.set "newShortcut", value
       @model.set input$[0].className, value
 
   onChangeKbd: (kbdtype) ->
-    @setKbdValue @$("input.disShortcut"), @model.get("disShortcut")
+    @setKbdValue @$("input.disShortcut"), @model.id
     @setKbdValue @$("input.newShortcut"), @model.get("newShortcut")
   
   onUpdateOrder: ->
@@ -60,14 +73,17 @@ KeyConfigView = Backbone.View.extend
     target$ = $(event.currentTarget)
     target$.parent().addClass "hilite"
     @model.set "option", target$.val()
-    target$.parents("label").find("input.newShortcut").focus()  if target$.val() is "assignOther"
+    if target$.val() is "assignOther"
+      @$("input.newShortcut").removeClass("disabled").focus()
+    else
+      @$("input.newShortcut").addClass("disabled").blur()
 
   onClickRemove: ->
     @trigger "removeConfig", @model
   
   # Object Method
   setKbdValue: (input$, value) ->
-    modif = (splited = value.split(","))[0]
+    modif = (splited = value.split("#"))[0]
     if key = keys[splited[1]]
       if /Shift/.test(modif) and key[1]
         input$.val modif + " + " + key[1]
@@ -99,14 +115,14 @@ KeyConfigView = Backbone.View.extend
       </label>
       <label>
         <div class="radioCaption">
-          <input type="radio" name="options" class="options" value="disable">Disabled
+          <input type="radio" name="options" class="options" value="disabled">Disabled
         </div>
       </label>
     </div>
     """
 
 KeyConfigSetView = Backbone.View.extend
-  # Backbone Specified
+  # Backbone Buitin Events
   el: "div.outerframe"
   
   events:
@@ -147,7 +163,11 @@ KeyConfigSetView = Backbone.View.extend
     @collection.remove model
   
   # DOM Events
-  onClickAddKeyConfig: ->
+  onClickAddKeyConfig: (event) ->
+    if @collection.length >= 15
+      $("#tiptip_content").text("Registration up to a maximum of 15.")
+      $(event.currentTarget).tipTip(defaultPosition: "right")
+      return
     @collection.add new KeyConfig({})
     @$("div.configSetView").sortable "refresh"
   

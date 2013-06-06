@@ -2,13 +2,14 @@
 <head>
   <link rel="stylesheet" href="css/kickstart.css" type="text/css" media="all">
   <link href='css/no-theme/jquery-ui-1.10.3.custom.min.css' rel='stylesheet' type='text/css'>
+  <link href='css/tipTip.css' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Orbitron' rel='stylesheet' type='text/css'>
   <style>
     body {
       font-family: 'Noto Sans', Arial;
       font-size: 0.9em;
-      padding: 15px 20px;
+      padding: 15px 20px 50px 20px;
     }
     h6 {
       font-family: 'Orbitron', Arial;
@@ -24,6 +25,7 @@
       margin: 5px;
     }
     select.kbdtype {
+      margin: 8px;
       float: right;
     }
     div.configSetView {
@@ -51,10 +53,14 @@
       box-shadow: none;
     }
     input.disShortcut {
+      font-weight: bold;
       margin-top: 5px;
+      width: 180px;
     }
     input.newShortcut {
+      font-weight: bold;
       margin-top: 3px;
+      width: 180px;
     }
     i.icon-double-angle-right {
       vertical-align: middle;
@@ -85,10 +91,17 @@
     <!--<button class="save">Save</button>-->
     <div class="configSetView"></div>
   </div>
+  <div id="tiptip_holder" style="display: none; margin: 709px 0px 0px 107px;" class="tip_right">
+    <div id="tiptip_arrow" style="margin-left: -12px; margin-top: 5px;">
+      <div id="tiptip_arrow_inner"></div>
+    </div>
+    <div id="tiptip_content"></div>
+  </div>
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery-2.0.0.min.js"></script>
   <script src="lib/backbone-min.js"></script>
   <script src="lib/jquery-ui-1.10.3.custom.min.js"></script>
+  <script src="lib/jquery.tipTip.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@ sendMessage = (message) ->
     chrome.tabs.sendMessage tabs[0].id, message
 
 kickSHS = (shortcut) ->
-  flexkbd.keyEvent shortcut
+  flexkbd.KeyEvent shortcut
 
 chrome.commands.getAll (commands) ->
   commands.forEach (command) ->
@@ -36,7 +36,7 @@ chrome.commands.getAll (commands) ->
         onclick: kickSHS(command.shortcut)
 
 keydown = ->
-  flexkbd.keyEvent()
+  flexkbd.KeyEvent()
 
 #chrome.tabs.getSelected(null, function(tab) {
 #  chrome.tabs.executeScript(tab.id, {file: "DomKeyEvent.js"});
@@ -48,23 +48,32 @@ chrome.contextMenus.create
   onclick: keydown
 
 # オプションページ表示時切り替え
-isActivated = false
+optionTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
   chrome.tabs.get activeInfo.tabId, (tab) ->
     if tab.url.indexOf(chrome.extension.getURL("")) is 0
-      flexkbd.startConfigMode()
-      isActivated = true
+      flexkbd.StartConfigMode()
+      optionTabId = activeInfo.tabId
     else
-      flexkbd.endConfigMode()
-      if isActivated
-        sendMessage
+      if optionTabId
+        chrome.tabs.sendMessage optionTabId,
           action: "saveConfig"
-      isActivated = false
+        optionTabId = null
 
+chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
+  if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
+    flexkbd.StartConfigMode()  
+  
+setConfigPlugin = (keyConfigSet) ->
+  sendData = []
+  if keyConfigSet
+    keyConfigSet.forEach (item) ->
+      sendData.push item.disShortcut + ";" + item.newShortcut + ";" + item.option
+    flexkbd.SetKeyConfig sendData.join("|")
+  
 fk.saveConfig = (saveData) ->
   localStorage.flexkbd = JSON.stringify saveData
-  sendData = JSON.parse saveData.keyConfigSet
-  flexkbd.setKeyConfig.apply null, saveData
+  setConfigPlugin saveData.keyConfigSet
 
 fk.getKeyCodes = ->
   JP:
@@ -76,6 +85,8 @@ fk.getKeyCodes = ->
 
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
+
+setConfigPlugin fk.getConfig().keyConfigSet
 
 window.pluginEvent = (action, value) ->
   switch action

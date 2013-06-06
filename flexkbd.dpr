@@ -1,30 +1,40 @@
 library flexkbd;
-// Plugin MIME types are specifed in the version info resource
+
 {$R 'version.res' 'version.rc'}
 
 uses
-  SysUtils,
-  Classes, Windows, NPPlugin, StrUtils, SyncObjs, Messages;
+  SysUtils, Classes, Windows, StrUtils, SyncObjs, Messages, NPPlugin;
 
 type
-  THookfunc = function(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
-
-  TMessageTh = class(TThread)
+  TKeyHookTh = class(TThread)
   protected
     pipeHandle: THandle;
     browser: IBrowserObject;
+    keyConfigList: TStringList;
+    configMode: Boolean;
+    criticalSection: TCriticalSection;
+    function VaridateKeyEvent(wPrm: UInt64): Boolean;
     procedure Execute; override;
   public
-    constructor Create(pipeHandle: THandle; browser: IBrowserObject);
-    destructor Destroy; override;
+    constructor Create(pipeHandle: THandle; browser: IBrowserObject; keyConfigList: TStringList; configMode: Boolean);
+  end;
+
+  TKeyConfig = class
+  public
+    new, mode: string;
+    constructor Create(new, mode: string);
   end;
 
   TMyClass = class(TPlugin)
   private
     pipeHandle: THandle;
-    messageTh: TMessageTh;
-    procedure endKeyHook;
-    procedure startKeyHook(hookFunc: THookfunc);
+    browser: IBrowserObject;
+    keyHookTh: TKeyHookTh;
+    //keyConfigList: TStringList;
+    procedure EndKeyHook;
+    procedure StartKeyHook(configMode: Boolean);
+    //procedure ResetKeyHook(configMode: Boolean = False);
+    procedure ReconfigKeyHook(configMode: Boolean = False);
   public
     constructor Create( AInstance         : PNPP ;
                         AExtraInfo        : TObject ;
@@ -35,12 +45,10 @@ type
                         const ASaved      : TNPSavedData ) ; override;
     destructor Destroy; override;
   published
-    // 設定を反映
-    procedure setKeyConfig(const params: array of Variant);
-    // コンフィグモード終了
-    procedure endConfigMode(const params: array of Variant);
+    // 設定を反映 & コンフィグモード終了兼監視モード開始
+    procedure SetKeyConfig(const params: array of Variant);
     // コンフィグモード開始
-    procedure startConfigMode;
+    procedure StartConfigMode;
     function keyEvent(const params: array of Variant): Variant;
   end;
 
@@ -48,35 +56,127 @@ const
   pipeName = '\\.\pipe\flexkbd';
 
 var
-  HookKey : HHOOK;
-  browser: IBrowserObject;
+  hookKey : HHOOK;
   modifiersCode: array[0..7] of Cardinal = (29,42,54,56,285,312,347,348);
+  keyConfigList: TStringList;
+  g_configMode: Boolean;
 
-constructor TMessageTh.Create(pipeHandle: THandle; browser: IBrowserObject);
+constructor TMyClass.Create( AInstance         : PNPP ;
+                             AExtraInfo        : TObject ;
+                             const APluginType : string ;
+                             AMode             : word ;
+                             AParamNames       : TStrings ;
+                             AParamValues      : TStrings ;
+                             const ASaved      : TNPSavedData );
 begin
-  Self.pipeHandle:= pipeHandle;
-  Self.browser:= browser;
-  FreeOnTerminate:= True;
-  inherited Create(False);
+  inherited;
+  pipeHandle:= CreateNamedPipe(
+    PChar(pipeName), PIPE_ACCESS_DUPLEX,
+    PIPE_TYPE_MESSAGE or PIPE_READMODE_MESSAGE or PIPE_WAIT,
+    1, 255, 255,
+    NMPWAIT_WAIT_FOREVER, nil
+  );
+  if pipeHandle = INVALID_HANDLE_VALUE then begin
+    Write2EventLog('FlexKbd', 'Error: CreateNamedPipe');
+    Exit;
+  end;
+  browser:= GetBrowserWindowObject;
+  keyConfigList:= TStringList.Create;
+  Write2EventLog('FlexKbd', 'Start Shortcut Exchanger', EVENTLOG_INFORMATION_TYPE);
 end;
 
-procedure TMessageTh.Execute;
-var
-  buf: array of AnsiChar;
-  bufSize: Integer;
-  bytesRead: Cardinal;
+destructor TMyClass.Destroy;
 begin
-  bufSize:= 255;
-  SetLength(buf, bufSize);
+  EndKeyHook;
+  CloseHandle(pipeHandle);
+  keyConfigList.Free;
+  Write2EventLog('FlexKbd', 'Terminated Shortcut Exchanger', EVENTLOG_INFORMATION_TYPE);
+  inherited;
+end;
+
+constructor TKeyConfig.Create(new, mode: string);
+begin
+  Self.new:= new;
+  Self.mode:= mode;
+end;
+
+constructor TKeyHookTh.Create(pipeHandle: THandle; browser: IBrowserObject; keyConfigList: TStringList; configMode: Boolean);
+begin
+  inherited Create(False);
+  FreeOnTerminate:= False;
+  Self.pipeHandle:= pipeHandle;
+  Self.browser:= browser;
+  Self.keyConfigList:= keyConfigList;
+  Self.configMode:= configMode;
+  criticalSection:= TCriticalSection.Create;
+end;
+
+function TKeyHookTh.VaridateKeyEvent(wPrm: UInt64): Boolean;
+var
+  KeyState: TKeyboardState;
+  shortcut, modifiersList: string;
+  scanCode, vkCode, I: Cardinal;
+begin
+  Result:= False;
+  scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
+  GetKeyState(0);
+  GetKeyboardState(KeyState);
+  if (scanCode > 32767) then // Not Key down
+    Exit;
+  if ((KeyState[VK_CONTROL] and 128) <> 0) then    // Cntrol
+    modifiersList:= 'Ctrl';
+  if ((KeyState[VK_MENU] and 128) <> 0) then begin // Alt
+    if modifiersList <> '' then
+      modifiersList:= modifiersList + ' + Alt'
+    else
+      modifiersList:= 'Alt';
+    scanCode:= scanCode - $2000;
+  end;
+  if ((KeyState[VK_SHIFT] and 128) <> 0) then      // Shift
+    if modifiersList <> '' then
+      modifiersList:= modifiersList + ' + Shift'
+    else
+      modifiersList:= 'Shift';
+  if ((KeyState[VK_LWIN] and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0) then // Win
+    if modifiersList <> '' then
+      modifiersList:= modifiersList + ' + Meta'
+    else
+      modifiersList:= 'Meta';
+  vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
+  if (modifiersList = '') or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
+    Exit;
+  for I:= 0 to 7 do begin
+    if scanCode = modifiersCode[I] then
+      Exit;
+  end;
+  shortcut:= Trim(modifiersList) + '#' + IntToStr(scanCode);
+  browser.Invoke('pluginEvent', ['kbdEvent', shortcut]);
+  if configMode then
+    Result:= True
+end;
+
+procedure TKeyHookTh.Execute;
+var
+  wPrm: UInt64;
+  bytesRead, bytesWrite: Cardinal;
+  cancelFlag: Boolean;
+begin
   while True do begin
-    //Write2EventLog('FlexKbd', 'Start', EVENTLOG_INFORMATION_TYPE);
     if ConnectNamedPipe(pipeHandle, nil) then begin
       try
-        if ReadFile(pipeHandle, buf[0], bufSize, bytesRead, nil) then begin
-          SetLength(buf, bytesRead);
-          //Write2EventLog('FlexKbd', AnsiString(buf), EVENTLOG_INFORMATION_TYPE);
-          browser.Invoke('pluginEvent', ['kbdEvent', AnsiString(buf)]);
-          SetLength(buf, bufSize);
+        if ReadFile(pipeHandle, wPrm, SizeOf(UInt64), bytesRead, nil) then begin
+          //if wPrm = 0 then // 終了呼び出し時
+          //  Break
+          //end;
+          if wPrm = 1 then begin // Config reload時
+            criticalSection.Acquire;
+            Self.configMode:= g_configMode;
+            Self.keyConfigList:= keyConfigList;
+            criticalSection.Release;
+            Continue;
+          end;
+          cancelFlag:= VaridateKeyEvent(wPrm);
+          WriteFile(pipeHandle, cancelFlag, SizeOf(Boolean), bytesWrite, nil);
         end;
       finally
         DisconnectNamedPipe(pipeHandle);
@@ -90,125 +190,34 @@ begin
   end;
 end;
 
-destructor TMessageTh.Destroy;
-begin
-  DisconnectNamedPipe(pipeHandle);
-  CloseHandle(pipeHandle);
-  //Write2EventLog('FlexKbd', 'NamedPipe CloseHandle', EVENTLOG_INFORMATION_TYPE);
-  inherited;
-end;
-
-procedure sendBrowser(msg: string);
-begin
-  browser.Invoke('pluginEvent', ['DomKeyEvent', msg]);
-end;
-
-function hookfuncConfig(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
+function Hookfunc(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
 var
-  hWindow: HWnd;
-  KeyState: TKeyboardState;
-  buf: array [0..1000] of Char;
-  messages, modifiersList: string;
   pipename: string;
-  bytesRead, scanCode, I: Cardinal;
+  cancelFlag: Boolean;
+  bytesRead: Cardinal;
+  hWindow: HWnd;
+  buf: array[0..1000] of AnsiChar;
 begin
   if (code < 0) then begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
-    exit;
+    Exit;
   end;
   hWindow:= GetforegroundWindow;
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText('chrome.exe', buf)  then begin
-    Result:= 1;
-    scanCode:= Hiword(wPrm and $00000000FFFFFFFF);
-    GetKeyboardState(KeyState);
-    if (scanCode > 32767) then // Not Key down
-      Exit;
-    if ((KeyState[VK_CONTROL] and 128) <> 0) then    // Cntrol
-      modifiersList:= 'Ctrl';
-    if ((KeyState[VK_MENU] and 128) <> 0) then begin // Alt
-      if modifiersList <> '' then
-        modifiersList:= modifiersList + '+Alt'
-      else
-        modifiersList:= 'Alt';
-      scanCode:= scanCode - $2000;
-    end;
-    if ((KeyState[VK_SHIFT] and 128) <> 0) then      // Shift
-      if modifiersList <> '' then
-        modifiersList:= modifiersList + '+Shift'
-      else
-        modifiersList:= 'Shift';
-    if ((KeyState[VK_LWIN] and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0) then // Win
-      if modifiersList <> '' then
-        modifiersList:= modifiersList + '+Meta'
-      else
-        modifiersList:= 'Meta';
-    if (modifiersList = '') then
-      Exit;
-    for I:= 0 to 7 do begin
-      if scanCode = modifiersCode[I] then
-        Exit;
-    end;
-    messages:= Trim(modifiersList) + ',' + IntToStr(scanCode);
+  if AnsiEndsText('chrome.exe', buf) then begin
     pipename:= '\\.\pipe\flexkbd';
-    CallNamedPipe(PChar(pipename), PAnsiChar(messages), length(messages), nil, 0, bytesRead, NMPWAIT_NOWAIT);
+    CallNamedPipe(PAnsiChar(pipename), @wPrm, SizeOf(UInt64), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    if cancelFlag then
+      Result:= 1
+    else
+      Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
+    //Write2EventLog('FlexKbd', IntToStr(Ord(goFlag^)), EVENTLOG_INFORMATION_TYPE);
   end else begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
   end;
 end;
 
-function hookfuncAll(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
-var
-  hWindow: HWnd;
-  KeyState: TKeyboardState;
-  buf: array [0..1000] of char;
-  modifiersList: string;
-begin
-  //Write2EventLog('FlexKbd', 'hookfuncAll');
-  if (code < 0) then begin
-    Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
-    exit;
-  end;
-  hWindow:= GetforegroundWindow;
-  GetWindowModuleFileName(hWindow, buf, 1000);
-  if AnsiEndsText('chrome.exe', buf)  then begin
-    GetKeyboardState(KeyState);
-    if ((KeyState[vk_Control] and 128) <> 0) then // Cntrol
-      modifiersList := 'Control ';
-    if ((KeyState[vk_Shift] and 128) <> 0) then   // Shift
-      modifiersList := modifiersList + 'Shift ';
-    if ((KeyState[vk_Menu] and 128) <> 0) then    // Alt
-      modifiersList := modifiersList + 'Alt';
-    Result:= 1;
-  end else begin
-    Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
-  end;
-end;
-
-procedure TMyClass.setKeyConfig(const params: array of Variant);
-var
-  I: Integer;
-begin
-  for I:= 0 to Length(params) - 1 do begin
-
-  end;
-end;
-
-// コンフィグモード開始
-procedure TMyClass.startConfigMode;
-begin
-  endKeyHook;
-  startKeyHook(hookfuncConfig);
-end;
-
-// コンフィグモード終了
-procedure TMyClass.endConfigMode(const params: array of Variant);
-begin
-  endKeyHook;
-  //startKeyHook(hookfuncAll);
-end;
-
-function TMyClass.keyEvent(const params: array of Variant): Variant;
+function TMyClass.KeyEvent(const params: array of Variant): Variant;
 begin
   //Write2EventLog('FlexKbd', params[0]);
   keybd_event(VK_CONTROL, 0, 0, 0);
@@ -218,53 +227,86 @@ begin
   //browser.Invoke('pluginEvent', ['UHOOOO!']);
 end;
 
-procedure TMyClass.startKeyHook(hookFunc: THookfunc);
+procedure TMyClass.SetKeyConfig(const params: array of Variant);
+var
+  I: Integer;
+  paramsList, paramList: TStringList;
 begin
-  HookKey:= SetWindowsHookEx(WH_KEYBOARD, @hookfunc, hInstance, 0);
+  paramsList:= TStringList.Create;
+  paramsList.Delimiter:= '|';
+  paramsList.DelimitedText:= params[0];
+  paramList:= TStringList.Create;
+  paramList.Delimiter:= ';';
+  keyConfigList.Clear;
+  try
+    for I:= 0 to paramsList.Count - 1 do begin
+      paramList.DelimitedText:= paramsList.Strings[I];
+      keyConfigList.AddObject(paramList.Strings[0], TKeyConfig.Create(paramList.Strings[1], paramList.Strings[2]));
+      //Write2EventLog('FlexKbd', TKeyConfig(keyConfigList.Objects[I]).mode);
+    end;
+  finally
+    paramsList.Free;
+    paramList.Free;
+  end;
+  // コンフィグモード終了兼監視モード開始
+  ReconfigKeyHook;
+end;
+
+// コンフィグモード開始
+procedure TMyClass.StartConfigMode;
+begin
+  ReconfigKeyHook(true);
+end;
+
+// Start KeyHook
+procedure TMyClass.StartKeyHook(configMode: Boolean);
+begin
+  keyHookTh:= TKeyHookTh.Create(pipeHandle, browser, keyConfigList, configMode);
+  hookKey:= SetWindowsHookEx(WH_KEYBOARD, @Hookfunc, hInstance, 0);
   //Write2EventLog('FlexKbd', IntToStr(HookKey));
 end;
 
-procedure TMyClass.endKeyHook;
-begin
- 	UnHookWindowsHookEX(HookKey);
-end;
-
-constructor TMyClass.Create( AInstance         : PNPP ;
-                             AExtraInfo        : TObject ;
-                             const APluginType : string ;
-                             AMode             : word ;
-                             AParamNames       : TStrings ;
-                             AParamValues      : TStrings ;
-                             const ASaved      : TNPSavedData );
-begin
-  inherited;
-  //startKeyHook(hookfuncAll);
-  browser:= GetBrowserWindowObject;
-  pipeHandle:= CreateNamedPipe(
-    PChar(pipeName), PIPE_ACCESS_DUPLEX,
-    PIPE_TYPE_MESSAGE or PIPE_READMODE_MESSAGE or PIPE_WAIT,
-    1, 255, 255,
-    NMPWAIT_WAIT_FOREVER, nil
-  );
-  if pipeHandle = INVALID_HANDLE_VALUE then begin
-    Write2EventLog('FlexKbd', 'Error: CreateNamedPipe');
-    Exit;
-  end;
-  messageTh:= TMessageTh.Create(pipeHandle, browser);
-  Write2EventLog('FlexKbd', 'Start Flex KBD', EVENTLOG_INFORMATION_TYPE);
-end;
-
-destructor TMyClass.Destroy;
+// Stop KeyHook
+procedure TMyClass.EndKeyHook;
 var
-  dummy: string;
+  cancelValue: UInt64;
+  dummyFlag: Boolean;
   bytesRead: Cardinal;
 begin
- 	UnHookWindowsHookEX(HookKey);
-  messageTh.Terminate;
-  dummy:= 'close';
-  CallNamedPipe(PChar(pipeName), PChar(dummy), length(dummy), nil, 0, bytesRead, NMPWAIT_NOWAIT);
-  Write2EventLog('FlexKbd', 'Terminated Flex KBD', EVENTLOG_INFORMATION_TYPE);
-  inherited;
+  if hookKey <> 0 then
+   	UnHookWindowsHookEX(HookKey);
+  if keyHookTh <> nil then begin
+    keyHookTh.Terminate;
+    cancelValue:= 0;
+    CallNamedPipe(PAnsiChar(pipeName), @cancelValue, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    keyHookTh.WaitFor;
+    FreeAndNil(keyHookTh);
+  end;
+end;
+
+{
+procedure TMyClass.ResetKeyHook(configMode: Boolean = False);
+begin
+  EndKeyHook;
+  StartKeyHook(configMode);
+end;
+}
+
+// Thread config reload
+procedure TMyClass.ReconfigKeyHook(configMode: Boolean = False);
+var
+  reloadValue: UInt64;
+  dummyFlag: Boolean;
+  bytesRead: Cardinal;
+begin
+  if keyHookTh = nil then begin
+    g_configMode:= False;
+    StartKeyHook(false);
+  end else begin
+    g_configMode:= configMode;
+    reloadValue:= 1;
+    CallNamedPipe(PAnsiChar(pipeName), @reloadValue, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+  end;
 end;
 
 begin

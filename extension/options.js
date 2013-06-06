@@ -9,6 +9,7 @@
   Config = Backbone.Model.extend({});
 
   KeyConfig = Backbone.Model.extend({
+    idAttribute: "disShortcut",
     defaults: {
       disShortcut: "",
       newShortcut: "",
@@ -35,8 +36,13 @@
       }, this);
     },
     render: function(kbdtype) {
+      var option;
       this.setElement(this.template(this.model.toJSON()));
-      this.$("input[value='" + (this.model.get("option")) + "']").attr("checked", "checked").parent().addClass("hilite");
+      option = this.model.get("option");
+      this.$("input[value='" + option + "']").attr("checked", "checked").parent().addClass("hilite");
+      if (option !== "assignOther") {
+        this.$("input.newShortcut").addClass("disabled");
+      }
       this.onChangeKbd(kbdtype);
       return this;
     },
@@ -46,15 +52,28 @@
       return this.remove();
     },
     onKbdEvent: function(value) {
-      var input$;
+      var input$, newShortcut$;
       input$ = this.$("input:text:focus");
       if (input$.length > 0) {
         this.setKbdValue(input$, value);
+        if (input$[0].className === "disShortcut") {
+          if (this.model.id !== value && this.model.collection.findWhere({
+            disShortcut: value
+          })) {
+            $("#tiptip_content").text("\"" + (input$.val()) + "\" is a already exists.");
+            this.setKbdValue(input$, this.model.id);
+            input$.tipTip();
+            return;
+          } else if ((newShortcut$ = this.$("input.newShortcut")).val() === "") {
+            this.setKbdValue(newShortcut$, value);
+            this.model.set("newShortcut", value);
+          }
+        }
         return this.model.set(input$[0].className, value);
       }
     },
     onChangeKbd: function(kbdtype) {
-      this.setKbdValue(this.$("input.disShortcut"), this.model.get("disShortcut"));
+      this.setKbdValue(this.$("input.disShortcut"), this.model.id);
       return this.setKbdValue(this.$("input.newShortcut"), this.model.get("newShortcut"));
     },
     onUpdateOrder: function() {
@@ -67,7 +86,9 @@
       target$.parent().addClass("hilite");
       this.model.set("option", target$.val());
       if (target$.val() === "assignOther") {
-        return target$.parents("label").find("input.newShortcut").focus();
+        return this.$("input.newShortcut").removeClass("disabled").focus();
+      } else {
+        return this.$("input.newShortcut").addClass("disabled").blur();
       }
     },
     onClickRemove: function() {
@@ -75,7 +96,7 @@
     },
     setKbdValue: function(input$, value) {
       var key, modif, splited;
-      modif = (splited = value.split(","))[0];
+      modif = (splited = value.split("#"))[0];
       if (key = keys[splited[1]]) {
         if (/Shift/.test(modif) && key[1]) {
           return input$.val(modif + " + " + key[1]);
@@ -88,7 +109,7 @@
         return input$.val("");
       }
     },
-    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disable\">Disabled\n    </div>\n  </label>\n</div>")
+    template: _.template("<div class=\"innerframe\">\n  <i class=\"icon-remove\" title=\"Remove\"></i>\n  <label>\n    <div class=\"targetCaption\">Target shortcut key:</div>\n    <input type=\"text\" class=\"disShortcut\" readonly>\n  </label>\n  <i class=\"icon-double-angle-right\"></i>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"assignOther\">Assign other shortcut key\n    </div>\n    <input type=\"text\" class=\"newShortcut\" readonly>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"sendDom\">Simulate keydown event\n    </div>\n  </label>\n  <label>\n    <div class=\"radioCaption\">\n      <input type=\"radio\" name=\"options\" class=\"options\" value=\"disabled\">Disabled\n    </div>\n  </label>\n</div>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -133,7 +154,14 @@
     onRemoveConfig: function(model) {
       return this.collection.remove(model);
     },
-    onClickAddKeyConfig: function() {
+    onClickAddKeyConfig: function(event) {
+      if (this.collection.length >= 15) {
+        $("#tiptip_content").text("Registration up to a maximum of 15.");
+        $(event.currentTarget).tipTip({
+          defaultPosition: "right"
+        });
+        return;
+      }
       this.collection.add(new KeyConfig({}));
       return this.$("div.configSetView").sortable("refresh");
     },
