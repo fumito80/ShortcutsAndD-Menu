@@ -1,11 +1,12 @@
 {
   "manifest_version": 2,
-  "name": "Flex keyboard with SHS context menu",
+  "name": "Shortcut Exchanger β",
   "version": "0.1.0",
-  "description": "Chromeショートカットキー回避と選択テキストのコンテキストメニューからSuperHighlightSearchを呼び出す",
+  "description": "You can assign a shortcut key to another one freely. (Run Windows only)",
   "icons": {
      "48": "images/keyboard.png"
   },
+  "options_page": "options.html",
   "background": {
     "page": "background.html",
     "persistent": true
@@ -14,11 +15,9 @@
     { "path": "flexkbd.dll" }
   ],
   "web_accessible_resources": ["kbdagent.js"],
-  "options_page": "options.html",
   "content_security_policy": "script-src 'unsafe-eval' 'self'; object-src 'self';",
   "permissions": [
     "tabs",
-    "contextMenus",
     "*://*/*"
   ]
 }
