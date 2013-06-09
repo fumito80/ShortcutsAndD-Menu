@@ -187,10 +187,10 @@ begin
     if index > -1 then begin
       Result:= True;
       keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
-      if keyConfig.mode = 'assignOther' then begin
+      if keyConfig.mode = 'assignOrg' then begin
         MakeKeyInputs(keyConfig.newScans, 0);
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
-      end else if keyConfig.mode = 'sendDom' then begin
+      end else if keyConfig.mode = 'simEvent' then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end;
     end;
@@ -287,6 +287,11 @@ var
     scans[Length(scans) - 1]:= scan;
   end;
 begin
+  if params[0] = '' then begin
+    keyConfigList.Clear;
+    ReconfigKeyHook;
+    Exit;
+  end;
   paramsList:= TStringList.Create;
   paramsList.Delimiter:= '|';
   paramsList.DelimitedText:= params[0];

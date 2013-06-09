@@ -15,17 +15,17 @@ sendMessage = (message) ->
 #  onclick: keydown
 
 # オプションページ表示時切り替え
-optionTabId = null
+optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
   chrome.tabs.get activeInfo.tabId, (tab) ->
     if tab.url.indexOf(chrome.extension.getURL("")) is 0
       flexkbd.StartConfigMode()
-      optionTabId = activeInfo.tabId
+      optionsTabId = activeInfo.tabId
     else
-      if optionTabId
-        chrome.tabs.sendMessage optionTabId,
+      if optionsTabId
+        chrome.tabs.sendMessage optionsTabId,
           action: "saveConfig"
-        optionTabId = null
+        optionsTabId = null
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
@@ -66,8 +66,8 @@ setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
     keyConfigSet.forEach (item) ->
-      if (item.disShortcut)
-        sendData.push item.disShortcut + ";" + item.newShortcut + ";" + item.option
+      if (item.proxy)
+        sendData.push item.proxy + ";" + item.origin + ";" + item.mode
     flexkbd.SetKeyConfig sendData.join("|")
   
 fk.saveConfig = (saveData) ->
@@ -81,6 +81,9 @@ fk.getKeyCodes = ->
   US:
     keys: keysUS
     name: "US 104 Keyboard"
+
+fk.getScHelp = ->
+  scHelp
 
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
@@ -98,3 +101,33 @@ window.pluginEvent = (action, value) ->
       preSendKeyEvent value
 
 setConfigPlugin fk.getConfig().keyConfigSet
+
+scHelp = {}
+scHelpPageUrl = "https://support.google.com/chrome/answer/157179?hl="
+
+analyzeScHelpPage = (resp, lang) ->
+  doc = $(resp)
+  targets = doc.find("div.article-container table tr:has(td:first-child:has(strong))")
+  $.each targets, (i, elem) ->
+    content = elem.cells[1].textContent.replace /^\s+|\s$/g, ""
+    Array.prototype.forEach.call elem.childNodes[1].getElementsByTagName("strong"), (strong) ->
+      scKey = strong.textContent.toUpperCase().replace /\s/g, ""
+      scKey = scKey.replace("PGUP", "PAGEUP").replace("PGDOWN", "PAGEDOWN").replace(/DEL$/, "DELETE").replace(/INS$/, "INSERT")
+      unless scHelp[scKey]?[lang]
+        unless scHelp[scKey]
+          scHelp[scKey] = {}
+        scHelp[scKey][lang] = []
+      scHelp[scKey][lang].push content
+
+xhr = new XMLHttpRequest()
+forecast = (lang) ->
+  xhr.onreadystatechange = ->
+    if xhr.readyState is 4 && xhr.status is 200
+      analyzeScHelpPage xhr.responseText, lang
+      dfd.resolve()
+  xhr.open "GET", scHelpPageUrl + lang, true
+  xhr.send()
+  (dfd = $.Deferred()).promise()
+
+forecast("ja").done ->
+  forecast "en"

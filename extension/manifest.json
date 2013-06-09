@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Shortcut Exchanger β",
+  "name": "Keyboard Shortcuts Freely β",
   "version": "0.1.0",
-  "description": "You can assign a shortcut key to another one freely. (Run Windows only)",
+  "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
   "icons": {
      "48": "images/keyboard.png"
   },
@@ -15,7 +15,7 @@
     { "path": "flexkbd.dll" }
   ],
   "web_accessible_resources": ["kbdagent.js"],
-  "content_security_policy": "script-src 'unsafe-eval' 'self'; object-src 'self';",
+  "content_security_policy": "script-src https://ajax.googleapis.com 'unsafe-eval' 'self'; object-src 'self';",
   "permissions": [
     "tabs",
     "*://*/*"
