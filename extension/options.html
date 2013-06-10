@@ -10,13 +10,13 @@
     body {
       padding: 0px 4px 0px 20px;
       margin: 0px 0px 0px 12px;
-      font-family: 'Noto Sans', Arial;
+      font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
       font-size: 0.9em;
       overflow: hidden;
     }
     div.header {
       width: 100%;
-      padding: 25px 25px 16px 0px;
+      padding: 16px 25px 10px 0px;
       background-color: #FFF;
     }
     h6 {
@@ -36,19 +36,19 @@
       float: right;
     }
     table.keyConfigSetView {
-      padding-bottom: 28px;
+      padding-bottom: 30px;
     }
     div.fixed-table-container {
       position: relative;
-      padding-top: 28px;
+      padding-top: 30px;
     }
     div.header-background {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      background: #FFF;
-      height: 36px;
+      background: #FFF; /* #243655 */
+      height: 30px;
     }
     div.fixed-table-container-inner {
       height: 100%;
@@ -66,13 +66,26 @@
     }
     canvas.check1, canvas.check2, canvas.check3 {
       position: absolute;
-      top: -120px;
+      top: -130px;
     }
     div.th_inner {
       position: absolute;
       top: 0px;
+      line-height: 30px;
+    }
+    div.th_inner.blank {
       background: #FFF;
-      line-height: 28px;
+      padding: 0px 12px;
+      right: 0px;
+    }
+    div.th_inner.assignOrg {
+      top: -60px;
+    }
+    div.th_inner.simEvent {
+      top: -40px;
+    }
+    div.th_inner.disable {
+      top: -20px;
     }
     input.proxy {
       margin-top: 5px;
@@ -93,6 +106,22 @@
     }
     td.desc {
       width: 80%;
+    }
+    td.desc div.sectInit {
+      background: rgb(122, 122, 160);
+      border-radius: 3px;
+      color: white;
+      padding: 0px 3px;
+      margin-right: 3px;
+      font-size: 12px;
+      width: 17px;
+      height: 17px;
+      text-align: center;
+      cursor: default;
+      float: left;
+    }
+    td.desc div.content {
+      overflow: auto;
     }
     td.desc ol {
       margin-bottom: 0px;

@@ -85,6 +85,9 @@ fk.getKeyCodes = ->
 fk.getScHelp = ->
   scHelp
 
+fk.getScHelpSect = ->
+  scHelpSect
+
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
 
@@ -103,12 +106,13 @@ window.pluginEvent = (action, value) ->
 setConfigPlugin fk.getConfig().keyConfigSet
 
 scHelp = {}
+scHelpSect = {}
 scHelpPageUrl = "https://support.google.com/chrome/answer/157179?hl="
 
-analyzeScHelpPage = (resp, lang) ->
-  doc = $(resp)
-  targets = doc.find("div.article-container table tr:has(td:first-child:has(strong))")
+scrapeHelp = (lang, sectInit, elTab) ->
+  targets = $(elTab).find("tr:has(td:first-child:has(strong))")
   $.each targets, (i, elem) ->
+  #Array.prototype.forEach.call targets[0], (el) ->
     content = elem.cells[1].textContent.replace /^\s+|\s$/g, ""
     Array.prototype.forEach.call elem.childNodes[1].getElementsByTagName("strong"), (strong) ->
       scKey = strong.textContent.toUpperCase().replace /\s/g, ""
@@ -117,7 +121,30 @@ analyzeScHelpPage = (resp, lang) ->
         unless scHelp[scKey]
           scHelp[scKey] = {}
         scHelp[scKey][lang] = []
-      scHelp[scKey][lang].push content
+      scHelp[scKey][lang].push sectInit + "^" + content
+
+analyzeScHelpPage = (resp, lang) ->
+  doc = $(resp)
+  mainSection = doc.find("div.main-section")
+  sectInit = ""
+  #$.each mainSection.children, (i, el) ->
+  Array.prototype.forEach.call mainSection[0].children, (el) ->
+    switch el.tagName
+      when "H3"
+        switch el.textContent
+          when "Tab and window shortcuts", "タブとウィンドウのショートカット"
+            sectInit = "T"
+          when "Google Chrome feature shortcuts", "Google Chrome 機能のショートカット"
+            sectInit = "F"
+          when "Address bar shortcuts", "アドレスバーのショートカット"
+            sectInit = "A"
+          when "Webpage shortcuts", "ウェブページのショートカット"
+            sectInit = "W"
+          when "Text shortcuts", "テキストのショートカット"
+            sectInit = "Tx"
+        scHelpSect[sectInit] = el.textContent
+      when "TABLE"
+        scrapeHelp lang, sectInit, el
 
 xhr = new XMLHttpRequest()
 forecast = (lang) ->

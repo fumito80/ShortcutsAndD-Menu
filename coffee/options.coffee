@@ -162,12 +162,11 @@ KeyConfigView = Backbone.View.extend
         if /^CTRL\+[2-7]$/.test keycombo
           help = scHelp["CTRL+1"]
       if help
-        if help[lang].length > 1
-          ol = @$("td.desc")[0].appendChild document.createElement "ol"
-          for i in [0...help[lang].length]
-            ol.appendChild(document.createElement "li").textContent = help[lang][i]
-        else
-          @$("td.desc").text help[lang][0]
+        #ol = @$("td.desc")[0].appendChild document.createElement "ol"
+        for i in [0...help[lang].length]
+          test = help[lang][i].match /(^\w+)\^(.+)/
+          @$("td.desc").append $("""<div class="sectInit" title="#{scHelpSect[RegExp.$1]}">#{RegExp.$1}</div><div class="content">#{RegExp.$2}</div>""")
+          #ol.appendChild(document.createElement "li").textContent = RegExp.$2
   
   template: _.template """
     <tr>
@@ -267,19 +266,35 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigSet: @collection.toJSON()
   
   setCanvasHeader: ->
-    fx = -76
-    fy = 120
-    fillText = (ctx, text) ->
-      ctx.font = "16px 'Noto Sans'"
-      ctx.fillStyle = '#000000'
-      ctx.rotate(325 * Math.PI / 180)
-      ctx.fillText(text, fx, fy)
+    #fx = -76
+    #fy = 120
+    fx = 0
+    lx = 9.5
+    fillText = (ctx, text, fy) ->
+      ctx.moveTo lx, fy + 6
+      ctx.lineTo lx, 150
+      ctx.lineWidth = 1
+      ctx.fillStyle = "#999999"
+      ctx.stroke()
+      #ctx.font = "14px 'Noto Sans'"
+      #ctx.rotate(325 * Math.PI / 180)
+      #ctx.fillStyle = "#000000"
+      #ctx.fillText(text, fx, fy)
+    strokeLine = (ctx, fy) ->
+      ctx.moveTo lx, fy + 7
+      ctx.lineTo lx, 150
+      ctx.lineWidth = 1
+      ctx.strokeStyle = "#666666"
+      ctx.stroke()
     ctx = @$("canvas.check1")[0].getContext("2d")
-    fillText ctx, "Assign org shortcut..."
+    strokeLine ctx, 90
+    #fillText ctx, "Assign orgin shortcut key", 90
     ctx = @$("canvas.check2")[0].getContext("2d")
-    fillText ctx, "Simurate key event"
+    strokeLine ctx, 110
+    #fillText ctx, "Simurate key event", 110
     ctx = @$("canvas.check3")[0].getContext("2d")
-    fillText ctx, "Disabled"
+    strokeLine ctx, 130
+    #fillText ctx, "Disabled", 130
   
   template: _.template """
     <thead>
@@ -287,12 +302,21 @@ KeyConfigSetView = Backbone.View.extend
         <th><div class="th_inner">New shortcut key <i class="icon-double-angle-right"></i> Origin shortcut key</div></th>
         <th></th>
         <th></th>
-        <th><canvas class="check1" width="200"></canvas></th>
-        <th><canvas class="check2" width="200"></canvas></th>
-        <th><canvas class="check3" width="200"></canvas></th>
+        <th>
+          <div class="th_inner assignOrg">Assign orgin shortcut key</div>
+          <canvas class="check1" width="200"></canvas>
+        </th>
+        <th>
+          <div class="th_inner simEvent">Simurate key event</div>
+          <canvas class="check2" width="200"></canvas>
+        </th>
+        <th>
+          <div class="th_inner disable">Disabled</div>
+          <canvas class="check3" width="200"></canvas>
+        </th>
         <th></th>
         <th></th>
-        <th></th>
+        <th><div class="th_inner blank">&nbsp;</div></th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -313,6 +337,7 @@ fk = chrome.extension.getBackgroundPage().fk
 saveData = fk.getConfig()
 keyCodes = fk.getKeyCodes()
 scHelp   = fk.getScHelp()
+scHelpSect = fk.getScHelpSect()
 
 $ = jQuery
 $ ->

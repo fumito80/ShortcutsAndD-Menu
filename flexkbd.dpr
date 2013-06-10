@@ -159,14 +159,14 @@ begin
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * 2);
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * 4);
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * 8);
-  if (modifierFlags and 2) = 2 then
+  if (modifierFlags and 2) <> 0 then
     scanCode:= scanCode - $2000;
   //vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
   //if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
   scanCodeRept:= scanCode - $4000;
   if scanCodeRept > 0 then
     scanCode:= scanCodeRept;
-  if (modifierFlags = 0) then
+  if (modifierFlags = 0) and not(scancode in [$3B..$44, $57, $58]) then
     Exit;
   for I := 0 to 7 do begin
     if scanCode = modifiersCode[I] then
@@ -320,9 +320,9 @@ begin
   finally
     paramsList.Free;
     paramList.Free;
+    // コンフィグモード終了兼監視モード開始
+    ReconfigKeyHook;
   end;
-  // コンフィグモード終了兼監視モード開始
-  ReconfigKeyHook;
 end;
 
 // コンフィグモード開始
