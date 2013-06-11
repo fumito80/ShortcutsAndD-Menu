@@ -6,8 +6,11 @@ uses
   SysUtils, Classes, Windows, StrUtils, SyncObjs, Messages, NPPlugin;
 
 type
+  TArrayCardinal = array of Cardinal;
+
   TKeyHookTh = class(TThread)
   protected
+    seq: Integer;
     pipeHandle: THandle;
     browser: IBrowserObject;
     keyConfigList: TStringList;
@@ -19,7 +22,6 @@ type
     constructor Create(pipeHandle: THandle; browser: IBrowserObject; keyConfigList: TStringList; configMode: Boolean);
   end;
 
-  TArrayCardinal = array of Cardinal;
   TKeyConfig = class
   public
     mode: string;
@@ -129,15 +131,35 @@ var
     Inc(KeyInputCount);
     SetLength(KeyInputs, KeyInputCount);
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
-    //Write2EventLog('FlexKbd', IntToStr(scanCode));
-    with  KeyInputs[KeyInputCount - 1].ki  do
+    //Write2EventLog('FlexKbd', IntToStr(scanCode) + ': '+IntToStr(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0))));
+    with KeyInputs[KeyInputCount - 1].ki do
     begin
-      wVk:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
+      wVk:= MapVirtualKeyEx(scanCode, 3, GetKeyboardLayout(0));
+      //Write2EventLog('FlexKbd', IntToHex(wVk, 4));
       wScan := scanCode;
-      dwFlags := KEYEVENTF_EXTENDEDKEY;
-      dwFlags := Flags or dwFlags;
+      dwFlags := Flags;
+      if scanCode > $100 then begin
+        dwFlags := dwFlags or KEYEVENTF_EXTENDEDKEY;
+        wScan:= wScan - $100;
+        wVk:= MapVirtualKeyEx(wScan, 3, GetKeyboardLayout(0));
+        //Write2EventLog('FlexKbd', IntToHex(wVk, 4));
+      end;
       time := 0;
-      dwExtraInfo := 0;
+      dwExtraInfo:= 0;
+    end;
+  end;
+  procedure  ReleaseModifier(vkCode, scanCode: Cardinal; Flags: DWord);
+  begin
+    Inc(KeyInputCount);
+    SetLength(KeyInputs, KeyInputCount);
+    KeyInputs[KeyInputCount - 1].Itype:= INPUT_KEYBOARD;
+    with KeyInputs[KeyInputCount - 1].ki do
+    begin
+      wVk:= vkCode;
+      wScan:= scanCode;
+      dwFlags := KEYEVENTF_KEYUP or Flags;
+      time := 0;
+      dwExtraInfo:= 0;
     end;
   end;
   procedure MakeKeyInputs(scans: TArrayCardinal; index: Integer);
@@ -148,8 +170,10 @@ var
     KeybdInput(scans[index], KEYEVENTF_KEYUP);
   end;
 begin
+  Inc(seq);
   Result:= False;
   scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
+  // Exit1
   if (scanCode > 32767) then // Not Key down
     Exit;
   GetKeyState(0);
@@ -161,33 +185,35 @@ begin
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * 8);
   if (modifierFlags and 2) <> 0 then
     scanCode:= scanCode - $2000;
-  //vkCode:= MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0));
   //if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
   scanCodeRept:= scanCode - $4000;
   if scanCodeRept > 0 then
     scanCode:= scanCodeRept;
+  scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
+  //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(GetAsyncKeyState(VK_CONTROL)));
+
+  // Exit2 --> Modifierキーが押されていない ＆ ファンクションキーじゃないとき
   if (modifierFlags = 0) and not(scancode in [$3B..$44, $57, $58]) then
     Exit;
+  // Exit3 --> Modifierキー単独のとき
   for I := 0 to 7 do begin
     if scanCode = modifiersCode[I] then
       Exit;
   end;
 
-  scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
-
-  //Write2EventLog('FlexKbd', IntToStr(scanCode) + ': ' + scans);
-
   if configMode then begin
     Result:= True;
     browser.Invoke('pluginEvent', ['configKeyEvent', scans]);
   end else begin
-    //Write2EventLog('FlexKbd', scans);
-    //Write2EventLog('FlexKbd', keyConfigList.CommaText);
     index:= keyConfigList.IndexOf(scans);
     if index > -1 then begin
       Result:= True;
       keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
       if keyConfig.mode = 'assignOrg' then begin
+        ReleaseModifier(VK_RCONTROL, $11D, KEYEVENTF_EXTENDEDKEY);
+        ReleaseModifier(VK_LCONTROL, $1D, 0);
+        ReleaseModifier(VK_RMENU, $138, KEYEVENTF_EXTENDEDKEY);
+        ReleaseModifier(VK_LMENU, $38, 0);
         MakeKeyInputs(keyConfig.newScans, 0);
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
       end else if keyConfig.mode = 'simEvent' then begin
@@ -224,6 +250,7 @@ begin
         DisconnectNamedPipe(pipeHandle);
       end;
     end else begin
+
       Write2EventLog('FlexKbd', 'Error: Connect named pipe');
       Break;
     end;
@@ -253,7 +280,6 @@ begin
       Result:= 1
     else
       Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
-    //Write2EventLog('FlexKbd', IntToStr(Ord(goFlag^)), EVENTLOG_INFORMATION_TYPE);
   end else begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
   end;
@@ -307,13 +333,14 @@ begin
       test:= paramList.Strings[1];
 
       modifiers:= StrToInt('$' + LeftBStr(test, 2));
-      if (modifiers and 1) <> 0 then AddScan(29);
-      if (modifiers and 2) <> 0 then AddScan(56);
-      if (modifiers and 4) <> 0 then AddScan(42);
-      if (modifiers and 8) <> 0 then AddScan(347);
+      if (modifiers and 1) <> 0 then AddScan($1D);  // VK_LCONTROL
+      if (modifiers and 2) <> 0 then AddScan($38);  // VK_LMENU
+      if (modifiers and 4) <> 0 then AddScan($2A);  // VK_LSHIFT
+      if (modifiers and 8) <> 0 then AddScan($15B); // VK_LWIN
 
       scan:= StrToInt(Copy(test, 3, 10));
       AddScan(scan);
+      //AddScan(MapVirtualKeyEx(scan, 1, GetKeyboardLayout(0)));
 
       keyConfigList.AddObject(target, TKeyConfig.Create(mode, scans));
     end;

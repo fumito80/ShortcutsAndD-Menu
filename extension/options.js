@@ -238,7 +238,7 @@
       });
       this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el);
       newChild.find("input.proxy").focus().end();
-      window.scrollTo(0, document.body.scrollHeight);
+      newChild[0].scrollIntoView(true);
       keyConfigView.on("removeConfig", this.onRemoveConfig, this);
       return this.setTableVisible();
     },
@@ -315,7 +315,7 @@
     template: _.template("<thead>\n  <tr>\n    <th><div class=\"th_inner\">New shortcut key <i class=\"icon-double-angle-right\"></i> Origin shortcut key</div></th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner assignOrg\">Assign orgin shortcut key</div>\n      <canvas class=\"check1\" width=\"200\"></canvas>\n    </th>\n    <th>\n      <div class=\"th_inner simEvent\">Simurate key event</div>\n      <canvas class=\"check2\" width=\"200\"></canvas>\n    </th>\n    <th>\n      <div class=\"th_inner disable\">Disabled</div>\n      <canvas class=\"check3\" width=\"200\"></canvas>\n    </th>\n    <th></th>\n    <th></th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 
-  marginBottom = 10;
+  marginBottom = 0;
 
   resizeTimer = false;
 

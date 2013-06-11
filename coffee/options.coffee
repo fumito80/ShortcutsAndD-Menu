@@ -225,7 +225,9 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView = new KeyConfigView(model: model)
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
     newChild.find("input.proxy").focus().end()
-    window.scrollTo 0, document.body.scrollHeight
+    newChild[0].scrollIntoView true
+    #window.scrollTo 0, document.body.scrollHeight
+    #window.scrollBy 0, 100
     keyConfigView.on "removeConfig", @onRemoveConfig, @
     @setTableVisible()
   
@@ -322,7 +324,7 @@ KeyConfigSetView = Backbone.View.extend
     <tbody></tbody>
     """
   
-marginBottom = 10
+marginBottom = 0
 resizeTimer = false
 windowOnResize = ->
   if resizeTimer
