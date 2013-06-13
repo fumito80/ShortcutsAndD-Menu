@@ -61,10 +61,17 @@
 
   KeyConfigView = Backbone.View.extend({
     kbdtype: null,
+    optionsDisp: {
+      assignOrg: "None",
+      simEvent: "Simurate key event",
+      disabled: "Disabled"
+    },
     events: {
       "click .origin,.proxy": "onClickInput",
       "click i.icon-remove": "onClickRemove",
-      "change select.mode": "onChangeMode"
+      "click div.mode": "onClickMode",
+      "click .selectMode div": "onChangeMode",
+      "blur  .selectMode": "onBlurSelectMode"
     },
     initialize: function(options) {
       this.model.on({
@@ -81,11 +88,10 @@
       var mode;
       this.setElement(this.template(this.model.toJSON()));
       mode = this.model.get("mode");
-      this.$(".mode").val(mode);
       this.setKbdValue(this.$(".proxy"), this.model.id);
       this.setKbdValue(this.$(".origin"), this.model.get("origin"));
       this.kbdtype = kbdtype;
-      this.onChangeMode();
+      this.onChangeMode(null, mode);
       return this;
     },
     onRemove: function() {
@@ -122,15 +128,29 @@
     onUpdateOrder: function() {
       return this.model.set("ordernum", this.$el.parent().children().index(this.$el));
     },
-    onChangeMode: function(event) {
-      var mode, select$;
-      if (event) {
-        $(event.currentTarget).blur();
+    onClickMode: function() {
+      if (this.$(".selectMode").toggle().is(":visible")) {
+        this.$(".selectMode").focus();
+        return this.$(".mode").addClass("selecting");
+      } else {
+        return this.$(".mode").removeClass("selecting");
       }
-      this.model.set("mode", mode = (select$ = this.$(".mode")).val());
-      select$.removeClass("assignOrg simEvent disabled").addClass(mode);
+    },
+    onChangeMode: function(event, mode) {
+      if (event) {
+        this.$(".mode").removeClass("selecting");
+        mode = event.currentTarget.className;
+        this.$(".selectMode").hide();
+      }
+      this.model.set("mode", mode);
+      this.$(".mode").removeClass("assignOrg simEvent disabled").addClass(mode);
       this.setDispMode(mode);
-      return this.setHelp();
+      this.setHelp();
+      return this.trigger("resizeInput");
+    },
+    onBlurSelectMode: function() {
+      this.$(".selectMode").hide();
+      return this.$(".mode").removeClass("selecting");
     },
     onClickInput: function(event) {
       var target$;
@@ -146,6 +166,7 @@
       return this.trigger("removeConfig", this.model);
     },
     setDispMode: function(mode) {
+      this.$("div.mode").addClass(mode).find("span").text(this.optionsDisp[mode]);
       this.$(".proxy,.origin,.icon-double-angle-right").removeClass("assignOrg simEvent disabled").addClass(mode);
       if (mode === "assignOrg") {
         return this.$(".origin").attr("tabIndex", "0");
@@ -156,7 +177,9 @@
     setKbdValue: function(input$, value) {
       var container;
       this.trigger("decodeKbdEvent", value, container = {});
-      return input$.text(container.result);
+      return input$.html(_.map(container.result.split(" + "), function(s) {
+        return "<span>" + s + "</span>";
+      }).join("+"));
     },
     setHelp: function() {
       var content, help, i, key, keycombo, lang, mode, test, _i, _ref, _results;
@@ -193,7 +216,7 @@
       }
     },
     templateDesc: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr>\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-double-angle-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <select class=\"mode\">\n      <option value=\"assignOrg\">None</option>\n      <option value=\"simEvent\">Simurate key event</option>\n      <option value=\"disabled\">Disabled</option>\n    </select>\n  <td class=\"desc\">\n  </td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Remove\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr>\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-double-angle-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <div class=\"assignOrg\">None</div>\n      <div class=\"simEvent\">Simurate key event</div>\n      <div class=\"disabled\">Disabled</div>\n    </div>\n  <td class=\"desc\">\n  </td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Remove\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -223,8 +246,6 @@
           return _this.userSorted();
         }
       });
-      this.setTableVisible();
-      $("button").focus().blur();
       return this;
     },
     onAddRender: function(model) {
@@ -234,9 +255,8 @@
       });
       keyConfigView.on("decodeKbdEvent", this.onChildDecodeKbdEvent, this);
       keyConfigView.on("removeConfig", this.onChildRemoveConfig, this);
-      this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el);
-      this.setTableVisible();
-      return newChild.find(".proxy").focus();
+      keyConfigView.on("resizeInput", this.onChildResizeInput, this);
+      return this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el);
     },
     onKbdEvent: function(value) {
       if (this.$(".addnew").length === 0) {
@@ -249,20 +269,29 @@
         this.$("div.addnew").tipTip();
         return;
       }
+      this.$("div.addnew").blur();
       this.collection.add(new KeyConfig({
         proxy: value,
         origin: value
       }));
       this.$("tbody").sortable("enable").sortable("refresh");
-      return windowOnResize();
+      windowOnResize();
+      return this.onChildResizeInput();
     },
     onChildDecodeKbdEvent: function(value, container) {
       return container.result = this.decodeKbdEvent(value);
     },
     onChildRemoveConfig: function(model) {
       this.collection.remove(model);
-      this.setTableVisible();
-      return windowOnResize();
+      windowOnResize();
+      return this.onChildResizeInput();
+    },
+    onChildResizeInput: function() {
+      var _this = this;
+      this.$(".th_inner").css("left", 0);
+      return setTimeout((function() {
+        return _this.$(".th_inner").css("left", "");
+      }), 0);
     },
     onClickAddKeyConfig: function(event) {
       if (this.$(".addnew").length > 0) {
@@ -277,7 +306,7 @@
       }
       $(this.templateAddNew({
         placeholder: this.placeholder
-      })).appendTo(this.$("tbody")).find(".proxy").focus()[0].scrollIntoView();
+      })).appendTo(this.$("tbody")).find(".addnew").focus()[0].scrollIntoView();
       this.$("tbody").sortable("disable");
       return windowOnResize();
     },
@@ -336,7 +365,7 @@
       };
     },
     templateAddNew: _.template("<tr class=\"addnew\">\n  <td colspan=\"3\">\n    <div class=\"proxy addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </td>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
-    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-double-angle-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner\">Options</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n    </th>\n    <th></th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
+    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-double-angle-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Options</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n    </th>\n    <th></th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 
   marginBottom = 0;

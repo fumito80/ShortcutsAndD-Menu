@@ -53,13 +53,20 @@ KeyConfig = Backbone.Model.extend
 KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
 
 KeyConfigView = Backbone.View.extend
-  # Backbone Buitin Events
+
   kbdtype: null
+  optionsDisp:
+    assignOrg: "None"
+    simEvent:  "Simurate key event"
+    disabled:  "Disabled"
   
+  # Backbone Buitin Events
   events:
-    "click .origin,.proxy" : "onClickInput"
-    "click i.icon-remove"  : "onClickRemove"
-    "change select.mode"   : "onChangeMode"
+    "click .origin,.proxy"  : "onClickInput"
+    "click i.icon-remove"   : "onClickRemove"
+    "click div.mode"        : "onClickMode"
+    "click .selectMode div" : "onChangeMode"
+    "blur  .selectMode"     : "onBlurSelectMode"
   
   initialize: (options) ->
     @model.on
@@ -75,11 +82,11 @@ KeyConfigView = Backbone.View.extend
   render: (kbdtype) ->
     @setElement @template(@model.toJSON())
     mode = @model.get("mode")
-    @$(".mode").val mode
+    #@$("select.mode").val mode
     @setKbdValue @$(".proxy"), @model.id
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
-    @onChangeMode()
+    @onChangeMode null, mode
     @
   
   # Model Events
@@ -113,15 +120,29 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
-  onChangeMode: (event) ->
+  onClickMode: ->
+    if @$(".selectMode").toggle().is(":visible")
+      @$(".selectMode").focus()
+      @$(".mode").addClass("selecting")
+    else
+      @$(".mode").removeClass("selecting")
+  
+  onChangeMode: (event, mode) ->
     if event
-      $(event.currentTarget).blur()
-    @model.set "mode", mode = (select$ = @$(".mode")).val()
-    select$
+      @$(".mode").removeClass("selecting")
+      mode = event.currentTarget.className
+      @$(".selectMode").hide()
+    @model.set "mode", mode
+    @$(".mode")
       .removeClass("assignOrg simEvent disabled")
       .addClass(mode)
     @setDispMode mode
     @setHelp()
+    @trigger "resizeInput"
+  
+  onBlurSelectMode: ->
+    @$(".selectMode").hide()
+    @$(".mode").removeClass("selecting")
   
   onClickInput: (event) ->
     if (event)
@@ -135,6 +156,7 @@ KeyConfigView = Backbone.View.extend
   
   # Object Method
   setDispMode: (mode) ->
+    @$("div.mode").addClass(mode).find("span").text @optionsDisp[mode]
     @$(".proxy,.origin,.icon-double-angle-right")
       .removeClass("assignOrg simEvent disabled")
       .addClass mode
@@ -145,7 +167,7 @@ KeyConfigView = Backbone.View.extend
   
   setKbdValue: (input$, value) ->
     @trigger "decodeKbdEvent", value, container = {}
-    input$.text container.result
+    input$.html _.map(container.result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
   
   setHelp: ->
     @$(".desc").empty()
@@ -186,12 +208,13 @@ KeyConfigView = Backbone.View.extend
       <td class="tdOrigin">
         <div class="origin" tabIndex="0"></div>
       </td>
-      <td>
-        <select class="mode">
-          <option value="assignOrg">None</option>
-          <option value="simEvent">Simurate key event</option>
-          <option value="disabled">Disabled</option>
-        </select>
+      <td class="options">
+        <div class="mode"><span></span><i class="icon-caret-down"></i></div>
+        <div class="selectMode" tabIndex="0">
+          <div class="assignOrg">None</div>
+          <div class="simEvent">Simurate key event</div>
+          <div class="disabled">Disabled</div>
+        </div>
       <td class="desc">
       </td>
       <td class="remove">
@@ -226,8 +249,8 @@ KeyConfigSetView = Backbone.View.extend
       scroll: true
       cursor: "move"
       update: => @userSorted()
-    @setTableVisible()
-    $("button").focus().blur()
+    #@setTableVisible()
+    #$("button").focus().blur()
     @
   
   # Collection Events
@@ -235,9 +258,10 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView = new KeyConfigView(model: model)
     keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
+    keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
-    @setTableVisible()
-    newChild.find(".proxy").focus()
+    #@setTableVisible()
+    #newChild.find(".proxy").focus()
   
   onKbdEvent: (value) ->
     if @$(".addnew").length is 0
@@ -246,6 +270,7 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
       return
+    @$("div.addnew").blur()
     @collection.add new KeyConfig
       proxy: value
       origin: value
@@ -253,6 +278,7 @@ KeyConfigSetView = Backbone.View.extend
       .sortable("enable")
       .sortable("refresh")
     windowOnResize()
+    @onChildResizeInput()
   
   # Child Model Events
   onChildDecodeKbdEvent: (value, container) ->
@@ -260,8 +286,13 @@ KeyConfigSetView = Backbone.View.extend
   
   onChildRemoveConfig: (model) ->
     @collection.remove model
-    @setTableVisible()
+    #@setTableVisible()
     windowOnResize()
+    @onChildResizeInput()
+  
+  onChildResizeInput: ->
+    @$(".th_inner").css("left", 0)
+    setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -271,7 +302,7 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 20 items)")
       $(event.currentTarget).tipTip(defaultPosition: "right")
       return
-    $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".proxy").focus()[0].scrollIntoView()
+    $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
   
@@ -331,7 +362,7 @@ KeyConfigSetView = Backbone.View.extend
         <th></th>
         <th></th>
         <th>
-          <div class="th_inner">Options</div>
+          <div class="th_inner options">Options</div>
         </th>
         <th>
           <div class="th_inner desc">Description</div>

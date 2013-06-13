@@ -183,7 +183,7 @@ begin
   if (modifierFlags and 2) <> 0 then
     scanCode:= scanCode - $2000;
   //if (modifierFlags = 0) or (vkCode in [0, VK_CONTROL, VK_SHIFT, VK_MENU, VK_LWIN, VK_RWIN]) then
-  scanCodeRept:= scanCode - $4000;
+  scanCodeRept:= scanCode - $4000; // ƒŠƒs[ƒg‘Î‰ž
   if scanCodeRept > 0 then
     scanCode:= scanCodeRept;
   scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
@@ -209,6 +209,8 @@ begin
       if keyConfig.mode = 'assignOrg' then begin
         ReleaseModifier(VK_RCONTROL, $11D, KEYEVENTF_EXTENDEDKEY);
         ReleaseModifier(VK_LCONTROL, $1D, 0);
+        ReleaseModifier(VK_RSHIFT, $36, 0);
+        ReleaseModifier(VK_LSHIFT, $2A, 0);
         ReleaseModifier(VK_RMENU, $138, KEYEVENTF_EXTENDEDKEY);
         ReleaseModifier(VK_LMENU, $38, 0);
         MakeKeyInputs(keyConfig.newScans, 0);

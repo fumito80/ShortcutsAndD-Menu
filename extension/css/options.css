@@ -7,7 +7,7 @@ body {
 }
 .header {
   width: 100%;
-  padding: 12px 25px 52px 0;
+  padding: 12px 25px 50px 0;
   background-color: #FFF;
 }
 .footer {
@@ -21,12 +21,13 @@ body {
 }
 .header div.h1 {
   position: fixed;
-  top: 0;
+  top: -1px;
   left: 37px;
   padding: 4px;
   font: 14px 'Michroma', Arial;
   color: #FFFFFF;
   background: rgb(31, 98, 129);
+  border-radius: 1px;
 }
 .header div.h1 div {
   line-height: 1.0em;
@@ -56,6 +57,7 @@ body {
   left: 0;
   right: 0;
   background: #FFF; /* #243655 */
+  border-bottom: 1px solid #DDDDDD;
   height: 30px;
 }
 .fixed-table-container-inner {
@@ -70,108 +72,151 @@ body {
 tbody tr:hover {
   background: rgb(245,245,255);
 }
-.check1, .check2, .check3 {
-  position: absolute;
-  top: -130px;
-}
-.canvasHeight {
-  top: -130px;  
-}
 .th_inner {
   position: absolute;
-  top: 0;
+  top: -1px;
   line-height: 30px;
+  background: #FFFFFF;
+}
+.keyConfigSetView .th_inner.options {
+  padding-left: 6px;
+}
+.keyConfigSetView .th_inner.desc {
+  padding-left: 0;
 }
 .th_inner.blank {
+  top: 0;
   background: #FFF;
   padding: 0 12px;
   right: 0;
 }
-.th_inner.assignOrg {
-  color: #000080;
-  top: -60px;
-}
-.th_inner.simEvent {
-  color: #00AA00;
-  top: -40px;
-}
-.th_inner.disable {
-  color: #CC0000;
-  top: -20px;
-}
 .proxy, .origin {
-  box-shadow: none;
-  border: 1px solid rgba(0,0,0,0);
-  cursor: pointer;
+  color: #518BAB;
   min-width: 80px;
   white-space: nowrap;
   font: 1.2em 'Arial';
   outline: 0;
-  border-radius: 5px;
   padding: 4px;
   display: inline-block;
+  box-shadow: none;
+  border: 1px solid rgba(0,0,0,0);
+  cursor: pointer;
+  border-radius: 5px;
 }
-.proxy:focus, .origin:focus {
-  background: #FFFFFF;
-  box-shadow: 0 0 7px #6DB9FF;
-  border: 1px solid #50B1FE;
-}
-.proxy {
-  font-weight: bold;
-}
-.proxy.assignOrg {
+.proxy.assignOrg span {
   color: #000000;
 }
-.proxy.simEvent {
+.proxy.simEvent span {
   color: #00AA00;
 }
 .origin.simEvent, .icon-double-angle-right.simEvent {
-  color: rgba(0,0,0,0);
-  cursor: default;
+  display: none;
 }
-.proxy.disabled {
+.proxy.disabled span {
   color: #CC0000;
 }
 .origin.disabled, .icon-double-angle-right.disabled {
-  color: rgba(0,0,0,0);
-  cursor: default;
+  display: none;
 }
-.proxy:not(:focus):hover {
-  text-decoration:underline;
+.proxy:not(:focus):hover span, .origin.assignOrg:not(:focus):hover span {
+  box-shadow: 0 0 4px #6DB9FF;
+  border: 1px solid #50B1FE;
 }
-.origin.assignOrg:not(:focus):hover {
-  color: #0000FF;
-  text-decoration:underline;
+.proxy:focus span, .origin.assignOrg:focus span {
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE;
+  background: #FFFFFF;
+}
+.proxy span, .origin span {
+  padding: 1px 3px;
+  border: 1px solid lightblue;
+  border-radius: 3px;
+  min-width: 24px;
+  display: inline-block;
+  text-align: center;
+  margin: 0px 1px;
+  font-family: verdana;
+}
+.proxy span {
+  /* color: #518BAB; */
+  font-weight: bold;
+}
+.origin span {
+  color: #000000;  
+}
+.addnew td {
+  padding-top: 10px;
+  background: #FFFFFF;
+  border: 0;
 }
 div.addnew:focus {
+  margin-top: 5px;
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE;
+  background: #FFFFFF;
   font-weight: normal;
   color: #999999;
+}
+.keyConfigSetView td.options {
+  padding-left: 11px;
+  white-space: nowrap;
+}
+.selectMode {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  border: 1px solid #999999;
+  background: #FFFFFF;
+  outline: none;
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE;
+}
+.selectMode div {
+  padding: 3px 5px;
+  font-family: arial;
+  cursor: default;
+}
+.selectMode div:hover {
+  background: #EEEEEE;
+}
+div.mode {
+  font-family: Arial;
+  cursor: pointer;
+  margin-bottom: 3px;
+  padding-left: 6px;
+}
+div.mode i {
+  position: relative;
+  margin-left: 4px;
+  font-size: 1.1em;
+  color: rgba(0,0,0,0);
+}
+div.mode.assignOrg:hover {
+  color: 333;
+}
+div.mode:hover i {
+  color: 333;
+}
+div.mode.assignOrg.selecting {
+  color: 333;
+}
+div.mode.selecting i {
+  color: 333;
 }
 .mode.assignOrg {
   color: #CCCCCC;
 }
-.mode.simEvent {
-  color: #00AA00;
-}
-.mode.disabled {
-  color: #CC0000;
-}
-.mode option[value='assignOrg'] {
+.origin .assignOrg {
   color: #000000;
 }
-.mode option[value='simEvent'] {
+.options .simEvent {
   color: #00AA00;
 }
-.mode option[value='disabled'] {
+.options .disabled {
   color: #CC0000;
 }
-.widthTester {
-  position: absolute;
-  top: -1000px;
-  box-shadow: none;
-}
 th i.icon-double-angle-right {
-  margin: 8px;
+  margin: 2px;
 }
 td i.icon-double-angle-right {
   font-size: 16px;
@@ -182,12 +227,9 @@ td i.icon-double-angle-right {
 .keyConfigSetView .tdOrigin {
   padding-right: 12px;
 }
-.keyConfigSetView .chkItem {
-  padding: 5px 7px;
-}
 .keyConfigSetView .desc {
   width: 80%;
-  padding-left: 15px;
+  padding-left: 10px;
 }
 .keyConfigSetView .desc .sectInit {
   background: rgb(122, 122, 160);
@@ -213,27 +255,6 @@ td i.icon-double-angle-right {
   border: 0;
   background: #FFF;
   padding: 0 12px;
-}
-.checkbox {
-  cursor: pointer;
-  border: 1px dotted rgba(0,0,0,0);
-  padding: 2px;
-}
-.checkbox:hover {
-  border: 1px dotted #c96;
-  border-radius: 2px;
-}
-.icon-ok {
-  color: #EEE;
-}
-.assignOrg.hilite {
-  color: #000080;
-}
-.icon-ok.simEvent.hilite {
-  color: #00AA00;
-}
-.icon-ok.disabled.hilite {
-  color: #CC0000;
 }
 .icon-remove {
   float: right;
