@@ -135,7 +135,7 @@ analyzeScHelpPage = (resp, lang) ->
           when "Tab and window shortcuts", "タブとウィンドウのショートカット"
             sectInit = "T"
           when "Google Chrome feature shortcuts", "Google Chrome 機能のショートカット"
-            sectInit = "F"
+            sectInit = "C"
           when "Address bar shortcuts", "アドレスバーのショートカット"
             sectInit = "A"
           when "Webpage shortcuts", "ウェブページのショートカット"

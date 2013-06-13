@@ -87,7 +87,7 @@ begin
   end;
   browser:= GetBrowserWindowObject;
   keyConfigList:= TStringList.Create;
-  Write2EventLog('FlexKbd', 'Start Shortcut Exchanger', EVENTLOG_INFORMATION_TYPE);
+  Write2EventLog('FlexKbd', 'Start Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
 end;
 
 destructor TMyClass.Destroy;
@@ -95,7 +95,7 @@ begin
   EndKeyHook;
   CloseHandle(pipeHandle);
   keyConfigList.Free;
-  Write2EventLog('FlexKbd', 'Terminated Shortcut Exchanger', EVENTLOG_INFORMATION_TYPE);
+  Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
   inherited;
 end;
 
@@ -131,18 +131,15 @@ var
     Inc(KeyInputCount);
     SetLength(KeyInputs, KeyInputCount);
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
-    //Write2EventLog('FlexKbd', IntToStr(scanCode) + ': '+IntToStr(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0))));
     with KeyInputs[KeyInputCount - 1].ki do
     begin
       wVk:= MapVirtualKeyEx(scanCode, 3, GetKeyboardLayout(0));
-      //Write2EventLog('FlexKbd', IntToHex(wVk, 4));
       wScan := scanCode;
       dwFlags := Flags;
       if scanCode > $100 then begin
         dwFlags := dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
         wVk:= MapVirtualKeyEx(wScan, 3, GetKeyboardLayout(0));
-        //Write2EventLog('FlexKbd', IntToHex(wVk, 4));
       end;
       time := 0;
       dwExtraInfo:= 0;

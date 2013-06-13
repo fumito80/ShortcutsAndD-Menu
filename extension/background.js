@@ -188,7 +188,7 @@
               break;
             case "Google Chrome feature shortcuts":
             case "Google Chrome 機能のショートカット":
-              sectInit = "F";
+              sectInit = "C";
               break;
             case "Address bar shortcuts":
             case "アドレスバーのショートカット":

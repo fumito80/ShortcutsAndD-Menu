@@ -1,211 +1,22 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="css/options.css" type="text/css" media="all">
   <link rel="stylesheet" href="css/kickstart.css" type="text/css" media="all">
   <link href='css/no-theme/jquery-ui-1.10.3.custom.min.css' rel='stylesheet' type='text/css'>
   <link href='css/tipTip.css' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Noto+Sans' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Michroma' rel='stylesheet' type='text/css'>
-  <style>
-    body {
-      padding: 0px 4px 0px 20px;
-      margin: 0px 0px 0px 12px;
-      font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
-      font-size: 0.9em;
-      overflow: hidden;
-    }
-    div.header {
-      width: 100%;
-      padding: 16px 25px 10px 0px;
-      background-color: #FFF;
-    }
-    div.footer {
-      height: 50px;
-      position: fixed;
-      width: 100%;
-      bottom: 0;
-      left: 0;
-      pointer-events: none;
-      background: -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.0)), to(rgba(255,255,255,1.0)));
-    }
-    h6 {
-      font-family: 'MS UI Gothic', Arial;
-      color: rgb(31, 98, 129);
-      display: inline-block;
-      margin: 2px 8px;
-    }
-    span.beta {
-      font-family: 'Noto Sans', Arial;
-    }
-    button.addKeyConfig {
-      margin: 5px;
-    }
-    select.kbdtype {
-      margin: 8px;
-      float: right;
-    }
-    table.keyConfigSetView {
-      padding-bottom: 30px;
-    }
-    div.fixed-table-container {
-      position: relative;
-      padding-top: 30px;
-    }
-    div.header-background {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #FFF; /* #243655 */
-      height: 30px;
-    }
-    div.fixed-table-container-inner {
-      height: 100%;
-      overflow: auto;
-      padding-bottom: 80px;
-    }
-    th, td {
-    }
-    thead th {
-      border: 0;
-      font-weight: normal;
-    }
-    tbody tr:hover {
-      background: rgb(245,245,255);
-    }
-    canvas.check1, canvas.check2, canvas.check3 {
-      position: absolute;
-      top: -130px;
-    }
-    div.th_inner {
-      position: absolute;
-      top: 0px;
-      line-height: 30px;
-    }
-    div.th_inner.blank {
-      background: #FFF;
-      padding: 0px 12px;
-      right: 0px;
-    }
-    div.th_inner.assignOrg {
-      color: #0000CC;
-      top: -60px;
-    }
-    div.th_inner.simEvent {
-      color: #00CC00;
-      top: -40px;
-    }
-    div.th_inner.disable {
-      color: #CC0000;
-      top: -20px;
-    }
-    input.proxy {
-      margin-top: 5px;
-      width: 186px;
-      box-shadow: none;
-      cursor: pointer;
-    }
-    input.origin {
-      margin-top: 3px;
-      width: 186px;
-      box-shadow: none;
-      cursor: pointer;    
-    }
-    input:enabled[data-entry='true'] {
-      font-weight: bold;
-    }
-    input:disabled {
-      cursor: default;
-    }
-    th i.icon-double-angle-right {
-      margin: 8px;
-    }
-    td i.icon-double-angle-right {
-      font-size: 16px;
-    }
-    td.desc {
-      width: 80%;
-    }
-    td.desc div.sectInit {
-      background: rgb(122, 122, 160);
-      border-radius: 3px;
-      color: white;
-      padding: 0px 3px;
-      margin-right: 3px;
-      font-size: 12px;
-      width: 17px;
-      height: 17px;
-      text-align: center;
-      cursor: default;
-      float: left;
-    }
-    td.desc div.content {
-      overflow: auto;
-    }
-    td.desc ol {
-      margin-bottom: 0px;
-      margin-left: 20px;
-    }
-    td.remove {
-      text-align: right;
-    }
-    td.blank {
-      border: 0;
-      background: #FFF;
-      padding: 0px 12px;
-    }
-    div.checkbox {
-      cursor: pointer;
-      border: 1px dotted rgba(0,0,0,0);
-      padding: 2px;
-    }
-    div.checkbox:hover {
-      border: 1px dotted #c96;
-      border-radius: 2px;
-    }
-    i.icon-ok {
-      color: #EEE;
-    }
-    i.icon-ok.assignOrg.hilite {
-      color: #0000CC;
-    }
-    i.icon-ok.simEvent.hilite {
-      color: #00CC00;
-    }
-    i.icon-ok.disabled.hilite {
-      color: #CC0000;
-    }
-    i.icon-remove {
-      float: right;
-      cursor: pointer;
-      color: #ccc;
-    }
-    i.icon-remove:hover {
-      color: #666;
-    }
-    div.custom-scroll-bar::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-      background-color: rgba(0,0,0,.0);
-    }
-    div.custom-scroll-bar::-webkit-scrollbar-thumb {
-      background-color: rgba(0,0,0,.3);
-    }
-    div.custom-scroll-bar::-webkit-scrollbar, .custom-scroll-bar::-webkit-scrollbar-thumb {
-      overflow: visible;
-      border-radius: 1px;
-    }
-    div.custom-scroll-bar::-webkit-scrollbar-button {
-      width: 0;
-      height: 0;
-    }
-  </style>
-  <title>Mapping shortcut key</title>
+  <title>Shortcuts Remapper</title>
 </head>
 <body>
   <div class="header">
-    <h6>おれのショートカット <span class="beta"></span></h6>
+    <div class="h1">
+      <div>Shortcuts</div>
+      <div>Remapper <span class="beta"></span></div>
+    </div>
     <select class="kbdtype"></select>
+    <a href="#" target="_blank" class="scHelp"></a>
     <button class="addKeyConfig">Add new</button>
     <!--<button class="save">Save</button>-->
   </div>
@@ -221,8 +32,7 @@
     </div>
     <div id="tiptip_content"></div>
   </div>
-  <div class="footer">
-  </div>
+  <!-- <div class="footer"></div> -->
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery-2.0.0.min.js"></script>
   <script src="lib/backbone-min.js"></script>

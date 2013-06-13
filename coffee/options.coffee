@@ -1,10 +1,14 @@
 keyCodes = {}
 keys = null
+placeholder = "Enter new shortcut key"
 
 WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
 HeaderView = Backbone.View.extend
+
+  scHelpUrl: "https://support.google.com/chrome/answer/157179?hl="
+  
   # Backbone Buitin Events
   el: "div.header"
   
@@ -19,6 +23,7 @@ HeaderView = Backbone.View.extend
     $.each keyCodes, (key, item) =>
       selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
     selectKbd$.val kbdtype
+    @setScHelp kbdtype
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -26,14 +31,26 @@ HeaderView = Backbone.View.extend
 
   onChangeSelKbd: (event) ->
     @trigger "changeSelKbd", (event)
-
+    @setScHelp @$("select.kbdtype").val()
+  
+  # Object method
+  setScHelp: (kbdtype) ->
+    if kbdtype is "JP"
+      @$(".scHelp")
+        .text("ショートカットキー一覧")
+        .attr "href", @scHelpUrl + "ja"
+    else
+      @$(".scHelp")
+        .text("Keyboard shortcuts")
+        .attr "href", @scHelpUrl + "en"
+  
 Config = Backbone.Model.extend({})
 
 KeyConfig = Backbone.Model.extend
   idAttribute: "proxy"
   defaults:
-    proxy: ""
-    origin: ""
+    proxy: placeholder
+    origin: placeholder
     mode: "assignOrg"
 
 KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
@@ -43,13 +60,13 @@ KeyConfigView = Backbone.View.extend
   kbdtype: null
   
   events:
-    "click div.checkbox"  : "onClickCheck"
-    "click input.origin"  : "onClickInputOrigin"
-    "click i.icon-remove" : "onClickRemove"
+    "click div.checkbox"   : "onClickCheck"
+    "click .origin,.proxy" : "onClickInput"
+    "click i.icon-remove"  : "onClickRemove"
   
   initialize: (options) ->
     @model.on
-      setFocus: @onSetFocus
+      setFocus: @onClickInput
       remove:   @onRemove
       @
     @model.collection.on
@@ -57,21 +74,17 @@ KeyConfigView = Backbone.View.extend
       changeKbd:   @onChangeKbd
       updateOrder: @onUpdateOrder
       @
-
+  
   render: (kbdtype) ->
     @setElement @template(@model.toJSON())
     mode = @model.get("mode")
     @$("i.#{mode}").addClass("hilite")
-    unless mode is "assignOrg"
-      @$("input.origin").attr("disabled", "disabled")
+    @setDispMode mode
     @onChangeKbd kbdtype
     @setHelp()
     @
   
   # Model Events
-  onSetFocus: ->
-    @$("input.proxy").focus()
-  
   onRemove: ->
     @model.off null, null, @
     @off null, null, null
@@ -79,28 +92,23 @@ KeyConfigView = Backbone.View.extend
   
   # Collection Events
   onKbdEvent: (value) ->
-    input$ = @$("input:text:focus")
+    input$ = @$("div:focus")
     if input$.length > 0
-      @setKbdValue input$, value
-      if input$[0].className is "proxy"
+      if input$.hasClass "proxy"
         if @model.id isnt value && @model.collection.findWhere(proxy: value)
-          $("#tiptip_content").text("\"#{input$.val()}\" is already exists.")
-          if @model.id
-            @setKbdValue input$, @model.id
-          else
-            input$.val("").removeAttr("data-entry")
+          @trigger "decodeKbdEvent", value, container = {}
+          $("#tiptip_content").text("\"#{container.result}\" is already exists.")
           input$.tipTip()
           return
-        else if (origin$ = @$("input.origin")).val() is ""
-          @setKbdValue origin$, value
-          @model.set "origin", value
-      @model.set input$[0].className, value
+      @setKbdValue input$, value
+      @model.set input$[0].className.match(/(proxy|origin)/)[0], value
       @setHelp()
+      @trigger "resizeInput"
   
   onChangeKbd: (kbdtype) ->
     @kbdtype = kbdtype
-    @setKbdValue @$("input.proxy"), @model.id
-    @setKbdValue @$("input.origin"), @model.get("origin")
+    @setKbdValue @$(".proxy"), @model.id
+    @setKbdValue @$(".origin"), @model.get("origin")
     @setHelp()
   
   onUpdateOrder: ->
@@ -113,71 +121,70 @@ KeyConfigView = Backbone.View.extend
     target$.addClass "hilite"
     value = target$[0].className.replace /icon-ok\s|\shilite/g, ""
     @model.set "mode", value
-    if value is "assignOrg"
-      @$("input.origin").removeAttr("disabled")
-    else
-      @$("input.origin").attr("disabled", "disabled").blur()
+    @setDispMode value
     @setHelp()
   
-  onClickInputOrigin: (event) ->
-    unless /assignOrg/.test @$("i.hilite")[0].className
-      $(event.currentTarget).blur()
+  setDispMode: (mode) ->
+    @$(".proxy,.origin,.icon-double-angle-right")
+      .removeClass("assignOrg simEvent disabled")
+      .addClass mode
+    if mode is "assignOrg"
+      @$(".origin").attr("tabIndex", "0")
+    else
+      @$(".origin").removeAttr("tabIndex")
+  
+  onClickInput: (event) ->
+    if (event)
+      if (target$ = $(event.currentTarget)).hasClass("proxy") || target$.hasClass("origin assignOrg")
+        target$.focus()
+    else
+      @$(".proxy").focus()
   
   onClickRemove: ->
     @trigger "removeConfig", @model
   
   # Object Method
   setKbdValue: (input$, value) ->
-    if !value
-      input$.val ""
-      return
-    modifiers = parseInt(value.substring(0, 2), 16)
-    scanCode = value.substring(2)
-    keyIdenfiers = keys[scanCode]
-    chars = []
-    chars.push "Ctrl" if modifiers & 1
-    chars.push "Alt"  if modifiers & 2
-    chars.push "Meta" if modifiers & 8
-    if modifiers & 4
-      chars.push "Shift"
-      chars.push keyIdenfiers[1] || keyIdenfiers[0]
-    else
-      chars.push keyIdenfiers[0]
-    input$
-      .val(chars.join(" + "))
-      .attr("data-entry", "true")
+    @trigger "decodeKbdEvent", value, container = {}
+    input$.text container.result
   
   setHelp: ->
-    @$("td.desc").empty()
+    @$(".desc").empty()
     if (mode = @model.get "mode") is "simEvent"
       #@$("td.desc").empty()
     else
       lang = if @kbdtype is "JP" then "ja" else "en"
       if mode is "assignOrg"
-        keycombo = @$("input.origin").val()
+        keycombo = @$(".origin").text()
       else
-        keycombo = @$("input.proxy").val()
+        keycombo = @$(".proxy").text()
       keycombo = (keycombo.replace /\s/g, "").toUpperCase()
       unless help = scHelp[keycombo]
         if /^CTRL\+[2-7]$/.test keycombo
           help = scHelp["CTRL+1"]
       if help
-        #ol = @$("td.desc")[0].appendChild document.createElement "ol"
         for i in [0...help[lang].length]
           test = help[lang][i].match /(^\w+)\^(.+)/
-          @$("td.desc").append $("""<div class="sectInit" title="#{scHelpSect[RegExp.$1]}">#{RegExp.$1}</div><div class="content">#{RegExp.$2}</div>""")
-          #ol.appendChild(document.createElement "li").textContent = RegExp.$2
+          key = RegExp.$1
+          @$("td.desc").append @templateDesc
+            sectDesc: scHelpSect[key]
+            sectKey:  key
+            scHelp:   RegExp.$2
+
+  templateDesc: _.template """
+    <div class="sectInit" title="<%=sectDesc%>"><%=sectKey%></div><div class="content"><%=scHelp%></div>
+    """
   
   template: _.template """
     <tr>
       <td>
-        <input type="text" class="proxy" placeholder="Enter new shortcut key" readonly>
+        <div class="proxy" tabIndex="0"></div>
       </td>
       <td>
         <i class="icon-double-angle-right"></i>
       </td>
-      <td>
-        <input type="text" class="origin" placeholder="Enter orgin shortcut key" readonly>
+      <td class="tdOrigin">
+        <div class="origin" tabIndex="0"></div>
       </td>
       <td class=" chkItem">
         <div class="checkbox"><i class="icon-ok assignOrg"></i></div>
@@ -201,12 +208,15 @@ KeyConfigSetView = Backbone.View.extend
   # Backbone Buitin Events
   el: "table.keyConfigSetView"
   
+  events:
+    "blur div.addnew": "onBlurAddnew"
+  
   initialize: (options) ->
     @collection.comparator = (model) ->
       model.get("ordernum")
     @collection.on
-      add: @onAddRender
-      onKeyEvent: @onAddRender
+      add:      @onAddRender
+      kbdEvent: @onKbdEvent
       @
   
   render: (keyConfigSet) ->
@@ -219,35 +229,65 @@ KeyConfigSetView = Backbone.View.extend
       update: => @userSorted()
     @setTableVisible()
     $("button").focus().blur()
+    @
   
+  # Collection Events
   onAddRender: (model) ->
-    taskView = undefined
     keyConfigView = new KeyConfigView(model: model)
+    keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
+    keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
+    keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
-    newChild.find("input.proxy").focus().end()
-    newChild[0].scrollIntoView true
-    #window.scrollTo 0, document.body.scrollHeight
-    #window.scrollBy 0, 100
-    keyConfigView.on "removeConfig", @onRemoveConfig, @
+    #newChild[0].scrollIntoView true
     @setTableVisible()
+    newChild.find(".proxy").focus()
+  
+  onKbdEvent: (value) ->
+    if @$(".addnew").length is 0
+      return
+    if @collection.findWhere(proxy: value)
+      $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
+      @$("div.addnew").tipTip()
+      return
+    #@$(".addnew").remove()
+    @collection.add new KeyConfig
+      proxy: value
+      origin: value
+    @$("tbody")
+      .sortable("enable")
+      .sortable("refresh")
+    windowOnResize()
+    @onChildResizeInput()
   
   # Child Model Events
-  onRemoveConfig: (model) ->
+  onChildDecodeKbdEvent: (value, container) ->
+    container.result = @decodeKbdEvent value
+  
+  onChildRemoveConfig: (model) ->
     @collection.remove model
     @setTableVisible()
     windowOnResize()
+    @onChildResizeInput()
+  
+  onChildResizeInput: ->
+    @$("canvas,.th_inner").css("left", 0)
+    setTimeout((=> @$("canvas,.th_inner").css("left", "")), 0)
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
-    if emptyModel = @collection.get("")
-      emptyModel.trigger "setFocus"
+    if @$(".addnew").length > 0
       return
     if @collection.length >= 20
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 20 items)")
       $(event.currentTarget).tipTip(defaultPosition: "right")
       return
-    @collection.add new KeyConfig({})
-    @$("tbody").sortable "refresh"
+    $(@templateAddNew).appendTo(@$("tbody")).find(".proxy").focus()[0].scrollIntoView()
+    @$("tbody").sortable "disable"
+    windowOnResize()
+  
+  onBlurAddnew: ->
+    @$(".addnew").remove()
+    @$("tbody").sortable "enable"
     windowOnResize()
   
   onChangeSelKbd: (event) ->
@@ -256,6 +296,21 @@ KeyConfigSetView = Backbone.View.extend
     @model.set "kbdtype", newKbd
   
   # Object Method
+  decodeKbdEvent: (value) ->
+    modifiers = parseInt(value.substring(0, 2), 16)
+    scanCode = value.substring(2)
+    keyIdenfiers = keys[scanCode]
+    keyCombo = []
+    keyCombo.push "Ctrl" if modifiers & 1
+    keyCombo.push "Alt"  if modifiers & 2
+    keyCombo.push "Meta" if modifiers & 8
+    if modifiers & 4
+      keyCombo.push "Shift"
+      keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
+    else
+      keyCombo.push keyIdenfiers[0]
+    keyCombo.join(" + ")
+  
   setTableVisible: ->
     if @collection.length is 0 then @$el.hide() else @$el.show()
   
@@ -264,6 +319,7 @@ KeyConfigSetView = Backbone.View.extend
     @collection.sort()
   
   getSaveData: ->
+    @collection.remove @collection.findWhere proxy: placeholder
     config: @model.toJSON()
     keyConfigSet: @collection.toJSON()
   
@@ -271,37 +327,41 @@ KeyConfigSetView = Backbone.View.extend
     #fx = -76
     #fy = 120
     fx = 0
-    lx = 9.5
+    lx = 6.5
     fillText = (ctx, text, fy) ->
-      ctx.moveTo lx, fy + 6
-      ctx.lineTo lx, 150
-      ctx.lineWidth = 1
-      ctx.fillStyle = "#999999"
-      ctx.stroke()
-      #ctx.font = "14px 'Noto Sans'"
-      #ctx.rotate(325 * Math.PI / 180)
-      #ctx.fillStyle = "#000000"
-      #ctx.fillText(text, fx, fy)
+      ctx.font = "14px 'Noto Sans'"
+      ctx.rotate(325 * Math.PI / 180)
+      ctx.fillStyle = "#000000"
+      ctx.fillText(text, fx, fy)
     strokeLine = (ctx, fy) ->
       ctx.moveTo lx, fy + 7
       ctx.lineTo lx, 150
       ctx.lineWidth = 1
       ctx.strokeStyle = "#666666"
       ctx.stroke()
-    ctx = @$("canvas.check1")[0].getContext("2d")
+    ctx = @$(".check1")[0].getContext("2d")
     strokeLine ctx, 90
     #fillText ctx, "Assign orgin shortcut key", 90
-    ctx = @$("canvas.check2")[0].getContext("2d")
+    ctx = @$(".check2")[0].getContext("2d")
     strokeLine ctx, 110
     #fillText ctx, "Simurate key event", 110
-    ctx = @$("canvas.check3")[0].getContext("2d")
+    ctx = @$(".check3")[0].getContext("2d")
     strokeLine ctx, 130
     #fillText ctx, "Disabled", 130
   
+  templateAddNew: """
+    <tr class="addnew">
+      <td colspan="3">
+        <div class="proxy addnew" tabIndex="0">#{placeholder}</div>
+      </td>
+      <td></td><td></td><td></td><td></td><td></td>
+    </tr>
+    """
+
   template: _.template """
     <thead>
       <tr>
-        <th><div class="th_inner">New shortcut key <i class="icon-double-angle-right"></i> Origin shortcut key</div></th>
+        <th><div class="th_inner">New <i class="icon-double-angle-right"></i> Origin shortcut key</div></th>
         <th></th>
         <th></th>
         <th>
@@ -323,16 +383,16 @@ KeyConfigSetView = Backbone.View.extend
     </thead>
     <tbody></tbody>
     """
-  
+
 marginBottom = 0
 resizeTimer = false
 windowOnResize = ->
   if resizeTimer
     clearTimeout resizeTimer
   resizeTimer = setTimeout((->
-    tableHeight = window.innerHeight - document.querySelector("div.header").offsetHeight - marginBottom;
-    document.querySelector("div.fixed-table-container").style.pixelHeight = tableHeight;
-    $("div.fixed-table-container-inner").getNiceScroll().resize()
+    tableHeight = window.innerHeight - document.querySelector(".header").offsetHeight - marginBottom;
+    document.querySelector(".fixed-table-container").style.pixelHeight = tableHeight;
+    $(".fixed-table-container-inner").getNiceScroll().resize()
   ), 200)
 
 fk = chrome.extension.getBackgroundPage().fk
@@ -372,11 +432,11 @@ $ ->
   
   windowOnResize()
   
-  $("div.fixed-table-container-inner").niceScroll
+  $(".fixed-table-container-inner").niceScroll
     cursorwidth: 12
     cursorborderradius: 2
     smoothscroll: false
     cursoropacitymin: .1
     cursoropacitymax: .6
   
-  $("span.beta").text("\u03B2")
+  $(".beta").text("\u03B2")
