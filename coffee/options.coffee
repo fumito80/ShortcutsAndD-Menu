@@ -1,6 +1,5 @@
 keyCodes = {}
 keys = null
-placeholder = "Enter new shortcut key"
 
 WebFontConfig =
   google: families: ['Noto+Sans::latin']
@@ -49,8 +48,6 @@ Config = Backbone.Model.extend({})
 KeyConfig = Backbone.Model.extend
   idAttribute: "proxy"
   defaults:
-    proxy: placeholder
-    origin: placeholder
     mode: "assignOrg"
 
 KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
@@ -60,9 +57,9 @@ KeyConfigView = Backbone.View.extend
   kbdtype: null
   
   events:
-    "click div.checkbox"   : "onClickCheck"
     "click .origin,.proxy" : "onClickInput"
     "click i.icon-remove"  : "onClickRemove"
+    "change select.mode"   : "onChangeMode"
   
   initialize: (options) ->
     @model.on
@@ -78,10 +75,11 @@ KeyConfigView = Backbone.View.extend
   render: (kbdtype) ->
     @setElement @template(@model.toJSON())
     mode = @model.get("mode")
-    @$("i.#{mode}").addClass("hilite")
-    @setDispMode mode
-    @onChangeKbd kbdtype
-    @setHelp()
+    @$(".mode").val mode
+    @setKbdValue @$(".proxy"), @model.id
+    @setKbdValue @$(".origin"), @model.get("origin")
+    @kbdtype = kbdtype
+    @onChangeMode()
     @
   
   # Model Events
@@ -115,23 +113,15 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
-  onClickCheck: (event) ->
-    @$("i.icon-ok").removeClass "hilite"
-    target$ = $(event.currentTarget).find("i")
-    target$.addClass "hilite"
-    value = target$[0].className.replace /icon-ok\s|\shilite/g, ""
-    @model.set "mode", value
-    @setDispMode value
-    @setHelp()
-  
-  setDispMode: (mode) ->
-    @$(".proxy,.origin,.icon-double-angle-right")
+  onChangeMode: (event) ->
+    if event
+      $(event.currentTarget).blur()
+    @model.set "mode", mode = (select$ = @$(".mode")).val()
+    select$
       .removeClass("assignOrg simEvent disabled")
-      .addClass mode
-    if mode is "assignOrg"
-      @$(".origin").attr("tabIndex", "0")
-    else
-      @$(".origin").removeAttr("tabIndex")
+      .addClass(mode)
+    @setDispMode mode
+    @setHelp()
   
   onClickInput: (event) ->
     if (event)
@@ -144,6 +134,15 @@ KeyConfigView = Backbone.View.extend
     @trigger "removeConfig", @model
   
   # Object Method
+  setDispMode: (mode) ->
+    @$(".proxy,.origin,.icon-double-angle-right")
+      .removeClass("assignOrg simEvent disabled")
+      .addClass mode
+    if mode is "assignOrg"
+      @$(".origin").attr("tabIndex", "0")
+    else
+      @$(".origin").removeAttr("tabIndex")
+  
   setKbdValue: (input$, value) ->
     @trigger "decodeKbdEvent", value, container = {}
     input$.text container.result
@@ -166,10 +165,11 @@ KeyConfigView = Backbone.View.extend
         for i in [0...help[lang].length]
           test = help[lang][i].match /(^\w+)\^(.+)/
           key = RegExp.$1
+          content = RegExp.$2
           @$("td.desc").append @templateDesc
             sectDesc: scHelpSect[key]
             sectKey:  key
-            scHelp:   RegExp.$2
+            scHelp:   content
 
   templateDesc: _.template """
     <div class="sectInit" title="<%=sectDesc%>"><%=sectKey%></div><div class="content"><%=scHelp%></div>
@@ -186,15 +186,12 @@ KeyConfigView = Backbone.View.extend
       <td class="tdOrigin">
         <div class="origin" tabIndex="0"></div>
       </td>
-      <td class=" chkItem">
-        <div class="checkbox"><i class="icon-ok assignOrg"></i></div>
-      </td>
-      <td class=" chkItem">
-        <div class="checkbox"><i class="icon-ok simEvent"></i></div>
-      </td>
-      <td class=" chkItem">
-        <div class="checkbox"><i class="icon-ok disabled"></i></div>
-      </td>
+      <td>
+        <select class="mode">
+          <option value="assignOrg">None</option>
+          <option value="simEvent">Simurate key event</option>
+          <option value="disabled">Disabled</option>
+        </select>
       <td class="desc">
       </td>
       <td class="remove">
@@ -205,6 +202,8 @@ KeyConfigView = Backbone.View.extend
     """
   
 KeyConfigSetView = Backbone.View.extend
+  placeholder: "Enter new shortcut key"
+
   # Backbone Buitin Events
   el: "table.keyConfigSetView"
   
@@ -236,9 +235,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView = new KeyConfigView(model: model)
     keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
-    keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
-    #newChild[0].scrollIntoView true
     @setTableVisible()
     newChild.find(".proxy").focus()
   
@@ -249,7 +246,6 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
       return
-    #@$(".addnew").remove()
     @collection.add new KeyConfig
       proxy: value
       origin: value
@@ -257,7 +253,6 @@ KeyConfigSetView = Backbone.View.extend
       .sortable("enable")
       .sortable("refresh")
     windowOnResize()
-    @onChildResizeInput()
   
   # Child Model Events
   onChildDecodeKbdEvent: (value, container) ->
@@ -267,11 +262,6 @@ KeyConfigSetView = Backbone.View.extend
     @collection.remove model
     @setTableVisible()
     windowOnResize()
-    @onChildResizeInput()
-  
-  onChildResizeInput: ->
-    @$("canvas,.th_inner").css("left", 0)
-    setTimeout((=> @$("canvas,.th_inner").css("left", "")), 0)
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -281,7 +271,7 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 20 items)")
       $(event.currentTarget).tipTip(defaultPosition: "right")
       return
-    $(@templateAddNew).appendTo(@$("tbody")).find(".proxy").focus()[0].scrollIntoView()
+    $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".proxy").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
   
@@ -319,64 +309,33 @@ KeyConfigSetView = Backbone.View.extend
     @collection.sort()
   
   getSaveData: ->
-    @collection.remove @collection.findWhere proxy: placeholder
+    @collection.remove @collection.findWhere proxy: @placeholder
     config: @model.toJSON()
     keyConfigSet: @collection.toJSON()
   
-  setCanvasHeader: ->
-    #fx = -76
-    #fy = 120
-    fx = 0
-    lx = 6.5
-    fillText = (ctx, text, fy) ->
-      ctx.font = "14px 'Noto Sans'"
-      ctx.rotate(325 * Math.PI / 180)
-      ctx.fillStyle = "#000000"
-      ctx.fillText(text, fx, fy)
-    strokeLine = (ctx, fy) ->
-      ctx.moveTo lx, fy + 7
-      ctx.lineTo lx, 150
-      ctx.lineWidth = 1
-      ctx.strokeStyle = "#666666"
-      ctx.stroke()
-    ctx = @$(".check1")[0].getContext("2d")
-    strokeLine ctx, 90
-    #fillText ctx, "Assign orgin shortcut key", 90
-    ctx = @$(".check2")[0].getContext("2d")
-    strokeLine ctx, 110
-    #fillText ctx, "Simurate key event", 110
-    ctx = @$(".check3")[0].getContext("2d")
-    strokeLine ctx, 130
-    #fillText ctx, "Disabled", 130
-  
-  templateAddNew: """
+  templateAddNew: _.template """
     <tr class="addnew">
       <td colspan="3">
-        <div class="proxy addnew" tabIndex="0">#{placeholder}</div>
+        <div class="proxy addnew" tabIndex="0"><%=placeholder%></div>
       </td>
-      <td></td><td></td><td></td><td></td><td></td>
+      <td></td><td></td><td></td><td class="blank"></td>
     </tr>
     """
 
   template: _.template """
     <thead>
       <tr>
-        <th><div class="th_inner">New <i class="icon-double-angle-right"></i> Origin shortcut key</div></th>
+        <th>
+          <div class="th_inner">New <i class="icon-double-angle-right"></i> Origin shortcut key</div>
+        </th>
         <th></th>
         <th></th>
         <th>
-          <div class="th_inner assignOrg">Assign orgin shortcut key</div>
-          <canvas class="check1" width="200"></canvas>
+          <div class="th_inner">Options</div>
         </th>
         <th>
-          <div class="th_inner simEvent">Simurate key event</div>
-          <canvas class="check2" width="200"></canvas>
+          <div class="th_inner desc">Description</div>
         </th>
-        <th>
-          <div class="th_inner disable">Disabled</div>
-          <canvas class="check3" width="200"></canvas>
-        </th>
-        <th></th>
         <th></th>
         <th><div class="th_inner blank">&nbsp;</div></th>
       </tr>
@@ -427,8 +386,6 @@ $ ->
       fk.saveConfig keyConfigSetView.getSaveData()
     .on "resize", ->
       windowOnResize()
-    .on "load", ->
-      keyConfigSetView.setCanvasHeader()
   
   windowOnResize()
   
