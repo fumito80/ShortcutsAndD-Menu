@@ -7,7 +7,7 @@ body {
 }
 .header {
   width: 100%;
-  padding: 12px 25px 50px 0;
+  padding: 12px 25px 47px 0;
   background-color: #FFF;
 }
 .footer {
@@ -44,6 +44,9 @@ body {
   margin: 8px;
   float: right;  
 }
+.header a {
+  display: inline-block;
+}
 .keyConfigSetView {
   padding-bottom: 30px;
 }
@@ -62,8 +65,9 @@ body {
 }
 .fixed-table-container-inner {
   height: 100%;
-  overflow: auto;
-  padding-bottom: 80px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 100px;
 }
 .keyConfigSetView th {
   border: 0;
@@ -109,13 +113,23 @@ tbody tr:hover {
 .proxy.simEvent span {
   color: #00AA00;
 }
-.origin.simEvent, .icon-double-angle-right.simEvent {
+.origin.simEvent, .icon-arrow-right.simEvent {
   display: none;
 }
 .proxy.disabled span {
   color: #CC0000;
 }
-.origin.disabled, .icon-double-angle-right.disabled {
+.proxy.through span {
+  color: #333333;
+  background: #DDDDDD;
+}
+.origin.disabled, .icon-arrow-right.disabled {
+  display: none;
+}
+.origin.through, .icon-arrow-right.through {
+  display: none;
+}
+.origin.bookmark, .icon-arrow-right.bookmark {
   display: none;
 }
 .proxy:not(:focus):hover span, .origin.assignOrg:not(:focus):hover span {
@@ -160,6 +174,7 @@ div.addnew:focus {
 .keyConfigSetView td.options {
   padding-left: 11px;
   white-space: nowrap;
+  position: relative;
 }
 .selectMode {
   position: absolute;
@@ -173,20 +188,19 @@ div.addnew:focus {
 }
 .selectMode div {
   padding: 3px 5px;
-  font-family: arial;
+  font-family: 'Arial';
   cursor: default;
 }
 .selectMode div:hover {
   background: #EEEEEE;
 }
 div.mode {
-  font-family: Arial;
+  font-family: 'Arial';
   cursor: pointer;
   margin-bottom: 3px;
   padding-left: 6px;
 }
 div.mode i {
-  position: relative;
   margin-left: 4px;
   font-size: 1.1em;
   color: rgba(0,0,0,0);
@@ -215,11 +229,17 @@ div.mode.selecting i {
 .options .disabled {
   color: #CC0000;
 }
-th i.icon-double-angle-right {
-  margin: 2px;
+.options .through {
+  color: gray;
 }
-td i.icon-double-angle-right {
-  font-size: 16px;
+.options .bookmark {
+  color: #518BAB;
+}
+i.icon-arrow-right {
+  color: #518BAB;
+}
+th i.icon-arrow-right {
+  margin: 2px;
 }
 .keyConfigSetView td {
   padding: 4px 5px;
@@ -246,6 +266,41 @@ td i.icon-double-angle-right {
 }
 .keyConfigSetView .desc .content {
   overflow: auto;
+}
+.keyConfigSetView .desc .icon-star {
+  color: gold;
+  margin: 0 5px 0 2px;
+}
+.keyConfigSetView .desc div:first-child {
+  float:left;
+}
+.keyConfigSetView .desc div:last-child {
+  overflow: auto;
+}
+.keyConfigSetView .desc .icon-pencil {
+  font-size: 18px;
+  float: left;
+  cursor: pointer;
+  color: rgba(0,0,0,0);
+  margin-right: 4px;
+}
+.keyConfigSetView .desc:hover .icon-pencil {
+  color: #999999;
+}
+.keyConfigSetView .desc .icon-pencil:hover {
+  color: #000000;
+}
+.keyConfigSetView .desc form.memo {
+  display: none;
+}
+.keyConfigSetView .desc input.memo {
+  font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
+  width: 90%;
+  /*
+  border: 0;
+  box-shadow: none;
+  background: rgba(0,0,0,0);
+  */
 }
 .keyConfigSetView .remove {
   text-align: right;
@@ -279,4 +334,48 @@ td i.icon-double-angle-right {
 .custom-scroll-bar::-webkit-scrollbar-button {
   width: 0;
   height: 0;
+}
+.bookmarks {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  width: 600px;
+  padding: 20px;
+  background: WhiteSmoke;
+  box-shadow: 0 0 20px black;
+  border-radius: 1px;
+}
+.bookmarks form {
+  padding-bottom: 5px;
+}
+.bookmarks .icon-remove {
+  float: right;
+  cursor: pointer;
+  font-size: 18px;
+}
+.bookmarks .result_outer {
+  overflow: auto;
+}
+.bookmarks .result {
+  white-space: nowrap;
+  padding-bottom: 15px;
+}
+.bookmarks input.query {
+  margin-left: 5px;
+}
+.bookmarks button.query {
+  margin-left: 5px;
+}
+.bookmarks .icon-folder-open {
+  color: rgb(255, 216, 0);
+}
+.backscreen {
+  display: none;
+  position: absolute;
+  z-index: 99;
+  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }

@@ -5,14 +5,16 @@ sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
     chrome.tabs.sendMessage tabs[0].id, message
 
-#keydown = ->
-#  flexkbd.KeyEvent()
+###
+triggerShortcutKey = ->
+  #flexkbd.KeyEvent()
 
-#chrome.contextMenus.create
-#  title: "「%s」をページ内検索"
-#  type: "normal"
-#  contexts: ["selection"]
-#  onclick: keydown
+chrome.contextMenus.create
+  title: "「%s」をページ内検索"
+  type: "normal"
+  contexts: ["selection"]
+  onclick: triggerShortcutKey
+###
 
 # オプションページ表示時切り替え
 optionsTabId = null
@@ -61,7 +63,16 @@ preSendKeyEvent = (keyEvent) ->
           allFrames: true
           (resp) ->
             sendKeyEventToDom(keyEvent, tabId)
-  
+
+openBookmark = (keyEvent) ->
+  local = fk.getConfig()
+  local.keyConfigSet.forEach (item) ->
+    #console.log keyEvent + ": " + key
+    if item.proxy is keyEvent
+      url = item.bookmark.url
+      chrome.tabs.query {active: true}, (tabs) ->
+        chrome.tabs.update tabs[0].id, url: url
+
 setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
@@ -91,6 +102,11 @@ fk.getScHelpSect = ->
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
 
+fk.startEditing = ->
+  flexkbd.EndConfigMode()
+fk.endEditing = ->
+  flexkbd.StartConfigMode()
+
 window.pluginEvent = (action, value) ->
   #console.log action + ": " + value
   switch action
@@ -102,6 +118,8 @@ window.pluginEvent = (action, value) ->
         value: value
     when "sendToDom"
       preSendKeyEvent value
+    when "bookmark"
+      openBookmark value
 
 setConfigPlugin fk.getConfig().keyConfigSet
 

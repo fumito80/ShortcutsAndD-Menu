@@ -54,6 +54,7 @@ type
     procedure SetKeyConfig(const params: array of Variant);
     // コンフィグモード開始
     procedure StartConfigMode;
+    procedure EndConfigMode;
     function keyEvent(const params: array of Variant): Variant;
   end;
 
@@ -217,6 +218,10 @@ begin
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
       end else if keyConfig.mode = 'simEvent' then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
+      end else if keyConfig.mode = 'bookmark' then begin
+        browser.Invoke('pluginEvent', ['bookmark', scans]);
+      end else if keyConfig.mode = 'through' then begin
+        Result:= False;
       end;
     end;
   end;
@@ -354,7 +359,12 @@ end;
 // コンフィグモード開始
 procedure TMyClass.StartConfigMode;
 begin
-  ReconfigKeyHook(true);
+  ReconfigKeyHook(True);
+end;
+
+procedure TMyClass.EndConfigMode;
+begin
+  ReconfigKeyHook(False);
 end;
 
 // Start KeyHook

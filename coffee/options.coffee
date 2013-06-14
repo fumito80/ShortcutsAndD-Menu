@@ -4,6 +4,21 @@ keys = null
 WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
+optionsDisp =
+  assignOrg: "None"
+  simEvent:  "Simurate key event"
+  bookmark:  "Bookmark"
+  disabled:  "Disabled"
+  through:   "Through"
+
+escape = (html) ->
+  entity =
+  "&": "&amp;"
+  "<": "&lt;"
+  ">": "&gt;"
+  html.replace /[&<>]/g, (match) ->
+    entity[match]
+  
 HeaderView = Backbone.View.extend
 
   scHelpUrl: "https://support.google.com/chrome/answer/157179?hl="
@@ -55,10 +70,7 @@ KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
 KeyConfigView = Backbone.View.extend
 
   kbdtype: null
-  optionsDisp:
-    assignOrg: "None"
-    simEvent:  "Simurate key event"
-    disabled:  "Disabled"
+  optionKeys: []
   
   # Backbone Buitin Events
   events:
@@ -67,9 +79,14 @@ KeyConfigView = Backbone.View.extend
     "click div.mode"        : "onClickMode"
     "click .selectMode div" : "onChangeMode"
     "blur  .selectMode"     : "onBlurSelectMode"
+    "click i.icon-pencil"   : "onClickEditDesc"
+    "submit .memo"          : "onSubmitMemo"
+    "blur  input.memo"      : "onBlurInputMemo"
   
   initialize: (options) ->
+    @optionKeys = _.keys optionsDisp
     @model.on
+      "change:bookmark": @onChangeBookmark
       setFocus: @onClickInput
       remove:   @onRemove
       @
@@ -80,7 +97,7 @@ KeyConfigView = Backbone.View.extend
       @
   
   render: (kbdtype) ->
-    @setElement @template(@model.toJSON())
+    @setElement @template({options: optionsDisp})
     mode = @model.get("mode")
     #@$("select.mode").val mode
     @setKbdValue @$(".proxy"), @model.id
@@ -90,6 +107,9 @@ KeyConfigView = Backbone.View.extend
     @
   
   # Model Events
+  onChangeBookmark: ->
+    @onChangeMode null, "bookmark"
+  
   onRemove: ->
     @model.off null, null, @
     @off null, null, null
@@ -107,19 +127,28 @@ KeyConfigView = Backbone.View.extend
           return
       @setKbdValue input$, value
       @model.set input$[0].className.match(/(proxy|origin)/)[0], value
-      @setHelp()
+      @setDesc()
       @trigger "resizeInput"
   
   onChangeKbd: (kbdtype) ->
     @kbdtype = kbdtype
     @setKbdValue @$(".proxy"), @model.id
     @setKbdValue @$(".origin"), @model.get("origin")
-    @setHelp()
+    @setDesc()
   
   onUpdateOrder: ->
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
+  onClickEditDesc: ->
+    (memo = @$("div.memo")).toggle()
+    editing = (input$ = @$("form.memo").toggle().find("input")).is(":visible")
+    if editing
+      startEditing()
+      input$.focus().val(memo.text())
+    else
+      @onSubmitMemo()
+  
   onClickMode: ->
     if @$(".selectMode").toggle().is(":visible")
       @$(".selectMode").focus()
@@ -132,12 +161,15 @@ KeyConfigView = Backbone.View.extend
       @$(".mode").removeClass("selecting")
       mode = event.currentTarget.className
       @$(".selectMode").hide()
+      if mode is "bookmark"
+        @trigger "showBookmarks", @model.id
+        return
     @model.set "mode", mode
     @$(".mode")
-      .removeClass("assignOrg simEvent disabled")
+      .removeClass(@optionKeys.join(" "))
       .addClass(mode)
     @setDispMode mode
-    @setHelp()
+    @setDesc()
     @trigger "resizeInput"
   
   onBlurSelectMode: ->
@@ -149,16 +181,25 @@ KeyConfigView = Backbone.View.extend
       if (target$ = $(event.currentTarget)).hasClass("proxy") || target$.hasClass("origin assignOrg")
         target$.focus()
     else
-      @$(".proxy").focus()
+      @$(".origin").focus()
+  
+  onSubmitMemo: ->
+    @$("form.memo").hide()
+    @model.set "memo": @$("div.memo").show().html(escape @$("input.memo").val()).text()
+    endEditing()
+    false
+  
+  onBlurInputMemo: ->
+    @onSubmitMemo()
   
   onClickRemove: ->
     @trigger "removeConfig", @model
   
   # Object Method
   setDispMode: (mode) ->
-    @$("div.mode").addClass(mode).find("span").text @optionsDisp[mode]
-    @$(".proxy,.origin,.icon-double-angle-right")
-      .removeClass("assignOrg simEvent disabled")
+    @$("div.mode").addClass(mode).find("span").text optionsDisp[mode]
+    @$(".proxy,.origin,.icon-arrow-right")
+      .removeClass(@optionKeys.join(" "))
       .addClass mode
     if mode is "assignOrg"
       @$(".origin").attr("tabIndex", "0")
@@ -169,31 +210,47 @@ KeyConfigView = Backbone.View.extend
     @trigger "decodeKbdEvent", value, container = {}
     input$.html _.map(container.result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
   
-  setHelp: ->
-    @$(".desc").empty()
-    if (mode = @model.get "mode") is "simEvent"
-      #@$("td.desc").empty()
-    else
-      lang = if @kbdtype is "JP" then "ja" else "en"
-      if mode is "assignOrg"
-        keycombo = @$(".origin").text()
-      else
-        keycombo = @$(".proxy").text()
-      keycombo = (keycombo.replace /\s/g, "").toUpperCase()
-      unless help = scHelp[keycombo]
-        if /^CTRL\+[2-7]$/.test keycombo
-          help = scHelp["CTRL+1"]
-      if help
-        for i in [0...help[lang].length]
-          test = help[lang][i].match /(^\w+)\^(.+)/
-          key = RegExp.$1
-          content = RegExp.$2
-          @$("td.desc").append @templateDesc
-            sectDesc: scHelpSect[key]
-            sectKey:  key
-            scHelp:   content
+  setDesc: ->
+    (tdDesc = @$(".desc")).empty()
+    switch mode = @model.get "mode"
+      #when "simEvent"
+      when "bookmark"
+        tdDesc.append """<div><i class="icon-star"></i></div><div class="bookmark" title="#{@model.get("bookmark").url}">#{@model.get("bookmark").title}</div>"""
+      when "assignOrg", "through", "disabled"
+        lang = if @kbdtype is "JP" then "ja" else "en"
+        if mode is "assignOrg"
+          keycombo = @$(".origin").text()
+        else
+          keycombo = @$(".proxy").text()
+        keycombo = (keycombo.replace /\s/g, "").toUpperCase()
+        unless help = scHelp[keycombo]
+          if /^CTRL\+[2-7]$/.test keycombo
+            help = scHelp["CTRL+1"]
+        if help
+          for i in [0...help[lang].length]
+            test = help[lang][i].match /(^\w+)\^(.+)/
+            key = RegExp.$1
+            content = RegExp.$2
+            tdDesc
+              .append(@templateHelp
+                sectDesc: scHelpSect[key]
+                sectKey:  key
+                scHelp:   content
+              ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
+    if tdDesc.html() is ""
+      tdDesc.append @templateMemo memo: @model.get("memo")
 
-  templateDesc: _.template """
+  templateMemo: _.template """
+    <div>
+      <i class="icon-pencil" title="Edit description"></i>
+    </div>
+    <form class="memo">
+      <input type="text" class="memo">
+    </form>
+    <div class="memo"><%=memo%></div>
+    """
+  
+  templateHelp: _.template """
     <div class="sectInit" title="<%=sectDesc%>"><%=sectKey%></div><div class="content"><%=scHelp%></div>
     """
   
@@ -203,7 +260,7 @@ KeyConfigView = Backbone.View.extend
         <div class="proxy" tabIndex="0"></div>
       </td>
       <td>
-        <i class="icon-double-angle-right"></i>
+        <i class="icon-arrow-right"></i>
       </td>
       <td class="tdOrigin">
         <div class="origin" tabIndex="0"></div>
@@ -211,9 +268,9 @@ KeyConfigView = Backbone.View.extend
       <td class="options">
         <div class="mode"><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
-          <div class="assignOrg">None</div>
-          <div class="simEvent">Simurate key event</div>
-          <div class="disabled">Disabled</div>
+          <% _.each(options, function(name, key) { %>
+          <div class="<%=key%>"><%=name%></div>
+          <% }); %>
         </div>
       <td class="desc">
       </td>
@@ -259,6 +316,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
+    keyConfigView.on "showBookmarks" , @onShowBookmarks      , @
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
     #@setTableVisible()
     #newChild.find(".proxy").focus()
@@ -271,7 +329,7 @@ KeyConfigSetView = Backbone.View.extend
       @$("div.addnew").tipTip()
       return
     @$("div.addnew").blur()
-    @collection.add new KeyConfig
+    @collection.add newitem = new KeyConfig
       proxy: value
       origin: value
     @$("tbody")
@@ -279,6 +337,7 @@ KeyConfigSetView = Backbone.View.extend
       .sortable("refresh")
     windowOnResize()
     @onChildResizeInput()
+    newitem.trigger "setFocus"
   
   # Child Model Events
   onChildDecodeKbdEvent: (value, container) ->
@@ -293,6 +352,15 @@ KeyConfigSetView = Backbone.View.extend
   onChildResizeInput: ->
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
+  
+  onShowBookmarks: (modelId) ->
+    @trigger "showBookmarks", modelId
+  
+  onSetBookmark: (modelId, options) ->
+    if options
+      @collection.get(modelId)
+        .set({"bookmark": options}, {silent: true})
+        .trigger "change:bookmark"
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -324,7 +392,7 @@ KeyConfigSetView = Backbone.View.extend
     keyCombo = []
     keyCombo.push "Ctrl" if modifiers & 1
     keyCombo.push "Alt"  if modifiers & 2
-    keyCombo.push "Meta" if modifiers & 8
+    keyCombo.push "Win"  if modifiers & 8
     if modifiers & 4
       keyCombo.push "Shift"
       keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
@@ -357,7 +425,7 @@ KeyConfigSetView = Backbone.View.extend
     <thead>
       <tr>
         <th>
-          <div class="th_inner">New <i class="icon-double-angle-right"></i> Origin shortcut key</div>
+          <div class="th_inner">New <i class="icon-arrow-right"></i> Origin shortcut key</div>
         </th>
         <th></th>
         <th></th>
@@ -374,6 +442,70 @@ KeyConfigSetView = Backbone.View.extend
     <tbody></tbody>
     """
 
+BookmarksView = Backbone.View.extend
+  el: ".bookmarks"
+  events:
+    "submit form"       : "onSubmitForm"
+    "click a"           : "setBookmark"
+    "click .icon-remove": "onClickIconRemove"
+  initialize: ->
+    @elBookmark$ = @$(".result")
+    @$(".result_outer").niceScroll
+      cursorwidth: 12
+      cursorborderradius: 6
+      smoothscroll: true
+      cursoropacitymin: .1
+      cursoropacitymax: .6
+  onClickIconRemove: ->
+    @trigger "setBookmark", @modelId, null
+    @hideBookmarks()
+  onShowBookmarks: (id) ->
+    @modelId = id
+    height = window.innerHeight - 80
+    left = (window.innerWidth - 600) / 2
+    @el.style.pixelTop = 20
+    @el.style.pixelLeft = left
+    @$(".result_outer").height(height - 30)
+    @$el.height(height)
+      .show()
+      .find("input.query").focus()
+    @$(".result_outer").getNiceScroll().show()
+    $(".backscreen").show()
+    startEditing()
+  onSubmitForm: ->
+    @$(".result").empty()
+    query = @$("input.query").val()
+    chrome.bookmarks.getTree (treeNode) =>
+      treeNode.forEach (node) =>
+        #console.log "title: " + node.title
+        @digBookmarks node, query, 1
+        #console.log node
+    windowOnResize()
+    false
+  digBookmarks: (node, query, indent) ->
+    if node.title
+      if node.children
+        #console.log Array(indent).join("  ") + "folder: " + node.title
+        @elBookmark$.append """<div class="folder" style="text-indent:#{indent-1}em"><i class="icon-folder-open"></i>#{node.title}</div>"""
+      else
+        #console.log Array(indent).join("  ") + "title: " + node.title
+        if !query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1
+          @elBookmark$.append """<div style="text-indent:#{indent}em"><a href="#" title="#{node.url}" data-id="#{node.id}">#{node.title}</a></div>"""
+    else
+      indent--
+    if node.children
+      node.children.forEach (child) =>
+        @digBookmarks child, query, indent + 1
+  hideBookmarks: ->
+    endEditing()
+    @$(".result_outer").getNiceScroll().hide()
+    $(".backscreen").hide()
+    @$el.hide()
+  setBookmark: (event) ->
+    target = $(event.currentTarget)
+    @trigger "setBookmark", @modelId, {title: target.text(), url: target.attr("title"), bmId: target.attr("data-id")}
+    @hideBookmarks()
+
 marginBottom = 0
 resizeTimer = false
 windowOnResize = ->
@@ -383,6 +515,7 @@ windowOnResize = ->
     tableHeight = window.innerHeight - document.querySelector(".header").offsetHeight - marginBottom;
     document.querySelector(".fixed-table-container").style.pixelHeight = tableHeight;
     $(".fixed-table-container-inner").getNiceScroll().resize()
+    $(".result_outer").getNiceScroll().resize()
   ), 200)
 
 fk = chrome.extension.getBackgroundPage().fk
@@ -390,6 +523,12 @@ saveData = fk.getConfig()
 keyCodes = fk.getKeyCodes()
 scHelp   = fk.getScHelp()
 scHelpSect = fk.getScHelpSect()
+
+startEditing = ->
+  fk.startEditing()
+
+endEditing = ->
+  fk.endEditing()
 
 $ = jQuery
 $ ->
@@ -401,9 +540,13 @@ $ ->
     model: new Config(saveData.config)
     collection: new KeyConfigSet()
   keyConfigSetView.render(saveData.keyConfigSet)
+
+  bookmarksView = new BookmarksView {}
   
   headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
+  keyConfigSetView.on "showBookmarks", bookmarksView.onShowBookmarks     , bookmarksView
+  bookmarksView.on    "setBookmark"  , keyConfigSetView.onSetBookmark    , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action
@@ -423,7 +566,7 @@ $ ->
   $(".fixed-table-container-inner").niceScroll
     cursorwidth: 12
     cursorborderradius: 2
-    smoothscroll: false
+    smoothscroll: true
     cursoropacitymin: .1
     cursoropacitymax: .6
   
