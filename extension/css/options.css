@@ -256,6 +256,7 @@ th i.icon-arrow-right {
   border-radius: 3px;
   color: white;
   padding: 0 3px;
+  margin-top: 2px;
   margin-right: 3px;
   font-size: 12px;
   width: 17px;
@@ -372,7 +373,7 @@ th i.icon-arrow-right {
 .backscreen {
   display: none;
   position: absolute;
-  z-index: 99;
+  z-index: 999999;
   background: rgba(0,0,0,0.5);
   top: 0;
   left: 0;

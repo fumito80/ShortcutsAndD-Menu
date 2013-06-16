@@ -87,13 +87,13 @@ KeyConfigView = Backbone.View.extend
     @optionKeys = _.keys optionsDisp
     @model.on
       "change:bookmark": @onChangeBookmark
-      setFocus: @onClickInput
-      remove:   @onRemove
+      "setFocus":        @onClickInput
+      "remove":          @onRemove
       @
     @model.collection.on
-      kbdEvent:    @onKbdEvent
-      changeKbd:   @onChangeKbd
-      updateOrder: @onUpdateOrder
+      "kbdEvent":    @onKbdEvent
+      "changeKbd":   @onChangeKbd
+      "updateOrder": @onUpdateOrder
       @
   
   render: (kbdtype) ->
@@ -176,10 +176,11 @@ KeyConfigView = Backbone.View.extend
     @$(".selectMode").hide()
     @$(".mode").removeClass("selecting")
   
-  onClickInput: (event) ->
+  onClickInput: (event, selector) ->
     if (event)
-      if (target$ = $(event.currentTarget)).hasClass("proxy") || target$.hasClass("origin assignOrg")
-        target$.focus()
+      $(event.currentTarget).focus()
+    else if selector
+      @$(selector).focus()
     else
       @$(".origin").focus()
   
@@ -306,8 +307,14 @@ KeyConfigSetView = Backbone.View.extend
       scroll: true
       cursor: "move"
       update: => @userSorted()
-    #@setTableVisible()
-    #$("button").focus().blur()
+    $(".fixed-table-container-inner").niceScroll
+      cursorwidth: 12
+      cursorborderradius: 2
+      smoothscroll: true
+      cursoropacitymin: .3
+      cursoropacitymax: .7
+      zindex: 999998
+    @niceScroll = $(".fixed-table-container-inner").getNiceScroll()
     @
   
   # Collection Events
@@ -318,11 +325,12 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     keyConfigView.on "showBookmarks" , @onShowBookmarks      , @
     @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
-    #@setTableVisible()
-    #newChild.find(".proxy").focus()
   
   onKbdEvent: (value) ->
     if @$(".addnew").length is 0
+      if (target = @$(".proxy:focus")).length is 0
+        if model = @collection.get(value)
+          model.trigger "setFocus", null, ".proxy"
       return
     if @collection.findWhere(proxy: value)
       $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
@@ -345,7 +353,6 @@ KeyConfigSetView = Backbone.View.extend
   
   onChildRemoveConfig: (model) ->
     @collection.remove model
-    #@setTableVisible()
     windowOnResize()
     @onChildResizeInput()
   
@@ -366,8 +373,8 @@ KeyConfigSetView = Backbone.View.extend
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
       return
-    if @collection.length >= 20
-      $("#tiptip_content").text("You have reached the maximum number of items. (Max 20 items)")
+    if @collection.length > 50
+      $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)")
       $(event.currentTarget).tipTip(defaultPosition: "right")
       return
     $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
@@ -384,7 +391,7 @@ KeyConfigSetView = Backbone.View.extend
     @collection.trigger "changeKbd", newKbd
     @model.set "kbdtype", newKbd
   
-  # Object Method
+  # Object Method  
   decodeKbdEvent: (value) ->
     modifiers = parseInt(value.substring(0, 2), 16)
     scanCode = value.substring(2)
@@ -399,9 +406,6 @@ KeyConfigSetView = Backbone.View.extend
     else
       keyCombo.push keyIdenfiers[0]
     keyCombo.join(" + ")
-  
-  setTableVisible: ->
-    if @collection.length is 0 then @$el.hide() else @$el.show()
   
   userSorted: ->
     @collection.trigger "updateOrder"
@@ -561,13 +565,6 @@ $ ->
     .on "resize", ->
       windowOnResize()
   
-  windowOnResize()
-  
-  $(".fixed-table-container-inner").niceScroll
-    cursorwidth: 12
-    cursorborderradius: 2
-    smoothscroll: true
-    cursoropacitymin: .1
-    cursoropacitymax: .6
-  
   $(".beta").text("\u03B2")
+
+  windowOnResize()
