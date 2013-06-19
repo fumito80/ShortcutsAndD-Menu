@@ -11,11 +11,13 @@ type
   TKeyHookTh = class(TThread)
   protected
     modifierRelCount, seq: Integer;
+    virtualModifires, virtualOffModifires: Byte;
+    virtualScanCode: Cardinal;
     pipeHandle: THandle;
     browser: IBrowserObject;
     keyConfigList: TStringList;
-    configMode: Boolean;
-    lastTarget, lastModified: string;
+    configMode, virtualOffModifiresFlag: Boolean;
+    lastTarget, lastModified, lastOrgModified: string;
     criticalSection: TCriticalSection;
     function VaridateKeyEvent(wPrm: UInt64): Boolean;
     procedure Execute; override;
@@ -25,10 +27,10 @@ type
 
   TKeyConfig = class
   public
-    mode, orgModified: string;
+    mode, origin, orgModified: string;
     modifierFlags: Byte;
     scanCode: Cardinal;
-    constructor Create(mode, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);
+    constructor Create(mode, origin, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);
   end;
 
   TMyClass = class(TPlugin)
@@ -119,9 +121,10 @@ begin
 end;
 
 //constructor TKeyConfig.Create(mode: string; newScans: TArrayCardinal);
-constructor TKeyConfig.Create(mode, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);
+constructor TKeyConfig.Create(mode, origin, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);
 begin
   Self.mode:= mode;
+  Self.origin:= origin;
   Self.orgModified:= orgModified;
   Self.modifierFlags:= modifierFlags;
   Self.scanCode:= scanCode;
@@ -183,17 +186,29 @@ var
       dwExtraInfo:= 0;
     end;
   end;
-  procedure ReleaseModifiers;
+  procedure AlterModified(var virtualModifires: Byte; var virtualScanCode: Cardinal; Flags: DWord);
   begin
-    ReleaseModifier(VK_RCONTROL, SCAN_RCONTROL, KEYEVENTF_EXTENDEDKEY);
-    ReleaseModifier(VK_LCONTROL, SCAN_LCONTROL, 0);
-    ReleaseModifier(VK_RMENU, SCAN_RMENU, KEYEVENTF_EXTENDEDKEY);
-    ReleaseModifier(VK_LMENU, SCAN_LMENU, 0);
-    ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, 0);
-    ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, 0);
-    ReleaseModifier(VK_RWIN, SCAN_RWIN, KEYEVENTF_EXTENDEDKEY);
-    ReleaseModifier(VK_LWIN, SCAN_LWIN, KEYEVENTF_EXTENDEDKEY);
+    if virtualScanCode <> 0 then
+      KeybdInput(virtualScanCode, Flags);
+    if (virtualModifires and FLAG_CONTROL) <> 0 then begin
+      ReleaseModifier(VK_RCONTROL, SCAN_RCONTROL, Flags or KEYEVENTF_EXTENDEDKEY);
+      ReleaseModifier(VK_LCONTROL, SCAN_LCONTROL, Flags);
+    end;
+    if (virtualModifires and FLAG_MENU) <> 0 then begin
+      ReleaseModifier(VK_RMENU, SCAN_RMENU, Flags or KEYEVENTF_EXTENDEDKEY);
+      ReleaseModifier(VK_LMENU, SCAN_LMENU, Flags);
+    end;
+    if (virtualModifires and FLAG_SHIFT) <> 0 then begin
+      ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, Flags);
+      ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, Flags);
+    end;
+    if (virtualModifires and FLAG_WIN) <> 0 then begin
+      ReleaseModifier(VK_RWIN, SCAN_RWIN, Flags or KEYEVENTF_EXTENDEDKEY);
+      ReleaseModifier(VK_LWIN, SCAN_LWIN, Flags or KEYEVENTF_EXTENDEDKEY);
+    end;
     SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
+    virtualScanCode:= 0;
+    virtualModifires:= 0;
   end;
   procedure AddScan(scan: Cardinal);
   begin
@@ -221,19 +236,21 @@ begin
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * FLAG_SHIFT);
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
   scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
-  //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(keyDownState));
+  Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(keyDownState));
 
-  // Exit1 --> Modifierキーが押されていない ＆ ファンクションキーじゃないとき
-  if (modifierFlags = 0) and not(scancode in [$3B..$44, $57, $58]) then
-    Exit;
-  // Exit2 --> Modifierキー単独のとき
+  // Exit1 --> Modifierキー単独のとき
   for I:= 0 to 7 do begin
     if scanCode = modifiersCode[I] then begin
       if (modifierRelCount > -1) and (keyDownState = KEYEVENTF_KEYUP) then begin
         if modifierRelCount = 0 then begin
-          ReleaseModifiers;
+          AlterModified(virtualModifires, virtualScanCode, KEYEVENTF_KEYUP);
+          virtualOffModifires:= 0;
+          virtualOffModifiresFlag:= False;
           modifierRelCount:= -1;
-          //Write2EventLog('FlexKbd', 'end');
+          lastTarget:= '';
+          lastModified:= '';
+          lastOrgModified:= '';
+          Write2EventLog('FlexKbd', 'end');
         end else begin
           Dec(modifierRelCount);
         end;
@@ -241,14 +258,32 @@ begin
       Exit;
     end;
   end;
+  // Exit2 --> Modifierキーが押されていない ＆ ファンクションキーじゃないとき
+  if (modifierFlags = 0)
+    and not(scancode in [$3B..$44, $57, $58])
+    and not((keyDownState = 0) and (virtualScanCode in [$3B..$44, $57, $58])) then
+      Exit;
 
   if configMode then begin
     Result:= True;
     browser.Invoke('pluginEvent', ['configKeyEvent', scans]);
   end else begin
-    if scans = lastModified then begin
+    Write2EventLog('FlexKbd', scans + ': ' + lastTarget + ': ' + lastModified + ': ' + IntToStr(modifierFlags) + ': ' + IntToStr(virtualModifires) + ': ' + IntToStr(virtualOffModifires));
+    if scans = lastOrgModified then begin
+      // リピート対応
       scans:= lastTarget;
       modifierFlags:= StrToInt('$' + LeftBStr(lastModified, 2));
+    end
+    else if (scans <> lastModified) and ((virtualModifires > 0) or (virtualOffModifires > 0)) then begin
+      // Modifier及びキー変更対応
+      scans:= IntToHex(modifierFlags and (not virtualModifires) or virtualOffModifires, 2) + IntToStr(scanCode);
+    end
+    else if (scans = lastModified) and (scanCode = virtualScanCode) then begin
+      // 循環参照対応
+      Write2EventLog('FlexKbd', 'Exit');
+      if keyDownState = KEYEVENTF_KEYUP then
+        virtualScanCode:= 0;
+      Exit;
     end;
 
     index:= keyConfigList.IndexOf(scans);
@@ -266,11 +301,15 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_CONTROL) <> 0 then begin
             AddScan(SCAN_LCONTROL);
+            if (virtualOffModifires and FLAG_CONTROL) = 0 then
+              virtualModifires:= virtualModifires or FLAG_CONTROL;
           end
           else if ((modifierFlags and FLAG_CONTROL) <> 0) and (keyDownState = 0) then begin
             ReleaseModifier(VK_RCONTROL, SCAN_RCONTROL, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LCONTROL, SCAN_LCONTROL, 0);
-            modifierRelCount:= 2;
+            Inc(modifierRelCount, 2);
+            if (virtualModifires and FLAG_CONTROL) = 0 then
+              virtualOffModifires:= virtualOffModifires or FLAG_CONTROL;
           end;
         end;
         // ALT
@@ -279,11 +318,15 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_MENU) <> 0 then begin
             AddScan(SCAN_LMENU);
+            if (virtualOffModifires and FLAG_MENU) = 0 then
+              virtualModifires:= virtualModifires or FLAG_MENU;
           end
           else if ((modifierFlags and FLAG_MENU) <> 0) and (keyDownState = 0) then begin
             ReleaseModifier(VK_RMENU, SCAN_RMENU, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LMENU, SCAN_LMENU, 0);
             Inc(modifierRelCount, 2);
+            if (virtualModifires and FLAG_MENU) = 0 then
+              virtualOffModifires:= virtualOffModifires or FLAG_MENU;
           end;
         end;
         // SHIFT
@@ -292,11 +335,15 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_SHIFT) <> 0 then begin
             AddScan(SCAN_LSHIFT);
+            if (virtualOffModifires and FLAG_SHIFT) = 0 then
+              virtualModifires:= virtualModifires or FLAG_SHIFT;
           end
           else if ((modifierFlags and FLAG_SHIFT) <> 0) and (keyDownState = 0) then begin
             ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, 0);
             ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, 0);
             Inc(modifierRelCount, 2);
+            if (virtualModifires and FLAG_SHIFT) = 0 then
+              virtualOffModifires:= virtualOffModifires or FLAG_SHIFT;
           end;
         end;
         // WIN
@@ -306,11 +353,15 @@ begin
           if (keyConfig.modifierFlags and FLAG_WIN) <> 0 then begin
             Write2EventLog('FlexKbd', 'addwin');
             AddScan(SCAN_LWIN);
+            if (virtualOffModifires and FLAG_WIN) = 0 then
+              virtualModifires:= virtualModifires or FLAG_WIN;
           end
           else if ((modifierFlags and FLAG_WIN) <> 0) and (keyDownState = 0) then begin
             ReleaseModifier(VK_RWIN, SCAN_RWIN, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LWIN, SCAN_LWIN, KEYEVENTF_EXTENDEDKEY);
             Inc(modifierRelCount, 2);
+            if (virtualModifires and FLAG_WIN) = 0 then
+              virtualOffModifires:= virtualOffModifires or FLAG_WIN;
           end;
         end;
         if keyDownState = 0 then
@@ -319,9 +370,10 @@ begin
           KeybdInput(newScans[I], keyDownState);
         end;
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
-        //modifierRelCount:= 0;
-        lastModified:= keyConfig.orgModified;
+        lastOrgModified:= keyConfig.orgModified;
         lastTarget:= scans;
+        lastModified:= keyConfig.origin;
+        virtualScanCode:= keyConfig.scanCode;
       end else if keyConfig.mode = 'simEvent' then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end else if keyConfig.mode = 'bookmark' then begin
@@ -455,6 +507,7 @@ begin
         //Write2EventLog('FlexKbd', 'MakeProxy: ' + proxyTarget + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
         keyConfigList.AddObject(proxyTarget, TKeyConfig.Create(
           mode,
+          origin,
           proxyOrgModified,
           modifierFlags,
           scanCode
@@ -470,6 +523,7 @@ begin
 
       keyConfigList.AddObject(target, TKeyConfig.Create(
         mode,
+        origin,
         orgModified,
         modifierFlags,
         scanCode

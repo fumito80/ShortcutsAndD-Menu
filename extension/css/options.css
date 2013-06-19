@@ -339,7 +339,7 @@ th i.icon-arrow-right {
 .bookmarks {
   display: none;
   position: fixed;
-  z-index: 100;
+  z-index: 999999;
   width: 600px;
   padding: 20px;
   background: WhiteSmoke;
@@ -373,7 +373,7 @@ th i.icon-arrow-right {
 .backscreen {
   display: none;
   position: absolute;
-  z-index: 999999;
+  z-index: 999998;
   background: rgba(0,0,0,0.5);
   top: 0;
   left: 0;

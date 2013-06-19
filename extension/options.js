@@ -84,12 +84,12 @@
     optionKeys: [],
     events: {
       "click .origin,.proxy": "onClickInput",
-      "click i.icon-remove": "onClickRemove",
       "click div.mode": "onClickMode",
-      "click .selectMode div": "onChangeMode",
-      "blur  .selectMode": "onBlurSelectMode",
       "click i.icon-pencil": "onClickEditDesc",
+      "click .selectMode div": "onChangeMode",
+      "click i.icon-remove": "onClickRemove",
       "submit .memo": "onSubmitMemo",
+      "blur  .selectMode": "onBlurSelectMode",
       "blur  input.memo": "onBlurInputMemo"
     },
     initialize: function(options) {
@@ -160,18 +160,20 @@
       editing = (input$ = this.$("form.memo").toggle().find("input")).is(":visible");
       if (editing) {
         startEditing();
-        return input$.focus().val(memo.text());
+        input$.focus().val(memo.text());
       } else {
-        return this.onSubmitMemo();
+        this.onSubmitMemo();
       }
+      return event.stopPropagation();
     },
     onClickMode: function() {
       if (this.$(".selectMode").toggle().is(":visible")) {
         this.$(".selectMode").focus();
-        return this.$(".mode").addClass("selecting");
+        this.$(".mode").addClass("selecting");
       } else {
-        return this.$(".mode").removeClass("selecting");
+        this.$(".mode").removeClass("selecting");
       }
+      return event.stopPropagation();
     },
     onChangeMode: function(event, mode) {
       if (event) {
@@ -195,12 +197,13 @@
     },
     onClickInput: function(event, selector) {
       if (event) {
-        return $(event.currentTarget).focus();
+        $(event.currentTarget).focus();
       } else if (selector) {
-        return this.$(selector).focus();
+        this.$(selector).focus();
       } else {
-        return this.$(".origin").focus();
+        this.$(".origin").focus();
       }
+      return event.stopPropagation();
     },
     onSubmitMemo: function() {
       this.$("form.memo").hide();
@@ -286,7 +289,8 @@
     placeholder: "Enter new shortcut key",
     el: "table.keyConfigSetView",
     events: {
-      "blur div.addnew": "onBlurAddnew"
+      "blur div.addnew": "onBlurAddnew",
+      "click": "onClickBlank"
     },
     initialize: function(options) {
       this.collection.comparator = function(model) {
@@ -334,12 +338,18 @@
     onKbdEvent: function(value) {
       var model, newitem, target;
       if (this.$(".addnew").length === 0) {
-        if ((target = this.$(".proxy:focus")).length === 0) {
+        if ((target = this.$(".proxy:focus,.origin:focus")).length === 0) {
           if (model = this.collection.get(value)) {
             model.trigger("setFocus", null, ".proxy");
+            retun;
+          } else {
+            if (!this.onClickAddKeyConfig()) {
+              return;
+            }
           }
+        } else {
+          return;
         }
-        return;
       }
       if (this.collection.findWhere({
         proxy: value
@@ -392,15 +402,19 @@
       if (this.collection.length > 50) {
         $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)");
         $(event.currentTarget).tipTip({
-          defaultPosition: "right"
+          defaultPosition: "left"
         });
-        return;
+        return false;
       }
       $(this.templateAddNew({
         placeholder: this.placeholder
       })).appendTo(this.$("tbody")).find(".addnew").focus()[0].scrollIntoView();
       this.$("tbody").sortable("disable");
-      return windowOnResize();
+      windowOnResize();
+      return true;
+    },
+    onClickBlank: function() {
+      return this.$(":focus").blur();
     },
     onBlurAddnew: function() {
       this.$(".addnew").remove();

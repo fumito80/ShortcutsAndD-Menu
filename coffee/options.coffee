@@ -75,12 +75,12 @@ KeyConfigView = Backbone.View.extend
   # Backbone Buitin Events
   events:
     "click .origin,.proxy"  : "onClickInput"
-    "click i.icon-remove"   : "onClickRemove"
     "click div.mode"        : "onClickMode"
-    "click .selectMode div" : "onChangeMode"
-    "blur  .selectMode"     : "onBlurSelectMode"
     "click i.icon-pencil"   : "onClickEditDesc"
+    "click .selectMode div" : "onChangeMode"
+    "click i.icon-remove"   : "onClickRemove"
     "submit .memo"          : "onSubmitMemo"
+    "blur  .selectMode"     : "onBlurSelectMode"
     "blur  input.memo"      : "onBlurInputMemo"
   
   initialize: (options) ->
@@ -148,6 +148,7 @@ KeyConfigView = Backbone.View.extend
       input$.focus().val(memo.text())
     else
       @onSubmitMemo()
+    event.stopPropagation()
   
   onClickMode: ->
     if @$(".selectMode").toggle().is(":visible")
@@ -155,6 +156,7 @@ KeyConfigView = Backbone.View.extend
       @$(".mode").addClass("selecting")
     else
       @$(".mode").removeClass("selecting")
+    event.stopPropagation()
   
   onChangeMode: (event, mode) ->
     if event
@@ -183,6 +185,7 @@ KeyConfigView = Backbone.View.extend
       @$(selector).focus()
     else
       @$(".origin").focus()
+    event.stopPropagation()
   
   onSubmitMemo: ->
     @$("form.memo").hide()
@@ -290,7 +293,8 @@ KeyConfigSetView = Backbone.View.extend
   
   events:
     "blur div.addnew": "onBlurAddnew"
-  
+    "click": "onClickBlank"
+    
   initialize: (options) ->
     @collection.comparator = (model) ->
       model.get("ordernum")
@@ -328,10 +332,15 @@ KeyConfigSetView = Backbone.View.extend
   
   onKbdEvent: (value) ->
     if @$(".addnew").length is 0
-      if (target = @$(".proxy:focus")).length is 0
+      if (target = @$(".proxy:focus,.origin:focus")).length is 0
         if model = @collection.get(value)
           model.trigger "setFocus", null, ".proxy"
-      return
+          retun
+        else
+          unless @onClickAddKeyConfig()
+            return
+      else
+        return
     if @collection.findWhere(proxy: value)
       $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
@@ -375,11 +384,15 @@ KeyConfigSetView = Backbone.View.extend
       return
     if @collection.length > 50
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)")
-      $(event.currentTarget).tipTip(defaultPosition: "right")
-      return
+      $(event.currentTarget).tipTip(defaultPosition: "left")
+      return false
     $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
+    true
+  
+  onClickBlank: ->
+    @$(":focus").blur()
   
   onBlurAddnew: ->
     @$(".addnew").remove()
