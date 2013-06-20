@@ -465,6 +465,9 @@ BookmarksView = Backbone.View.extend
     "submit form"       : "onSubmitForm"
     "click a"           : "setBookmark"
     "click .icon-remove": "onClickIconRemove"
+    "click span.folder" : "onClickFolder"
+    "click .expand"     : "onClickExpand"
+  
   initialize: ->
     @elBookmark$ = @$(".result")
     @$(".result_outer").niceScroll
@@ -473,9 +476,33 @@ BookmarksView = Backbone.View.extend
       smoothscroll: true
       cursoropacitymin: .1
       cursoropacitymax: .6
+  
+  onClickFolder: (event) ->
+    visible = (target$ = $(event.currentTarget)).parent().children("div").toggle().is(":visible")
+    if visible
+      target$.find("> i")[0].className = "icon-folder-open"
+    else
+      target$.find("> i")[0].className = "icon-folder-close"
+    windowOnResize()
+    event.stopPropagation()
+  
+  onClickExpand: ->
+    if @$(".expand").is(":checked")
+      $.each @$("div.folder"), (i, div) ->
+        $(div)
+          .children("div").show().end()
+          .find("> span > i")[0].className = "icon-folder-open"
+    else
+      $.each @$("div.folder"), (i, div) ->
+        $(div)
+          .children("div").hide().end()
+          .find("> span > i")[0].className = "icon-folder-close"
+    windowOnResize()
+  
   onClickIconRemove: ->
     @trigger "setBookmark", @modelId, null
     @hideBookmarks()
+  
   onShowBookmarks: (id) ->
     @modelId = id
     height = window.innerHeight - 80
@@ -489,35 +516,39 @@ BookmarksView = Backbone.View.extend
     @$(".result_outer").getNiceScroll().show()
     $(".backscreen").show()
     startEditing()
+  
   onSubmitForm: ->
     @$(".result").empty()
     query = @$("input.query").val()
     chrome.bookmarks.getTree (treeNode) =>
       treeNode.forEach (node) =>
-        #console.log "title: " + node.title
-        @digBookmarks node, query, 1
-        #console.log node
-    windowOnResize()
+        @digBookmarks node, @elBookmark$, query, 0
+      @onClickExpand()
     false
-  digBookmarks: (node, query, indent) ->
+  
+  digBookmarks: (node, parent, query, indent) ->
     if node.title
       if node.children
         #console.log Array(indent).join("  ") + "folder: " + node.title
-        @elBookmark$.append """<div class="folder" style="text-indent:#{indent-1}em"><i class="icon-folder-open"></i>#{node.title}</div>"""
+        folderIndent = indent / 2
+        parent.append newParent = $("""<div class="folder" style="text-indent:#{folderIndent}em"><span class="folder"><i class="icon-folder-open"></i>#{node.title}</span></div>""")
+        parent = newParent
       else
         #console.log Array(indent).join("  ") + "title: " + node.title
         if !query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1
-          @elBookmark$.append """<div style="text-indent:#{indent}em"><a href="#" title="#{node.url}" data-id="#{node.id}">#{node.title}</a></div>"""
+          parent.append """<div style="text-indent:#{indent}em"><a href="#" title="#{node.url}" data-id="#{node.id}">#{node.title}</a></div>"""
     else
       indent--
     if node.children
       node.children.forEach (child) =>
-        @digBookmarks child, query, indent + 1
+        @digBookmarks child, parent, query, indent + 1
+  
   hideBookmarks: ->
     endEditing()
     @$(".result_outer").getNiceScroll().hide()
     $(".backscreen").hide()
     @$el.hide()
+  
   setBookmark: (event) ->
     target = $(event.currentTarget)
     @trigger "setBookmark", @modelId, {title: target.text(), url: target.attr("title"), bmId: target.attr("data-id")}

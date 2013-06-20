@@ -80,7 +80,7 @@ setConfigPlugin = (keyConfigSet) ->
       if (item.proxy)
         sendData.push item.proxy + ";" + item.origin + ";" + item.mode
     flexkbd.SetKeyConfig sendData.join("|")
-  
+
 fk.saveConfig = (saveData) ->
   localStorage.flexkbd = JSON.stringify saveData
   setConfigPlugin saveData.keyConfigSet
@@ -176,3 +176,8 @@ forecast = (lang) ->
 
 forecast("ja").done ->
   forecast "en"
+
+#indexedDB = new db.IndexedDB
+#  schema_name: "scremapper"
+#  schema_version: 1
+#  keyPath: "proxy"

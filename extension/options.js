@@ -472,7 +472,9 @@
     events: {
       "submit form": "onSubmitForm",
       "click a": "setBookmark",
-      "click .icon-remove": "onClickIconRemove"
+      "click .icon-remove": "onClickIconRemove",
+      "click span.folder": "onClickFolder",
+      "click .expand": "onClickExpand"
     },
     initialize: function() {
       this.elBookmark$ = this.$(".result");
@@ -483,6 +485,29 @@
         cursoropacitymin: .1,
         cursoropacitymax: .6
       });
+    },
+    onClickFolder: function(event) {
+      var target$, visible;
+      visible = (target$ = $(event.currentTarget)).parent().children("div").toggle().is(":visible");
+      if (visible) {
+        target$.find("> i")[0].className = "icon-folder-open";
+      } else {
+        target$.find("> i")[0].className = "icon-folder-close";
+      }
+      windowOnResize();
+      return event.stopPropagation();
+    },
+    onClickExpand: function() {
+      if (this.$(".expand").is(":checked")) {
+        $.each(this.$("div.folder"), function(i, div) {
+          return $(div).children("div").show().end().find("> span > i")[0].className = "icon-folder-open";
+        });
+      } else {
+        $.each(this.$("div.folder"), function(i, div) {
+          return $(div).children("div").hide().end().find("> span > i")[0].className = "icon-folder-close";
+        });
+      }
+      return windowOnResize();
     },
     onClickIconRemove: function() {
       this.trigger("setBookmark", this.modelId, null);
@@ -507,21 +532,24 @@
       this.$(".result").empty();
       query = this.$("input.query").val();
       chrome.bookmarks.getTree(function(treeNode) {
-        return treeNode.forEach(function(node) {
-          return _this.digBookmarks(node, query, 1);
+        treeNode.forEach(function(node) {
+          return _this.digBookmarks(node, _this.elBookmark$, query, 0);
         });
+        return _this.onClickExpand();
       });
-      windowOnResize();
       return false;
     },
-    digBookmarks: function(node, query, indent) {
-      var _this = this;
+    digBookmarks: function(node, parent, query, indent) {
+      var folderIndent, newParent,
+        _this = this;
       if (node.title) {
         if (node.children) {
-          this.elBookmark$.append("<div class=\"folder\" style=\"text-indent:" + (indent - 1) + "em\"><i class=\"icon-folder-open\"></i>" + node.title + "</div>");
+          folderIndent = indent / 2;
+          parent.append(newParent = $("<div class=\"folder\" style=\"text-indent:" + folderIndent + "em\"><span class=\"folder\"><i class=\"icon-folder-open\"></i>" + node.title + "</span></div>"));
+          parent = newParent;
         } else {
           if (!query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1) {
-            this.elBookmark$.append("<div style=\"text-indent:" + indent + "em\"><a href=\"#\" title=\"" + node.url + "\" data-id=\"" + node.id + "\">" + node.title + "</a></div>");
+            parent.append("<div style=\"text-indent:" + indent + "em\"><a href=\"#\" title=\"" + node.url + "\" data-id=\"" + node.id + "\">" + node.title + "</a></div>");
           }
         }
       } else {
@@ -529,7 +557,7 @@
       }
       if (node.children) {
         return node.children.forEach(function(child) {
-          return _this.digBookmarks(child, query, indent + 1);
+          return _this.digBookmarks(child, parent, query, indent + 1);
         });
       }
     },

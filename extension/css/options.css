@@ -368,7 +368,15 @@ th i.icon-arrow-right {
   margin-left: 5px;
 }
 .bookmarks .icon-folder-open {
+  margin-right: 2px;
   color: rgb(255, 216, 0);
+}
+.bookmarks .icon-folder-close {
+  margin-right: 2px;
+  color: rgb(255, 216, 0);
+}
+.bookmarks span.folder {
+  cursor: pointer;
 }
 .backscreen {
   display: none;
