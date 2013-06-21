@@ -72,6 +72,8 @@ openBookmark = (keyEvent) ->
       url = item.bookmark.url
       chrome.tabs.query {active: true}, (tabs) ->
         chrome.tabs.update tabs[0].id, url: url
+      #chrome.tabs.create
+      #  url: url
 
 setConfigPlugin = (keyConfigSet) ->
   sendData = []

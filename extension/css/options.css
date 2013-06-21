@@ -73,7 +73,7 @@ body {
   border: 0;
   font-weight: normal;
 }
-tbody tr:hover {
+tbody .data:hover {
   background: rgb(245,245,255);
 }
 .th_inner {
@@ -241,8 +241,19 @@ i.icon-arrow-right {
 th i.icon-arrow-right {
   margin: 2px;
 }
+.keyConfigSetView thead tr {
+  border: hidden;
+}
 .keyConfigSetView td {
+  border: hidden;
   padding: 4px 5px;
+}
+.keyConfigSetView .border td {
+  padding: 0;
+}
+.keyConfigSetView div.border {
+  border-top: 1px dotted ddd;
+  padding: 0;
 }
 .keyConfigSetView .tdOrigin {
   padding-right: 12px;
@@ -297,18 +308,13 @@ th i.icon-arrow-right {
 .keyConfigSetView .desc input.memo {
   font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
   width: 90%;
-  /*
-  border: 0;
-  box-shadow: none;
-  background: rgba(0,0,0,0);
-  */
 }
 .keyConfigSetView .remove {
   text-align: right;
   padding-right: 8px;
 }
 .keyConfigSetView .blank {
-  border: 0;
+  border: hidden;
   background: #FFF;
   padding: 0 12px;
 }
@@ -341,7 +347,7 @@ th i.icon-arrow-right {
   position: fixed;
   z-index: 999999;
   width: 600px;
-  padding: 20px;
+  padding: 20px 10px 10px 20px;
   background: WhiteSmoke;
   box-shadow: 0 0 20px black;
   border-radius: 1px;

@@ -223,9 +223,13 @@
       this.$("div.mode").addClass(mode).find("span").text(optionsDisp[mode]);
       this.$(".proxy,.origin,.icon-arrow-right").removeClass(this.optionKeys.join(" ")).addClass(mode);
       if (mode === "assignOrg") {
-        return this.$(".origin").attr("tabIndex", "0");
+        this.$(".origin").attr("tabIndex", "0");
+        this.$("td:first").removeAttr("colspan");
+        return this.$("td:eq(1),td:eq(2)").show();
       } else {
-        return this.$(".origin").removeAttr("tabIndex");
+        this.$(".origin").removeAttr("tabIndex");
+        this.$("td:first").attr("colspan", "3");
+        return this.$("td:eq(1),td:eq(2)").hide();
       }
     },
     setKbdValue: function(input$, value) {
@@ -282,7 +286,7 @@
     },
     templateMemo: _.template("<div>\n  <i class=\"icon-pencil\" title=\"Edit description\"></i>\n</div>\n<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
     templateHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr>\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-arrow-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(name, key) { %>\n      <div class=\"<%=key%>\"><%=name%></div>\n      <% }); %>\n    </div>\n  <td class=\"desc\">\n  </td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Remove\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr class=\"data\">\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-arrow-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(name, key) { %>\n      <div class=\"<%=key%>\"><%=name%></div>\n      <% }); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Remove\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -310,7 +314,13 @@
         scroll: true,
         cursor: "move",
         update: function() {
-          return _this.userSorted();
+          return _this.onUpdateSort();
+        },
+        start: function() {
+          return _this.onStartSort();
+        },
+        stop: function() {
+          return _this.onStopSort();
         }
       });
       $(".fixed-table-container-inner").niceScroll({
@@ -333,7 +343,7 @@
       keyConfigView.on("removeConfig", this.onChildRemoveConfig, this);
       keyConfigView.on("resizeInput", this.onChildResizeInput, this);
       keyConfigView.on("showBookmarks", this.onShowBookmarks, this);
-      return this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el);
+      return this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el).append(this.tmplBorder);
     },
     onKbdEvent: function(value) {
       var model, newitem, target;
@@ -406,7 +416,7 @@
         });
         return false;
       }
-      $(this.templateAddNew({
+      $(this.tmplAddNew({
         placeholder: this.placeholder
       })).appendTo(this.$("tbody")).find(".addnew").focus()[0].scrollIntoView();
       this.$("tbody").sortable("disable");
@@ -426,6 +436,32 @@
       keys = keyCodes[newKbd = event.currentTarget.value].keys;
       this.collection.trigger("changeKbd", newKbd);
       return this.model.set("kbdtype", newKbd);
+    },
+    onStartSort: function() {
+      return this.$(".ui-sortable-placeholder").next("tr.border").remove();
+    },
+    onStopSort: function() {
+      var target$,
+        _this = this;
+      $.each(this.$("tbody tr"), function(i, tr) {
+        var target$, _ref, _ref1;
+        if (tr.className === "data") {
+          if (((_ref = $(tr).next("tr")[0]) != null ? _ref.className : void 0) !== "border") {
+            return $(tr).after(_this.tmplBorder);
+          }
+        } else {
+          if (((_ref1 = (target$ = $(tr).next("tr"))[0]) != null ? _ref1.className : void 0) !== "data") {
+            return target$.remove();
+          }
+        }
+      });
+      if ((target$ = this.$("tbody tr:first"))[0].className === "border") {
+        return target$.remove();
+      }
+    },
+    onUpdateSort: function() {
+      this.collection.trigger("updateOrder");
+      return this.collection.sort();
     },
     decodeKbdEvent: function(value) {
       var keyCombo, keyIdenfiers, modifiers, scanCode;
@@ -450,10 +486,6 @@
       }
       return keyCombo.join(" + ");
     },
-    userSorted: function() {
-      this.collection.trigger("updateOrder");
-      return this.collection.sort();
-    },
     getSaveData: function() {
       this.collection.remove(this.collection.findWhere({
         proxy: this.placeholder
@@ -463,7 +495,8 @@
         keyConfigSet: this.collection.toJSON()
       };
     },
-    templateAddNew: _.template("<tr class=\"addnew\">\n  <td colspan=\"3\">\n    <div class=\"proxy addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </td>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
+    tmplAddNew: _.template("<tr class=\"addnew\">\n  <td colspan=\"3\">\n    <div class=\"proxy addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </td>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
+    tmplBorder: "<tr class=\"border\">\n  <td colspan=\"6\"><div class=\"border\"></div></td>\n  <td></td>\n</tr>",
     template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Options</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n    </th>\n    <th></th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 

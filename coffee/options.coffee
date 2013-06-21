@@ -207,8 +207,12 @@ KeyConfigView = Backbone.View.extend
       .addClass mode
     if mode is "assignOrg"
       @$(".origin").attr("tabIndex", "0")
+      @$("td:first").removeAttr("colspan")
+      @$("td:eq(1),td:eq(2)").show()
     else
       @$(".origin").removeAttr("tabIndex")
+      @$("td:first").attr("colspan", "3")
+      @$("td:eq(1),td:eq(2)").hide()
   
   setKbdValue: (input$, value) ->
     @trigger "decodeKbdEvent", value, container = {}
@@ -259,7 +263,7 @@ KeyConfigView = Backbone.View.extend
     """
   
   template: _.template """
-    <tr>
+    <tr class="data">
       <td>
         <div class="proxy" tabIndex="0"></div>
       </td>
@@ -276,8 +280,7 @@ KeyConfigView = Backbone.View.extend
           <div class="<%=key%>"><%=name%></div>
           <% }); %>
         </div>
-      <td class="desc">
-      </td>
+      <td class="desc"></td>
       <td class="remove">
         <i class="icon-remove" title="Remove"></i>
       </td>
@@ -310,7 +313,9 @@ KeyConfigSetView = Backbone.View.extend
       delay: 300
       scroll: true
       cursor: "move"
-      update: => @userSorted()
+      update: => @onUpdateSort()
+      start: => @onStartSort()
+      stop: => @onStopSort()
     $(".fixed-table-container-inner").niceScroll
       cursorwidth: 12
       cursorborderradius: 2
@@ -328,7 +333,9 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     keyConfigView.on "showBookmarks" , @onShowBookmarks      , @
-    @$("tbody").append newChild = keyConfigView.render(@model.get("kbdtype")).$el
+    @$("tbody")
+      .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
+      .append(@tmplBorder)
   
   onKbdEvent: (value) ->
     if @$(".addnew").length is 0
@@ -386,7 +393,7 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)")
       $(event.currentTarget).tipTip(defaultPosition: "left")
       return false
-    $(@templateAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
+    $(@tmplAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
     true
@@ -404,7 +411,25 @@ KeyConfigSetView = Backbone.View.extend
     @collection.trigger "changeKbd", newKbd
     @model.set "kbdtype", newKbd
   
-  # Object Method  
+  onStartSort: ->
+    @$(".ui-sortable-placeholder").next("tr.border").remove()
+  
+  onStopSort: ->
+    $.each @$("tbody tr"), (i, tr) =>
+      if tr.className is "data"
+        unless $(tr).next("tr")[0]?.className is "border"
+          $(tr).after @tmplBorder
+      else
+        unless (target$ = $(tr).next("tr"))[0]?.className is "data"
+          target$.remove()
+    if (target$ = @$("tbody tr:first"))[0].className is "border"
+      target$.remove()
+  
+  onUpdateSort: ->
+    @collection.trigger "updateOrder"
+    @collection.sort()
+  
+  # Object Method
   decodeKbdEvent: (value) ->
     modifiers = parseInt(value.substring(0, 2), 16)
     scanCode = value.substring(2)
@@ -420,21 +445,24 @@ KeyConfigSetView = Backbone.View.extend
       keyCombo.push keyIdenfiers[0]
     keyCombo.join(" + ")
   
-  userSorted: ->
-    @collection.trigger "updateOrder"
-    @collection.sort()
-  
   getSaveData: ->
     @collection.remove @collection.findWhere proxy: @placeholder
     config: @model.toJSON()
     keyConfigSet: @collection.toJSON()
   
-  templateAddNew: _.template """
+  tmplAddNew: _.template """
     <tr class="addnew">
       <td colspan="3">
         <div class="proxy addnew" tabIndex="0"><%=placeholder%></div>
       </td>
       <td></td><td></td><td></td><td class="blank"></td>
+    </tr>
+    """
+  
+  tmplBorder: """
+    <tr class="border">
+      <td colspan="6"><div class="border"></div></td>
+      <td></td>
     </tr>
     """
 
