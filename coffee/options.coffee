@@ -219,7 +219,8 @@ KeyConfigView = Backbone.View.extend
   
   setKbdValue: (input$, value) ->
     @trigger "decodeKbdEvent", value, container = {}
-    input$.html _.map(container.result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
+    if container.result
+      input$.html _.map(container.result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
   
   setDesc: ->
     (tdDesc = @$(".desc")).empty()
