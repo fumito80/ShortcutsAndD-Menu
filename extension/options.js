@@ -138,6 +138,10 @@
             input$.tipTip();
             return;
           }
+        } else {
+          if (~~value.substring(2) > 0x200) {
+            return;
+          }
         }
         this.setKbdValue(input$, value);
         this.model.set(input$[0].className.match(/(proxy|origin)/)[0], value);
@@ -203,7 +207,7 @@
       } else {
         this.$(".origin").focus();
       }
-      return event.stopPropagation();
+      return event != null ? event.stopPropagation() : void 0;
     },
     onSubmitMemo: function() {
       this.$("form.memo").hide();
@@ -346,12 +350,12 @@
       return this.$("tbody").append(newChild = keyConfigView.render(this.model.get("kbdtype")).$el).append(this.tmplBorder);
     },
     onKbdEvent: function(value) {
-      var model, newitem, target;
+      var model, newitem, originValue, target;
       if (this.$(".addnew").length === 0) {
         if ((target = this.$(".proxy:focus,.origin:focus")).length === 0) {
           if (model = this.collection.get(value)) {
             model.trigger("setFocus", null, ".proxy");
-            retun;
+            return;
           } else {
             if (!this.onClickAddKeyConfig()) {
               return;
@@ -369,9 +373,14 @@
         return;
       }
       this.$("div.addnew").blur();
+      if (~~value.substring(2) > 0x200) {
+        originValue = "0130";
+      } else {
+        originValue = value;
+      }
       this.collection.add(newitem = new KeyConfig({
         proxy: value,
-        origin: value
+        origin: originValue
       }));
       this.$("tbody").sortable("enable").sortable("refresh");
       windowOnResize();
@@ -383,6 +392,7 @@
     },
     onChildRemoveConfig: function(model) {
       this.collection.remove(model);
+      this.onStopSort();
       windowOnResize();
       return this.onChildResizeInput();
     },

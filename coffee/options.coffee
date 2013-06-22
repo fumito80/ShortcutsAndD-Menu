@@ -125,6 +125,9 @@ KeyConfigView = Backbone.View.extend
           $("#tiptip_content").text("\"#{container.result}\" is already exists.")
           input$.tipTip()
           return
+      else # Origin
+        if ~~value.substring(2) > 0x200
+          return
       @setKbdValue input$, value
       @model.set input$[0].className.match(/(proxy|origin)/)[0], value
       @setDesc()
@@ -185,7 +188,7 @@ KeyConfigView = Backbone.View.extend
       @$(selector).focus()
     else
       @$(".origin").focus()
-    event.stopPropagation()
+    event?.stopPropagation()
   
   onSubmitMemo: ->
     @$("form.memo").hide()
@@ -342,7 +345,7 @@ KeyConfigSetView = Backbone.View.extend
       if (target = @$(".proxy:focus,.origin:focus")).length is 0
         if model = @collection.get(value)
           model.trigger "setFocus", null, ".proxy"
-          retun
+          return
         else
           unless @onClickAddKeyConfig()
             return
@@ -353,9 +356,13 @@ KeyConfigSetView = Backbone.View.extend
       @$("div.addnew").tipTip()
       return
     @$("div.addnew").blur()
+    if ~~value.substring(2) > 0x200
+      originValue = "0130"
+    else
+      originValue = value
     @collection.add newitem = new KeyConfig
       proxy: value
-      origin: value
+      origin: originValue
     @$("tbody")
       .sortable("enable")
       .sortable("refresh")
@@ -369,6 +376,7 @@ KeyConfigSetView = Backbone.View.extend
   
   onChildRemoveConfig: (model) ->
     @collection.remove model
+    @onStopSort()
     windowOnResize()
     @onChildResizeInput()
   
