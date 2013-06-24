@@ -499,14 +499,27 @@ KeyConfigSetView = Backbone.View.extend
 BookmarksView = Backbone.View.extend
   el: ".bookmarks"
   events:
-    "submit form"       : "onSubmitForm"
-    "click a"           : "setBookmark"
-    "click .icon-remove": "onClickIconRemove"
-    "click span.folder" : "onClickFolder"
-    "click .expand"     : "onClickExpand"
+    "submit form"        : "onSubmitForm"
+    "click  a"           : "setBookmark"
+    "click  .title"      : "onClickFolder"
+    "click  .expand-icon": "onClickExpandIcon"
+    "click  .expand"     : "onClickExpand"
+    "click  .icon-remove": "onClickIconRemove"
   
   initialize: ->
     @elBookmark$ = @$(".result")
+    ctx = document.getCSSCanvasContext('2d', 'triangle', 8, 5.5);
+    ctx.fillStyle = '#000000'
+    ctx.translate(.5, .5)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(0, 1)
+    ctx.lineTo(3.5, 4.5)
+    ctx.lineTo(7, 1)
+    ctx.lineTo(7, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
     @$(".result_outer").niceScroll
       cursorwidth: 12
       cursorborderradius: 6
@@ -515,25 +528,28 @@ BookmarksView = Backbone.View.extend
       cursoropacitymax: .6
   
   onClickFolder: (event) ->
-    visible = (target$ = $(event.currentTarget)).parent().children("div").toggle().is(":visible")
+    visible = (target$ = $(event.currentTarget).parent()).hasClass("opened")
     if visible
-      target$.find("> i")[0].className = "icon-folder-open"
+      target$.removeClass("opened expanded")
     else
-      target$.find("> i")[0].className = "icon-folder-close"
+      target$.addClass("opened expanded")
+    windowOnResize()
+    event.stopPropagation()
+  
+  onClickExpandIcon: (event) ->
+    expanded = (target$ = $(event.currentTarget).parent()).hasClass("expanded")
+    if expanded
+      target$.removeClass("expanded")
+    else
+      target$.addClass("expanded")
     windowOnResize()
     event.stopPropagation()
   
   onClickExpand: ->
     if @$(".expand").is(":checked")
-      $.each @$("div.folder"), (i, div) ->
-        $(div)
-          .children("div").show().end()
-          .find("> span > i")[0].className = "icon-folder-open"
+      @$(".folder").addClass("opened expanded")
     else
-      $.each @$("div.folder"), (i, div) ->
-        $(div)
-          .children("div").hide().end()
-          .find("> span > i")[0].className = "icon-folder-close"
+      @$(".folder").removeClass("opened expanded")
     windowOnResize()
   
   onClickIconRemove: ->
@@ -557,28 +573,34 @@ BookmarksView = Backbone.View.extend
   onSubmitForm: ->
     @$(".result").empty()
     query = @$("input.query").val()
+    state = if @$(".expand").is(":checked") then "opened expanded" else ""
     chrome.bookmarks.getTree (treeNode) =>
       treeNode.forEach (node) =>
-        @digBookmarks node, @elBookmark$, query, 0
-      @onClickExpand()
+        @digBookmarks node, @elBookmark$, query, 0, state
+      @elBookmark$.append recent = $(@tmplFolder("title": "Recent", "state": state, "indent": 0))
+      recent.find(".title").prepend """<img src="images/star.png">"""
+      chrome.bookmarks.getRecent 50, (treeNode) =>
+        treeNode.forEach (node) =>
+          @digBookmarks node, recent, query, 1, state
     false
   
-  digBookmarks: (node, parent, query, indent) ->
+  digBookmarks: (node, parent, query, indent, state) ->
     if node.title
+      node.state = state
       if node.children
-        #console.log Array(indent).join("  ") + "folder: " + node.title
-        folderIndent = indent / 2
-        parent.append newParent = $("""<div class="folder" style="text-indent:#{folderIndent}em"><span class="folder"><i class="icon-folder-open"></i>#{node.title}</span></div>""")
+        node.indent = indent
+        parent.append newParent = $(@tmplFolder(node))
         parent = newParent
       else
-        #console.log Array(indent).join("  ") + "title: " + node.title
         if !query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1
-          parent.append """<div style="text-indent:#{indent}em"><a href="#" title="#{node.url}" data-id="#{node.id}">#{node.title}</a></div>"""
+          node.indent = indent + 1
+          parent.append $(@tmplLink(node))
     else
       indent--
     if node.children
+      parent.parent().addClass("hasFolder")
       node.children.forEach (child) =>
-        @digBookmarks child, parent, query, indent + 1
+        @digBookmarks child, parent, query, indent + 1, state
   
   hideBookmarks: ->
     endEditing()
@@ -590,6 +612,18 @@ BookmarksView = Backbone.View.extend
     target = $(event.currentTarget)
     @trigger "setBookmark", @modelId, {title: target.text(), url: target.attr("title"), bmId: target.attr("data-id")}
     @hideBookmarks()
+  
+  tmplFolder: _.template """
+    <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
+      <span class="expand-icon"></span><span class="title"><%=title%></span>
+    </div>
+    """
+
+  tmplLink: _.template """
+    <div class="link" style="text-indent:<%=indent%>em;">
+      <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></a>
+    </div>
+    """
 
 marginBottom = 0
 resizeTimer = false

@@ -352,13 +352,28 @@ th i.icon-arrow-right {
   box-shadow: 0 0 20px black;
   border-radius: 1px;
 }
-.bookmarks form {
-  padding-bottom: 5px;
+.expand-icon {
+  -webkit-transform: rotate(-90deg);
+  -webkit-transition: all 150ms;
+  background-image: -webkit-canvas(triangle);
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  display: inline-block;
+  height: 16px;
+  opacity: .6;
+  position: relative;
+  top: 2px;
+  vertical-align: top;
+  width: 16px;
 }
 .bookmarks .icon-remove {
-  float: right;
-  cursor: pointer;
-  font-size: 18px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 1.1em;
+}
+.bookmarks form {
+  padding-bottom: 5px;
 }
 .bookmarks .result_outer {
   overflow: auto;
@@ -373,15 +388,61 @@ th i.icon-arrow-right {
 .bookmarks button.query {
   margin-left: 5px;
 }
-.bookmarks .icon-folder-open {
-  margin-right: 2px;
-  color: rgb(255, 216, 0);
+.bookmarks .title {
+  position: relative;
+  -webkit-padding-start: 20px;
+  background-position: 0 50%;
+  background-repeat: no-repeat;
 }
-.bookmarks .icon-folder-close {
-  margin-right: 2px;
-  color: rgb(255, 216, 0);
+.bookmarks .opened > .title {
+  background-image: -webkit-image-set( url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAASCAYAAAC5DOVpAAABU0lEQVR42rXU30rCcBjGca+s7qDTToNgB50E4UlQrKigg4r+GlmrhIQySAiDCDO7gBSVwCxbpVQsXQUFQdueXt+1gW2CjnXwZYPf+PAMxgIAfMt/bLyvW6DgkuAFQ70Y574qJ1wxOctgJxivCo32IxMLctn9IS63NwBpuIfBdlfzKuP9HMZbozT019/UNLT6mVkthe8XSjnlPi83rdWiA9MJMdQkqvkowiO9nWYt7TIxlbDaMR8YSgLG8yGMpzhQiQL3EUCWgHIYuFnltPyM3UcyaK0cY4xeheanGMPjAfCwA9xtA7cbhKwB1yGgtAwUpjntYqI1ZkPVGCBvEbJuriitUEvA1SKQm7JijK5NEBVoxsphXmEDxQVq3kLs9MwkQ64YQ3KkAVAMcC4QpxXmHJBX7O8qsQlTjgb5sN3o+ZbfmUCh0xK7kgOzbkQv/fsvyLd+AMFi/otH877xAAAAAElFTkSuQmCC') 1x);
 }
-.bookmarks span.folder {
+.bookmarks .opened > .link {
+  display: block;
+}
+.bookmarks .folder:not(.opened) > .title {
+  background-image: -webkit-image-set(url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAASCAYAAAC5DOVpAAABMElEQVR4Xs2Ur0oEURhHzxVFcIPJIGizGX0Bg8GnWLC4BoPBYDJYtctYRLCITXwAi31REGxuMphk3WXn3/3kx51hdoPLrCzogQ+Gb7iHw8AdZ2ZMixmmyCzAyc7mLhAhRmkdXz5cTCSTaP/oANFoNBBvr8/cXN9FQH2ZqpZW1+g8PSKc84gZP2BleVHVhqhRrbJo77AJBmCYETBY3zIEFvbly+Sjw9nplao1bliGmeF8BhjOPGi8L55znM+LXY6I31/GfDMPSFaJgiTra1+MhDnjqMryVKJQUUmCoCyLv2rIcsmScCjtgZU1PmSbwaALUEOmQ1kCabeqMQuDQdyjoF4ZKssGQCkRSPSH1+mzfc/C/Bx16cfpj7LW+W07YkI2tpuIEcwM+z0Mj8qE+3f/s2+HifXuxm91UAAAAABJRU5ErkJggg==') 1x);
+}
+.bookmarks .folder:not(.opened) > .link {
+  display: none;
+}
+.bookmarks .expanded > .expand-icon {
+  -webkit-transform: rotate(0);
+}
+.bookmarks .expanded > .folder {
+  display: block;
+}
+.bookmarks .folder:not(.expanded) > .folder {
+  display: none;
+}
+.bookmarks .folder:not(.hasFolder) > .expand-icon {
+  visibility: hidden;
+}
+/*
+.bookmarks .icon-star {
+  font-size: 9px;
+  position: absolute;
+  left: 3px;
+  bottom: 4px;
+  color: blue;
+}
+.bookmarks .opened .icon-star {
+  font-size: 8px;
+  left: 6px;
+}
+.bookmarks .folder.recent > .title {
+  background-image: url(/images/star.png)
+}
+.bookmarks .opened.recent > .title {
+  background-image: url(/images/star.png)
+}
+*/
+.bookmarks a {
+  -webkit-padding-start: 20px;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+.bookmarks .folder span {
   cursor: pointer;
 }
 .backscreen {
