@@ -227,7 +227,9 @@ KeyConfigView = Backbone.View.extend
     switch mode = @model.get "mode"
       #when "simEvent"
       when "bookmark"
-        tdDesc.append """<div><i class="icon-star"></i></div><div class="bookmark" title="#{@model.get("bookmark").url}">#{@model.get("bookmark").title}</div>"""
+        #tdDesc.append """<div><i class="icon-star"></i></div><div class="bookmark" title="#{@model.get("bookmark").url}">#{@model.get("bookmark").title}</div>"""
+        url = @model.get("bookmark").url
+        tdDesc.append """<div class="bookmark" title="#{url}" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/#{url}) 1x);">#{@model.get("bookmark").title}</div>"""
       when "assignOrg", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "assignOrg"
@@ -244,15 +246,15 @@ KeyConfigView = Backbone.View.extend
             key = RegExp.$1
             content = RegExp.$2
             tdDesc
-              .append(@templateHelp
+              .append(@tmplHelp
                 sectDesc: scHelpSect[key]
                 sectKey:  key
                 scHelp:   content
               ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
     if tdDesc.html() is ""
-      tdDesc.append @templateMemo memo: @model.get("memo")
+      tdDesc.append @tmplMemo memo: @model.get("memo")
 
-  templateMemo: _.template """
+  tmplMemo: _.template """
     <div>
       <i class="icon-pencil" title="Edit description"></i>
     </div>
@@ -262,7 +264,7 @@ KeyConfigView = Backbone.View.extend
     <div class="memo"><%=memo%></div>
     """
   
-  templateHelp: _.template """
+  tmplHelp: _.template """
     <div class="sectInit" title="<%=sectDesc%>"><%=sectKey%></div><div class="content"><%=scHelp%></div>
     """
   
@@ -444,9 +446,12 @@ KeyConfigSetView = Backbone.View.extend
     scanCode = value.substring(2)
     keyIdenfiers = keys[scanCode]
     keyCombo = []
-    keyCombo.push "Ctrl" if modifiers & 1
-    keyCombo.push "Alt"  if modifiers & 2
-    keyCombo.push "Win"  if modifiers & 8
+    keyCombo.push "Ctrl"    if modifiers &  1
+    keyCombo.push "Alt"     if modifiers &  2
+    keyCombo.push "Win"     if modifiers &  8
+    keyCombo.push "MouseL"  if modifiers & 16
+    keyCombo.push "MouseR"  if modifiers & 32
+    keyCombo.push "MouseM"  if modifiers & 64
     if modifiers & 4
       keyCombo.push "Shift"
       keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
@@ -557,15 +562,17 @@ BookmarksView = Backbone.View.extend
     @hideBookmarks()
   
   onShowBookmarks: (id) ->
+    if @$(".result").children().length is 0
+      @onSubmitForm()
     @modelId = id
     height = window.innerHeight - 80
     left = (window.innerWidth - 600) / 2
     @el.style.pixelTop = 20
     @el.style.pixelLeft = left
     @$(".result_outer").height(height - 30)
-    @$el.height(height)
-      .show()
-      .find("input.query").focus()
+    @$el.height(height).show()
+    if (target = @$("input.query")).val()
+      target.focus()
     @$(".result_outer").getNiceScroll().show()
     $(".backscreen").show()
     startEditing()
@@ -573,6 +580,8 @@ BookmarksView = Backbone.View.extend
   onSubmitForm: ->
     @$(".result").empty()
     query = @$("input.query").val()
+    if query
+      @$(".expand")[0].checked = true
     state = if @$(".expand").is(":checked") then "opened expanded" else ""
     chrome.bookmarks.getTree (treeNode) =>
       treeNode.forEach (node) =>
@@ -621,7 +630,7 @@ BookmarksView = Backbone.View.extend
 
   tmplLink: _.template """
     <div class="link" style="text-indent:<%=indent%>em;">
-      <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></a>
+      <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);"><%=title%></a>
     </div>
     """
 

@@ -246,11 +246,12 @@
       }
     },
     setDesc: function() {
-      var content, help, i, key, keycombo, lang, mode, tdDesc, test, _i, _ref;
+      var content, help, i, key, keycombo, lang, mode, tdDesc, test, url, _i, _ref;
       (tdDesc = this.$(".desc")).empty();
       switch (mode = this.model.get("mode")) {
         case "bookmark":
-          tdDesc.append("<div><i class=\"icon-star\"></i></div><div class=\"bookmark\" title=\"" + (this.model.get("bookmark").url) + "\">" + (this.model.get("bookmark").title) + "</div>");
+          url = this.model.get("bookmark").url;
+          tdDesc.append("<div class=\"bookmark\" title=\"" + url + "\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/" + url + ") 1x);\">" + (this.model.get("bookmark").title) + "</div>");
           break;
         case "assignOrg":
         case "through":
@@ -272,7 +273,7 @@
               test = help[lang][i].match(/(^\w+)\^(.+)/);
               key = RegExp.$1;
               content = RegExp.$2;
-              tdDesc.append(this.templateHelp({
+              tdDesc.append(this.tmplHelp({
                 sectDesc: scHelpSect[key],
                 sectKey: key,
                 scHelp: content
@@ -285,13 +286,13 @@
           }
       }
       if (tdDesc.html() === "") {
-        return tdDesc.append(this.templateMemo({
+        return tdDesc.append(this.tmplMemo({
           memo: this.model.get("memo")
         }));
       }
     },
-    templateMemo: _.template("<div>\n  <i class=\"icon-pencil\" title=\"Edit description\"></i>\n</div>\n<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
-    templateHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
+    tmplMemo: _.template("<div>\n  <i class=\"icon-pencil\" title=\"Edit description\"></i>\n</div>\n<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
+    tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
     template: _.template("<tr class=\"data\">\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-arrow-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(name, key) { %>\n      <div class=\"<%=key%>\"><%=name%></div>\n      <% }); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Remove\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
@@ -490,6 +491,15 @@
       if (modifiers & 8) {
         keyCombo.push("Win");
       }
+      if (modifiers & 16) {
+        keyCombo.push("MouseL");
+      }
+      if (modifiers & 32) {
+        keyCombo.push("MouseR");
+      }
+      if (modifiers & 64) {
+        keyCombo.push("MouseM");
+      }
       if (modifiers & 4) {
         keyCombo.push("Shift");
         keyCombo.push(keyIdenfiers[1] || keyIdenfiers[0]);
@@ -580,14 +590,20 @@
       return this.hideBookmarks();
     },
     onShowBookmarks: function(id) {
-      var height, left;
+      var height, left, target;
+      if (this.$(".result").children().length === 0) {
+        this.onSubmitForm();
+      }
       this.modelId = id;
       height = window.innerHeight - 80;
       left = (window.innerWidth - 600) / 2;
       this.el.style.pixelTop = 20;
       this.el.style.pixelLeft = left;
       this.$(".result_outer").height(height - 30);
-      this.$el.height(height).show().find("input.query").focus();
+      this.$el.height(height).show();
+      if ((target = this.$("input.query")).val()) {
+        target.focus();
+      }
       this.$(".result_outer").getNiceScroll().show();
       $(".backscreen").show();
       return startEditing();
@@ -597,6 +613,9 @@
         _this = this;
       this.$(".result").empty();
       query = this.$("input.query").val();
+      if (query) {
+        this.$(".expand")[0].checked = true;
+      }
       state = this.$(".expand").is(":checked") ? "opened expanded" : "";
       chrome.bookmarks.getTree(function(treeNode) {
         var recent;
@@ -659,7 +678,7 @@
       return this.hideBookmarks();
     },
     tmplFolder: _.template("<div class=\"folder <%=state%>\" style=\"text-indent:<%=indent%>em\">\n  <span class=\"expand-icon\"></span><span class=\"title\"><%=title%></span>\n</div>"),
-    tmplLink: _.template("<div class=\"link\" style=\"text-indent:<%=indent%>em;\">\n  <a href=\"#\" title=\"<%=url%>\" data-id=\"<%=id%>\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);\"><%=title%></a>\n</div>")
+    tmplLink: _.template("<div class=\"link\" style=\"text-indent:<%=indent%>em;\">\n  <a href=\"#\" title=\"<%=url%>\" data-id=\"<%=id%>\" style=\"background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);\"><%=title%></a>\n</div>")
   });
 
   marginBottom = 0;

@@ -38,6 +38,7 @@ body {
 .addKeyConfig {
   margin: 5px;
   margin-right: 20px;
+  padding: 7px 10px;
   float: right;
 }
 .kbdtype, .scHelp {
@@ -105,7 +106,6 @@ tbody .data:hover {
   box-shadow: none;
   border: 1px solid rgba(0,0,0,0);
   cursor: pointer;
-  border-radius: 5px;
 }
 .proxy.assignOrg span {
   color: #000000;
@@ -309,6 +309,12 @@ th i.icon-arrow-right {
   font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
   width: 90%;
 }
+.keyConfigSetView .desc .bookmark {
+  -webkit-padding-start: 20px;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  background-position-y: 2px;
+}
 .keyConfigSetView .remove {
   text-align: right;
   padding-right: 8px;
@@ -375,18 +381,25 @@ th i.icon-arrow-right {
 .bookmarks form {
   padding-bottom: 5px;
 }
+.bookmarks form button[type='submit'] {
+  margin-left: -23px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.bookmarks .query {
+  padding-right: 23px;
+}
+.bookmarks .expand {
+  margin-left: 8px;
+}
 .bookmarks .result_outer {
   overflow: auto;
 }
 .bookmarks .result {
   white-space: nowrap;
   padding-bottom: 15px;
-}
-.bookmarks input.query {
-  margin-left: 5px;
-}
-.bookmarks button.query {
-  margin-left: 5px;
 }
 .bookmarks .title {
   position: relative;
@@ -418,25 +431,6 @@ th i.icon-arrow-right {
 .bookmarks .folder:not(.hasFolder) > .expand-icon {
   visibility: hidden;
 }
-/*
-.bookmarks .icon-star {
-  font-size: 9px;
-  position: absolute;
-  left: 3px;
-  bottom: 4px;
-  color: blue;
-}
-.bookmarks .opened .icon-star {
-  font-size: 8px;
-  left: 6px;
-}
-.bookmarks .folder.recent > .title {
-  background-image: url(/images/star.png)
-}
-.bookmarks .opened.recent > .title {
-  background-image: url(/images/star.png)
-}
-*/
 .bookmarks a {
   -webkit-padding-start: 20px;
   background-repeat: no-repeat;

@@ -127,7 +127,6 @@ var
   bytesRead: Cardinal;
   hWindow: HWnd;
   buf: array[0..1000] of AnsiChar;
-  msg: PMsg;
   mouseInfo: TMsllHookStruct;
   msgAlt: Int64;
   msgFlag: UInt64;
@@ -137,8 +136,8 @@ begin
     Result:= CallNextHookEx(hookMouse, code, wPrm, lPrm);
     Exit;
   end;
-  msgAlt:= wPrm - $0200; //msg^.message - $0200;
-  if not (msgAlt in [MSG_MOUSE_LDOWN, MSG_MOUSE_RDOWN, MSG_MOUSE_MDOWN, MSG_MOUSE_WHEEL]) then begin
+  msgAlt:= wPrm - $0200;
+  if (msgAlt in [MSG_MOUSE_LDBL, MSG_MOUSE_RDBL, MSG_MOUSE_MDBL]) or not (msgAlt in [MSG_MOUSE_LDOWN..MSG_MOUSE_WHEEL]) then begin
     Result:= CallNextHookEx(HookMouse, code, wPrm, lPrm);
     Exit;
   end;
@@ -146,6 +145,7 @@ begin
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
   if AnsiEndsText('chrome.exe', buf) then begin
     mouseInfo:= PMsllHookStruct(lPrm)^;
+    Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
     if wPrm = WM_MOUSEWHEEL then begin
       mouseData:= Hiword(mouseInfo.mouseData);
       if mouseData > 0 then

@@ -20,17 +20,29 @@ type
 
   TMouseHookTh = class(THookTh)
   protected
+    stateDownL, stateDownM, stateDownR: Boolean;
     function VaridateEvent(wPrm: UInt64): Boolean; override;
   public
   end;
 
 const
   MSG_MOUSE_LDOWN = WM_LBUTTONDOWN - $0200;
+  MSG_MOUSE_LUP   = WM_LBUTTONUP   - $0200;
+  MSG_MOUSE_LDBL  = WM_LBUTTONDBLCLK - $200;
   MSG_MOUSE_RDOWN = WM_RBUTTONDOWN - $0200;
+  MSG_MOUSE_RUP   = WM_RBUTTONUP   - $0200;
+  MSG_MOUSE_RDBL  = WM_RBUTTONDBLCLK - $0200;
   MSG_MOUSE_MDOWN = WM_MBUTTONDOWN - $0200;
+  MSG_MOUSE_MUP   = WM_MBUTTONUP   - $0200;
+  MSG_MOUSE_MDBL  = WM_MBUTTONDBLCLK - $0200;
   MSG_MOUSE_WHEEL = WM_MOUSEWHEEL  - $0200;
   WM_WHEEL_UP   = $020B;
   WM_WHEEL_DOWN = $020D;
+
+var
+  FLAG_LDOWN: Byte = 16;
+  FLAG_RDOWN: Byte = 32;
+  FLAG_MDOWN: Byte = 64;
 
 implementation
 
@@ -44,6 +56,7 @@ var
   KeyInputs: array of TInput;
   KeyInputCount: Integer;
   newScans: TArrayCardinal;
+  stateButton: Int64;
   procedure  KeybdInput(scanCode: Cardinal; Flags: DWord);
   begin
     Inc(KeyInputCount);
@@ -98,9 +111,22 @@ begin
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * FLAG_MENU);
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * FLAG_SHIFT);
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
+  // Mouse events
+  modifierFlags:= modifierFlags or (Ord(stateDownL) * FLAG_LDOWN);
+  modifierFlags:= modifierFlags or (Ord(stateDownR) * FLAG_RDOWN);
+  modifierFlags:= modifierFlags or (Ord(stateDownM) * FLAG_MDOWN);
   //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(wPrm, 4) + ': ' + scans);
+  stateButton:= wPrm - $200;
+  case stateButton of
+    MSG_MOUSE_LDOWN: stateDownL:= True;
+    MSG_MOUSE_RDOWN: stateDownR:= True;
+    MSG_MOUSE_MDOWN: stateDownM:= True;
+    MSG_MOUSE_LUP  : stateDownL:= False;
+    MSG_MOUSE_RUP  : stateDownR:= False;
+    MSG_MOUSE_MUP  : stateDownM:= False;
+  end;
   // Exit 1
-  if (modifierFlags = 0) then
+  if (modifierFlags = 0) or (stateButton in [MSG_MOUSE_LUP, MSG_MOUSE_RUP, MSG_MOUSE_MUP]) then
     Exit;
 
   scans:= IntToHex(modifierFlags, 2) + IntToStr(wPrm);
@@ -114,7 +140,6 @@ begin
       Result:= True;
       keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
       if keyConfig.mode = 'assignOrg' then begin
-        //modifierRelCount:= 0;
         modifiersBoth:= modifierFlags and keyConfig.modifierFlags;
         // CONTROL
         if (modifiersBoth and FLAG_CONTROL) <> 0 then begin
@@ -122,15 +147,10 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_CONTROL) <> 0 then begin
             AddScan(SCAN_LCONTROL);
-            //if (virtualOffModifires and FLAG_CONTROL) = 0 then
-            //  virtualModifires:= virtualModifires or FLAG_CONTROL;
           end
           else if ((modifierFlags and FLAG_CONTROL) <> 0) then begin
             ReleaseModifier(VK_RCONTROL, SCAN_RCONTROL, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LCONTROL, SCAN_LCONTROL, 0);
-            //Inc(modifierRelCount, 2);
-            //if (virtualModifires and FLAG_CONTROL) = 0 then
-            //  virtualOffModifires:= virtualOffModifires or FLAG_CONTROL;
           end;
         end;
         // ALT
@@ -139,15 +159,10 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_MENU) <> 0 then begin
             AddScan(SCAN_LMENU);
-            //if (virtualOffModifires and FLAG_MENU) = 0 then
-            //  virtualModifires:= virtualModifires or FLAG_MENU;
           end
           else if ((modifierFlags and FLAG_MENU) <> 0) then begin
             ReleaseModifier(VK_RMENU, SCAN_RMENU, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LMENU, SCAN_LMENU, 0);
-            //Inc(modifierRelCount, 2);
-            //if (virtualModifires and FLAG_MENU) = 0 then
-            //  virtualOffModifires:= virtualOffModifires or FLAG_MENU;
           end;
         end;
         // SHIFT
@@ -156,15 +171,10 @@ begin
         end else begin
           if (keyConfig.modifierFlags and FLAG_SHIFT) <> 0 then begin
             AddScan(SCAN_LSHIFT);
-            //if (virtualOffModifires and FLAG_SHIFT) = 0 then
-            //  virtualModifires:= virtualModifires or FLAG_SHIFT;
           end
           else if ((modifierFlags and FLAG_SHIFT) <> 0) then begin
             ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, 0);
             ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, 0);
-            //Inc(modifierRelCount, 2);
-            //if (virtualModifires and FLAG_SHIFT) = 0 then
-            //  virtualOffModifires:= virtualOffModifires or FLAG_SHIFT;
           end;
         end;
         // WIN
@@ -172,30 +182,17 @@ begin
           ;
         end else begin
           if (keyConfig.modifierFlags and FLAG_WIN) <> 0 then begin
-            //Write2EventLog('FlexKbd', 'addwin');
             AddScan(SCAN_LWIN);
-            //if (virtualOffModifires and FLAG_WIN) = 0 then
-            //  virtualModifires:= virtualModifires or FLAG_WIN;
           end
           else if ((modifierFlags and FLAG_WIN) <> 0) then begin
             ReleaseModifier(VK_RWIN, SCAN_RWIN, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LWIN, SCAN_LWIN, KEYEVENTF_EXTENDEDKEY);
-            //Inc(modifierRelCount, 2);
-            //if (virtualModifires and FLAG_WIN) = 0 then
-            //  virtualOffModifires:= virtualOffModifires or FLAG_WIN;
           end;
         end;
         //if keyDownState = 0 then
         AddScan(keyConfig.scanCode);
-        //for I:= 0 to Length(newScans) - 1 do begin
-        //  KeybdInput(newScans[I], keyDownState);
-        //end;
         MakeKeyInputs(newScans, 0);
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
-        //lastOrgModified:= keyConfig.orgModified;
-        //lastTarget:= scans;
-        //lastModified:= keyConfig.origin;
-        //virtualScanCode:= keyConfig.scanCode;
       end else if keyConfig.mode = 'simEvent' then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end else if keyConfig.mode = 'bookmark' then begin
