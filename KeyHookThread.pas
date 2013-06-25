@@ -35,18 +35,18 @@ var
     with KeyInputs[KeyInputCount - 1].ki do
     begin
       wVk:= MapVirtualKeyEx(scanCode, 3, GetKeyboardLayout(0));
-      wScan := scanCode;
-      dwFlags := Flags;
+      wScan:= scanCode;
+      dwFlags:= Flags;
       if scanCode > $100 then begin
-        dwFlags := dwFlags or KEYEVENTF_EXTENDEDKEY;
+        dwFlags:= dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
         wVk:= MapVirtualKeyEx(wScan, 3, GetKeyboardLayout(0));
       end;
-      time := 0;
+      time:= 0;
       dwExtraInfo:= 0;
     end;
   end;
-  procedure  ReleaseModifier(vkCode, scanCode: Cardinal; Flags: DWord);
+  procedure ReleaseModifier(vkCode, scanCode: Cardinal; Flags: DWord);
   begin
     Inc(KeyInputCount);
     SetLength(KeyInputs, KeyInputCount);
@@ -55,8 +55,8 @@ var
     begin
       wVk:= vkCode;
       wScan:= scanCode;
-      dwFlags := KEYEVENTF_KEYUP or Flags;
-      time := 0;
+      dwFlags:= KEYEVENTF_KEYUP or Flags;
+      time:= 0;
       dwExtraInfo:= 0;
     end;
   end;
@@ -95,11 +95,11 @@ begin
   scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
   //Write2EventLog('FlexKbd', IntToHex(scanCode, 8));
   keyDownState:= 0;
-  if (scanCode and $8000) <> $0 then begin
+  if (scanCode and $8000) <> 0 then begin
     keyDownState:= KEYEVENTF_KEYUP;
     scanCode:= scanCode and $7FFF;
   end;
-  if (scanCode and $6000) <> $0 then begin
+  if (scanCode and $6000) <> 0 then begin
     scanCode:= scanCode and $1FFF; // ÉäÉsÅ[Ég or Alt
   end;
   //Write2EventLog('FlexKbd', IntToStr(seq) + ') ' + IntToStr(scanCode) + ': ' + IntToHex(scanCode, 8) + ': '+ IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(keyDownState));
@@ -214,7 +214,7 @@ begin
               virtualModifires:= virtualModifires or FLAG_SHIFT;
           end
           else if ((modifierFlags and FLAG_SHIFT) <> 0) and (keyDownState = 0) then begin
-            ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, 0);
+            ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, KEYEVENTF_EXTENDEDKEY);
             ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, 0);
             Inc(modifierRelCount, 2);
             if (virtualModifires and FLAG_SHIFT) = 0 then
@@ -226,7 +226,6 @@ begin
           ;
         end else begin
           if (keyConfig.modifierFlags and FLAG_WIN) <> 0 then begin
-            //Write2EventLog('FlexKbd', 'addwin');
             AddScan(SCAN_LWIN);
             if (virtualOffModifires and FLAG_WIN) = 0 then
               virtualModifires:= virtualModifires or FLAG_WIN;

@@ -145,7 +145,7 @@ begin
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
   if AnsiEndsText('chrome.exe', buf) then begin
     mouseInfo:= PMsllHookStruct(lPrm)^;
-    Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
+    //Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
     if wPrm = WM_MOUSEWHEEL then begin
       mouseData:= Hiword(mouseInfo.mouseData);
       if mouseData > 0 then

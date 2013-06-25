@@ -38,11 +38,9 @@ const
   MSG_MOUSE_WHEEL = WM_MOUSEWHEEL  - $0200;
   WM_WHEEL_UP   = $020B;
   WM_WHEEL_DOWN = $020D;
-
-var
-  FLAG_LDOWN: Byte = 16;
-  FLAG_RDOWN: Byte = 32;
-  FLAG_MDOWN: Byte = 64;
+  FLAG_LDOWN = 16;
+  FLAG_RDOWN = 32;
+  FLAG_MDOWN = 64;
 
 implementation
 

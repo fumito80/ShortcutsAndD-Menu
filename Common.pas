@@ -36,22 +36,22 @@ type
 const
   keyPipeName   = '\\.\pipe\flexkbd';
   mousePipeName = '\\.\pipe\flexmouse';
+  SCAN_LCONTROL =  $1D;
+  SCAN_RCONTROL = $11D;
+  SCAN_LMENU    =  $38;
+  SCAN_RMENU    = $138;
+  SCAN_LSHIFT   =  $2A;
+  SCAN_RSHIFT   =  $36;
+  SCAN_LWIN     = $15B;
+  SCAN_RWIN     = $15C;
+  FLAG_CONTROL  = 1;
+  FLAG_MENU     = 2;
+  FLAG_SHIFT    = 4;
+  FLAG_WIN      = 8;
 
 var
   modifiersCode: array[0..7] of Cardinal;
   g_configMode: Boolean;
-  SCAN_LCONTROL: Cardinal =  $1D;
-  SCAN_RCONTROL: Cardinal = $11D;
-  SCAN_LMENU   : Cardinal =  $38;
-  SCAN_RMENU   : Cardinal = $138;
-  SCAN_LSHIFT  : Cardinal =  $2A;
-  SCAN_RSHIFT  : Cardinal =  $36;
-  SCAN_LWIN    : Cardinal = $15B;
-  SCAN_RWIN    : Cardinal = $15C;
-  FLAG_CONTROL : Byte     = 1;
-  FLAG_MENU    : Byte     = 2;
-  FLAG_SHIFT   : Byte     = 4;
-  FLAG_WIN     : Byte     = 8;
 
 implementation
 
