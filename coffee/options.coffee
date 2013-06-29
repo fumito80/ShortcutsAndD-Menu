@@ -288,7 +288,7 @@ KeyConfigView = Backbone.View.extend
         </div>
       <td class="desc"></td>
       <td class="remove">
-        <i class="icon-remove" title="Remove"></i>
+        <i class="icon-remove" title="Delete"></i>
       </td>
       <td class="blank">&nbsp;</td>
     </tr>
@@ -565,7 +565,7 @@ BookmarksView = Backbone.View.extend
     if @$(".result").children().length is 0
       @onSubmitForm()
     @modelId = id
-    height = window.innerHeight - 80
+    height = window.innerHeight - 60
     left = (window.innerWidth - 600) / 2
     @el.style.pixelTop = 20
     @el.style.pixelLeft = left
@@ -579,7 +579,7 @@ BookmarksView = Backbone.View.extend
   
   onSubmitForm: ->
     @$(".result").empty()
-    query = @$("input.query").val()
+    query = @$("input.query").focus().val()
     if query
       @$(".expand")[0].checked = true
     state = if @$(".expand").is(":checked") then "opened expanded" else ""

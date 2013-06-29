@@ -1,4 +1,4 @@
-copy flexkbd.dll extension
-cmd /c coffee -co extension coffee
-rem cmd /c coffee -cob extension coffee\indexedDB.coffee
+copy flexkbd.dll shortcutsremapper
+cmd /c coffee -co shortcutsremapper coffee
+rem cmd /c coffee -cob shortcutsremapper coffee\indexedDB.coffee
 pause
