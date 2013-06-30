@@ -34,13 +34,13 @@ var
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
     with KeyInputs[KeyInputCount - 1].ki do
     begin
-      wVk:= MapVirtualKeyEx(scanCode, 3, GetKeyboardLayout(0));
+      wVk:= MapVirtualKeyEx(scanCode, 3, kbdLayout);
       wScan:= scanCode;
       dwFlags:= Flags;
       if scanCode > $100 then begin
         dwFlags:= dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
-        wVk:= MapVirtualKeyEx(wScan, 3, GetKeyboardLayout(0));
+        wVk:= MapVirtualKeyEx(wScan, 3, kbdLayout);
       end;
       time:= 0;
       dwExtraInfo:= 0;
@@ -73,7 +73,7 @@ var
       ReleaseModifier(VK_LMENU, SCAN_LMENU, Flags);
     end;
     if (virtualModifires and FLAG_SHIFT) <> 0 then begin
-      ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, Flags);
+      ReleaseModifier(VK_RSHIFT, SCAN_RSHIFT, Flags or KEYEVENTF_EXTENDEDKEY);
       ReleaseModifier(VK_LSHIFT, SCAN_LSHIFT, Flags);
     end;
     if (virtualModifires and FLAG_WIN) <> 0 then begin
@@ -102,7 +102,7 @@ begin
   if (scanCode and $6000) <> 0 then begin
     scanCode:= scanCode and $1FFF; // リピート or Alt
   end;
-  //Write2EventLog('FlexKbd', IntToStr(seq) + ') ' + IntToStr(scanCode) + ': ' + IntToHex(scanCode, 8) + ': '+ IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(keyDownState));
+  //Write2EventLog('FlexKbd', IntToStr(seq) + ') ' + IntToStr(scanCode) + ': ' + IntToHex(scanCode, 8) + ': '+ IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
   GetKeyState(0);
   GetKeyboardState(KeyState);
   modifierFlags:= 0;
@@ -111,20 +111,20 @@ begin
   modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * FLAG_SHIFT);
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
   scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
-  //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, GetKeyboardLayout(0)), 4) + ': ' + IntToStr(keyDownState));
+  //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
 
   // Exit1 --> Modifierキー単独のとき
   for I:= 0 to 7 do begin
     if scanCode = modifiersCode[I] then begin
       if (modifierRelCount > -1) and (keyDownState = KEYEVENTF_KEYUP) then begin
         if modifierRelCount = 0 then begin
-          AlterModified(virtualModifires, virtualScanCode, KEYEVENTF_KEYUP);
           virtualOffModifires:= 0;
           virtualOffModifiresFlag:= False;
           modifierRelCount:= -1;
           lastTarget:= '';
           lastModified:= '';
           lastOrgModified:= '';
+          AlterModified(virtualModifires, virtualScanCode, KEYEVENTF_KEYUP);
           //Write2EventLog('FlexKbd', 'end');
         end else begin
           Dec(modifierRelCount);
@@ -133,8 +133,8 @@ begin
       Exit;
     end;
   end;
-  // Exit2 --> Modifierキーが押されていない ＆ ファンクションキーじゃないとき
-  if (modifierFlags = 0)
+  // Exit2 --> Modifierキーが押されていない or Shiftのみ ＆ ファンクションキーじゃないとき
+  if (modifierFlags in [0, 4])
     and not(scancode in [$3B..$44, $57, $58])
     and not((keyDownState = 0) and (virtualScanCode in [$3B..$44, $57, $58])) then
       Exit;
@@ -154,10 +154,24 @@ begin
       scans:= IntToHex(modifierFlags and (not virtualModifires) or virtualOffModifires, 2) + IntToStr(scanCode);
     end
     else if (scans = lastModified) and (scanCode = virtualScanCode) then begin
-      // 循環参照対応
-      //Write2EventLog('FlexKbd', 'Exit');
+      // エコーバックは捨てる(循環参照対応)
+      //
       if keyDownState = KEYEVENTF_KEYUP then
         virtualScanCode:= 0;
+        // 単独キーのとき --> 中止
+        {
+        if LeftBStr(lastTarget, 2) = '00' then begin
+          //Write2EventLog('FlexKbd', IntToStr(virtualModifires));
+          virtualOffModifires:= 0;
+          virtualOffModifiresFlag:= False;
+          modifierRelCount:= -1;
+          lastTarget:= '';
+          lastModified:= '';
+          lastOrgModified:= '';
+          dumScanCode:= 0;
+          AlterModified(virtualModifires, dumScanCode, KEYEVENTF_KEYUP);
+        end;
+        }
       Exit;
     end;
 
@@ -248,10 +262,10 @@ begin
         lastTarget:= scans;
         lastModified:= keyConfig.origin;
         virtualScanCode:= keyConfig.scanCode;
-      end else if keyConfig.mode = 'simEvent' then begin
+      end else if (keyDownState = 0) and (keyConfig.mode = 'simEvent') then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
-      end else if keyConfig.mode = 'bookmark' then begin
-        browser.Invoke('pluginEvent', ['bookmark', scans]);
+      end else if (keyDownState = 0) and ((keyConfig.mode = 'bookmark') or (keyConfig.mode = 'command')) then begin
+        browser.Invoke('pluginEvent', [keyConfig.mode, scans]);
       end else if keyConfig.mode = 'through' then begin
         Result:= False;
       end;

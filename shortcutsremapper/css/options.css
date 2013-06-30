@@ -96,7 +96,8 @@ tbody .data:hover {
   right: 0;
 }
 .proxy, .origin {
-  color: #518BAB;
+  /* color: #518BAB; */
+  color: #000000;
   min-width: 80px;
   white-space: nowrap;
   font: 1.2em 'Arial';
@@ -107,21 +108,26 @@ tbody .data:hover {
   border: 1px solid rgba(0,0,0,0);
   cursor: pointer;
 }
+/*
 .proxy.assignOrg span {
   color: #000000;
 }
 .proxy.simEvent span {
   color: #00AA00;
 }
-.origin.simEvent, .icon-arrow-right.simEvent {
-  display: none;
+.proxy.bookmark span {
+  color: rgb(255, 192, 0);
 }
+*/
 .proxy.disabled span {
   color: #CC0000;
 }
 .proxy.through span {
   color: #333333;
   background: #DDDDDD;
+}
+.origin.simEvent, .icon-arrow-right.simEvent {
+  display: none;
 }
 .origin.disabled, .icon-arrow-right.disabled {
   display: none;
@@ -233,8 +239,11 @@ div.mode.selecting i {
 .options .through {
   color: gray;
 }
-.options .bookmark {
+.options .command {
   color: #518BAB;
+}
+.options .bookmark {
+  color: rgb(255, 192, 0);
 }
 i.icon-arrow-right {
   color: #518BAB;
@@ -264,19 +273,24 @@ th i.icon-arrow-right {
   padding-left: 10px;
   cursor: default;
 }
-.keyConfigSetView .desc .sectInit {
-  background: rgb(122, 122, 160);
+.sectInit, .commandIcon {
   border-radius: 3px;
   color: white;
   padding: 0 3px;
   margin-top: 2px;
   margin-right: 3px;
   font-size: 12px;
-  width: 17px;
   height: 17px;
   text-align: center;
   cursor: default;
   float: left;
+}
+.sectInit {
+  width: 17px;
+  background: rgb(122, 122, 160);  
+}
+.commandIcon {
+  background: rgb(133, 203, 241);
 }
 .keyConfigSetView .desc .content {
   overflow: auto;
@@ -350,15 +364,34 @@ th i.icon-arrow-right {
   width: 0;
   height: 0;
 }
-.bookmarks {
+.backscreen {
+  display: none;
+  position: absolute;
+  z-index: 999998;
+  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.bookmarks, .commands {
   display: none;
   position: fixed;
   z-index: 999999;
-  width: 600px;
   padding: 10px;
-  background: WhiteSmoke;
+  background: GhostWhite;
   box-shadow: 0 0 20px black;
   border-radius: 1px;
+}
+.bookmarks .icon-remove, .commands .icon-remove {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 1.1em;
+  cursor: auto;
+}
+.bookmarks {
+  width: 600px;
 }
 .expand-icon {
   -webkit-transform: rotate(-90deg);
@@ -373,12 +406,6 @@ th i.icon-arrow-right {
   top: 2px;
   vertical-align: top;
   width: 16px;
-}
-.bookmarks .icon-remove {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  font-size: 1.1em;
 }
 .bookmarks form {
   padding-left: 5px;
@@ -442,13 +469,12 @@ th i.icon-arrow-right {
 .bookmarks .folder span {
   cursor: pointer;
 }
-.backscreen {
-  display: none;
-  position: absolute;
-  z-index: 999998;
-  background: rgba(0,0,0,0.5);
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.commands button[type='submit'] {
+  margin-left: 15px;
+}
+.commands form {
+  padding: 10px 30px 20px 10px;
+}
+.commands .commandRadios div {
+  padding: 3px;
 }

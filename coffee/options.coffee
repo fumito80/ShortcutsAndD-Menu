@@ -6,8 +6,9 @@ WebFontConfig =
 
 optionsDisp =
   assignOrg: "None"
-  simEvent:  "Simurate key event"
+  command:   "Command"
   bookmark:  "Bookmark"
+  simEvent:  "Simurate key event"
   disabled:  "Disabled"
   through:   "Through"
 
@@ -87,6 +88,7 @@ KeyConfigView = Backbone.View.extend
     @optionKeys = _.keys optionsDisp
     @model.on
       "change:bookmark": @onChangeBookmark
+      "change:command":  @onChangeCommand
       "setFocus":        @onClickInput
       "remove":          @onRemove
       @
@@ -109,6 +111,9 @@ KeyConfigView = Backbone.View.extend
   # Model Events
   onChangeBookmark: ->
     @onChangeMode null, "bookmark"
+  
+  onChangeCommand: ->
+    @onChangeMode null, "command"
   
   onRemove: ->
     @model.off null, null, @
@@ -147,7 +152,7 @@ KeyConfigView = Backbone.View.extend
     (memo = @$("div.memo")).toggle()
     editing = (input$ = @$("form.memo").toggle().find("input")).is(":visible")
     if editing
-      startEditing()
+      #startEditing()
       input$.focus().val(memo.text())
     else
       @onSubmitMemo()
@@ -166,8 +171,8 @@ KeyConfigView = Backbone.View.extend
       @$(".mode").removeClass("selecting")
       mode = event.currentTarget.className
       @$(".selectMode").hide()
-      if mode is "bookmark"
-        @trigger "showBookmarks", @model.id
+      if mode in ["bookmark", "command"]
+        @trigger "showUiDialog", mode, @model.id, @model.get(mode)
         return
     @model.set "mode", mode
     @$(".mode")
@@ -193,7 +198,7 @@ KeyConfigView = Backbone.View.extend
   onSubmitMemo: ->
     @$("form.memo").hide()
     @model.set "memo": @$("div.memo").show().html(escape @$("input.memo").val()).text()
-    endEditing()
+    #endEditing()
     false
   
   onBlurInputMemo: ->
@@ -227,9 +232,11 @@ KeyConfigView = Backbone.View.extend
     switch mode = @model.get "mode"
       #when "simEvent"
       when "bookmark"
-        #tdDesc.append """<div><i class="icon-star"></i></div><div class="bookmark" title="#{@model.get("bookmark").url}">#{@model.get("bookmark").title}</div>"""
         url = @model.get("bookmark").url
         tdDesc.append """<div class="bookmark" title="#{url}" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/#{url}) 1x);">#{@model.get("bookmark").title}</div>"""
+      when "command"
+        desc = commandsDisp[@model.get("command").name]
+        tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
       when "assignOrg", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "assignOrg"
@@ -245,8 +252,7 @@ KeyConfigView = Backbone.View.extend
             test = help[lang][i].match /(^\w+)\^(.+)/
             key = RegExp.$1
             content = RegExp.$2
-            tdDesc
-              .append(@tmplHelp
+            tdDesc.append(@tmplHelp
                 sectDesc: scHelpSect[key]
                 sectKey:  key
                 scHelp:   content
@@ -338,7 +344,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
-    keyConfigView.on "showBookmarks" , @onShowBookmarks      , @
+    keyConfigView.on "showUiDialog"  , @onShowUiDialog       , @
     @$("tbody")
       .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
       .append(@tmplBorder)
@@ -387,14 +393,18 @@ KeyConfigSetView = Backbone.View.extend
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
-  onShowBookmarks: (modelId) ->
-    @trigger "showBookmarks", modelId
+  onShowUiDialog: (name, modelId, options) ->
+    @trigger "showUiDialog", name, modelId, options
   
   onSetBookmark: (modelId, options) ->
-    if options
-      @collection.get(modelId)
-        .set({"bookmark": options}, {silent: true})
-        .trigger "change:bookmark"
+    @collection.get(modelId)
+      .set({"bookmark": options}, {silent: true})
+      .trigger "change:bookmark"
+  
+  onSetCommand: (modelId, options) ->
+    @collection.get(modelId)
+      .set({"command": options}, {silent: true})
+      .trigger "change:command"
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -501,139 +511,6 @@ KeyConfigSetView = Backbone.View.extend
     <tbody></tbody>
     """
 
-BookmarksView = Backbone.View.extend
-  el: ".bookmarks"
-  events:
-    "submit form"        : "onSubmitForm"
-    "click  a"           : "setBookmark"
-    "click  .title"      : "onClickFolder"
-    "click  .expand-icon": "onClickExpandIcon"
-    "click  .expand"     : "onClickExpand"
-    "click  .icon-remove": "onClickIconRemove"
-  
-  initialize: ->
-    @elBookmark$ = @$(".result")
-    ctx = document.getCSSCanvasContext('2d', 'triangle', 8, 5.5);
-    ctx.fillStyle = '#000000'
-    ctx.translate(.5, .5)
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(0, 1)
-    ctx.lineTo(3.5, 4.5)
-    ctx.lineTo(7, 1)
-    ctx.lineTo(7, 0)
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-    @$(".result_outer").niceScroll
-      cursorwidth: 12
-      cursorborderradius: 6
-      smoothscroll: true
-      cursoropacitymin: .1
-      cursoropacitymax: .6
-  
-  onClickFolder: (event) ->
-    visible = (target$ = $(event.currentTarget).parent()).hasClass("opened")
-    if visible
-      target$.removeClass("opened expanded")
-    else
-      target$.addClass("opened expanded")
-    windowOnResize()
-    event.stopPropagation()
-  
-  onClickExpandIcon: (event) ->
-    expanded = (target$ = $(event.currentTarget).parent()).hasClass("expanded")
-    if expanded
-      target$.removeClass("expanded")
-    else
-      target$.addClass("expanded")
-    windowOnResize()
-    event.stopPropagation()
-  
-  onClickExpand: ->
-    if @$(".expand").is(":checked")
-      @$(".folder").addClass("opened expanded")
-    else
-      @$(".folder").removeClass("opened expanded")
-    windowOnResize()
-  
-  onClickIconRemove: ->
-    @trigger "setBookmark", @modelId, null
-    @hideBookmarks()
-  
-  onShowBookmarks: (id) ->
-    if @$(".result").children().length is 0
-      @onSubmitForm()
-    @modelId = id
-    height = window.innerHeight - 60
-    left = (window.innerWidth - 600) / 2
-    @el.style.pixelTop = 20
-    @el.style.pixelLeft = left
-    @$(".result_outer").height(height - 30)
-    @$el.height(height).show()
-    if (target = @$("input.query")).val()
-      target.focus()
-    @$(".result_outer").getNiceScroll().show()
-    $(".backscreen").show()
-    startEditing()
-  
-  onSubmitForm: ->
-    @$(".result").empty()
-    query = @$("input.query").focus().val()
-    if query
-      @$(".expand")[0].checked = true
-    state = if @$(".expand").is(":checked") then "opened expanded" else ""
-    chrome.bookmarks.getTree (treeNode) =>
-      treeNode.forEach (node) =>
-        @digBookmarks node, @elBookmark$, query, 0, state
-      @elBookmark$.append recent = $(@tmplFolder("title": "Recent", "state": state, "indent": 0))
-      recent.find(".title").prepend """<img src="images/star.png">"""
-      chrome.bookmarks.getRecent 50, (treeNode) =>
-        treeNode.forEach (node) =>
-          @digBookmarks node, recent, query, 1, state
-    false
-  
-  digBookmarks: (node, parent, query, indent, state) ->
-    if node.title
-      node.state = state
-      if node.children
-        node.indent = indent
-        parent.append newParent = $(@tmplFolder(node))
-        parent = newParent
-      else
-        if !query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1
-          node.indent = indent + 1
-          parent.append $(@tmplLink(node))
-    else
-      indent--
-    if node.children
-      parent.parent().addClass("hasFolder")
-      node.children.forEach (child) =>
-        @digBookmarks child, parent, query, indent + 1, state
-  
-  hideBookmarks: ->
-    endEditing()
-    @$(".result_outer").getNiceScroll().hide()
-    $(".backscreen").hide()
-    @$el.hide()
-  
-  setBookmark: (event) ->
-    target = $(event.currentTarget)
-    @trigger "setBookmark", @modelId, {title: target.text(), url: target.attr("title"), bmId: target.attr("data-id")}
-    @hideBookmarks()
-  
-  tmplFolder: _.template """
-    <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
-      <span class="expand-icon"></span><span class="title"><%=title%></span>
-    </div>
-    """
-
-  tmplLink: _.template """
-    <div class="link" style="text-indent:<%=indent%>em;">
-      <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);"><%=title%></a>
-    </div>
-    """
-
 marginBottom = 0
 resizeTimer = false
 windowOnResize = ->
@@ -670,11 +547,14 @@ $ ->
   keyConfigSetView.render(saveData.keyConfigSet)
 
   bookmarksView = new BookmarksView {}
+  commandsView  = new CommandsView {}
   
-  headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
-  headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  keyConfigSetView.on "showBookmarks", bookmarksView.onShowBookmarks     , bookmarksView
-  bookmarksView.on    "setBookmark"  , keyConfigSetView.onSetBookmark    , keyConfigSetView
+  headerView.on       "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
+  headerView.on       "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
+  keyConfigSetView.on "showUiDialog"     , bookmarksView.onShowUiDialog        , bookmarksView
+  keyConfigSetView.on "showUiDialog"     , commandsView.onShowUiDialog         , commandsView
+  bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
+  commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action

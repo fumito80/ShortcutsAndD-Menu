@@ -20,7 +20,7 @@ type
   protected
     modifierRelCount, seq: Integer;
     virtualModifires, virtualOffModifires: Byte;
-    virtualScanCode: Cardinal;
+    virtualScanCode, kbdLayout: Cardinal;
     pipeHandle: THandle;
     browser: IBrowserObject;
     keyConfigList: TStringList;
@@ -72,6 +72,7 @@ begin
   Self.browser:= browser;
   Self.keyConfigList:= keyConfigList;
   Self.configMode:= configMode;
+  kbdLayout:= GetKeyboardLayout(0);
   criticalSection:= TCriticalSection.Create;
   modifierRelCount:= -1;
 end;

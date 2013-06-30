@@ -85,7 +85,7 @@ begin
   end;
   browser:= GetBrowserWindowObject;
   keyConfigList:= TStringList.Create;
-  Write2EventLog('FlexKbd', 'Start Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
+  //Write2EventLog('FlexKbd', 'Start Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
 end;
 
 destructor TMyClass.Destroy;
@@ -93,7 +93,7 @@ begin
   EndHook;
   CloseHandle(keyPipeHandle);
   keyConfigList.Free;
-  Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
+  //Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
   inherited;
 end;
 
@@ -170,14 +170,14 @@ var
   modifierFlags, targetModifierFlags, I: Byte;
   paramsList, paramList: TStringList;
   mode, orgModified, target, origin, proxyTarget, proxyOrgModified: string;
-  scanCode, targetScanCode, proxyScanCode: Cardinal;
+  scanCode, targetScanCode, proxyScanCode, kbdLayout: Cardinal;
   scans: TArrayCardinal;
   function GetProxyScanCode(scanCode: Cardinal): Cardinal;
   var
     I, J: Integer;
     exists: Boolean;
   begin
-    for I:= 0 to 100 do begin
+    for I:= 0 to 200 do begin
       exists:= False;
       for J:= 0 to keyConfigList.Count - 1 do begin
         if IntToStr(scanCode) = Copy(keyConfigList.Strings[J], 3, 10) then begin
@@ -185,10 +185,15 @@ var
           Break;
         end;
       end;
-      if exists then
+      if exists then begin
         Inc(scanCode)
-      else
-        Break;
+      end else begin
+        if MapVirtualKeyEx(scanCode, 3, kbdLayout) <> VK_NONAME then begin
+          //Write2EventLog('FlexKbd VK_', IntToStr(MapVirtualKeyEx(scanCode, 3, kbdLayout)));
+          Inc(scanCode);
+        end else
+          Break;
+      end;
     end;
     Result:= scanCode;
   end;
@@ -198,6 +203,7 @@ begin
     ReconfigHook;
     Exit;
   end;
+  kbdLayout:= GetKeyboardLayout(0);
   paramsList:= TStringList.Create;
   paramsList.Delimiter:= '|';
   paramsList.DelimitedText:= params[0];
@@ -222,7 +228,7 @@ begin
 
       if (scanCode = targetScanCode) and (modifierFlags <> targetModifierFlags) and (mode = 'assignOrg') then begin
         // Make Proxy
-        proxyScanCode:= GetProxyScanCode($59);
+        proxyScanCode:= GetProxyScanCode($5A);
         proxyTarget:= LeftBStr(target, 2) + IntToStr(proxyScanCode);
         proxyOrgModified:= LeftBStr(origin, 2) + IntToStr(proxyScanCode);
         //Write2EventLog('FlexKbd', 'MakeProxy: ' + proxyTarget + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);

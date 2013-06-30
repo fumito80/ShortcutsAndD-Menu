@@ -16,6 +16,21 @@ chrome.contextMenus.create
   onclick: triggerShortcutKey
 ###
 
+getActiveTab = ->
+  dfd = $.Deferred()
+  chrome.windows.getCurrent null, (win) ->
+    chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
+      dfd.resolve tabs[0], win.id
+  dfd.promise()
+
+getTabs = (options) ->
+  dfd = $.Deferred()
+  chrome.windows.getCurrent null, (win) ->
+    options.windowId = win.id
+    chrome.tabs.query options, (tabs) ->
+      dfd.resolve tabs
+  dfd.promise()
+
 # オプションページ表示時切り替え
 optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
@@ -29,9 +44,20 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
           action: "saveConfig"
         optionsTabId = null
 
+chrome.windows.onFocusChanged.addListener (windowId) ->
+  if optionsTabId
+    chrome.tabs.sendMessage optionsTabId,
+      action: "saveConfig"
+    optionsTabId = null
+  else
+    getActiveTab().done (tab) ->
+      if tab.url.indexOf(chrome.extension.getURL("")) is 0
+        flexkbd.StartConfigMode()
+        optionsTabId = tab.id
+
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
-    flexkbd.StartConfigMode()  
+    flexkbd.StartConfigMode()
 
 sendKeyEventToDom = (keyEvent, tabId) ->
   local = fk.getConfig()
@@ -74,6 +100,75 @@ openBookmark = (keyEvent) ->
         chrome.tabs.update tabs[0].id, url: url
       #chrome.tabs.create
       #  url: url
+
+closeTabs = (fnWhere) ->
+  getTabs({active: false, currentWindow: true, windowType: "normal"}, fnWhere)
+    .done (tabs) ->
+      tabIds = []
+      tabs.forEach (tab) ->
+        tabIds.push tab.id if fnWhere(tab)
+      chrome.tabs.remove tabIds if tabIds.length > 0
+
+execCommand = (keyEvent) ->
+  local = fk.getConfig()
+  pos = 0
+  local.keyConfigSet.forEach (item) ->
+    #console.log keyEvent + ": " + key
+    if item.proxy is keyEvent
+      switch command = item.command.name
+        when "closeOtherTabs"
+          closeTabs -> true
+        when "closeTabsRight", "closeTabsLeft"
+          getActiveTab().done (tab) ->
+            pos = tab.index
+            if command is "closeTabsRight"
+              closeTabs (tab) -> tab.index > pos
+            else
+              closeTabs (tab) -> tab.index < pos
+        when "moveTabRight", "moveTabLeft"
+          getActiveTab().done (tab, windowId) ->
+            newpos = tab.index
+            if command is "moveTabRight"
+              newpos = newpos + 1
+            else
+              newpos = newpos - 1
+            chrome.tabs.move tab.id, {windowId: windowId, index: newpos if newpos > -1}
+        when "moveTabFirst"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.move tab.id, {windowId: windowId, index: 0}
+        when "moveTabLast"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.move tab.id, {windowId: windowId, index: 1000}
+        when "detachTab"
+          getActiveTab().done (tab, windowId) ->
+            chrome.windows.create {tabId: tab.id, focused: true, type: "normal"}
+        when "duplicateTab"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.duplicate tab.id
+        when "duplicateTabWin"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.duplicate tab.id, (tab) ->
+              chrome.windows.create {tabId: tab.id, focused: true, type: "normal"}
+        when "switchNextWin"
+          chrome.windows.getAll null, (windows) ->
+            for i in [0...windows.length]
+              if windows[i].focused
+                if i is windows.length - 1
+                  chrome.windows.update windows[0].id, {focused: true}
+                else
+                  chrome.windows.update windows[i + 1].id, {focused: true}
+                break
+        when "switchPrevWin"
+          chrome.windows.getAll null, (windows) ->
+            for i in [0...windows.length]
+              if windows[i].focused
+                if i is 0
+                  chrome.windows.update windows[windows.length - 1].id, {focused: true}
+                else
+                  chrome.windows.update windows[i - 1].id, {focused: true}
+                break
+      #  when "execJS"
+      #  when "insertCSS"
 
 setConfigPlugin = (keyConfigSet) ->
   sendData = []
@@ -122,6 +217,8 @@ window.pluginEvent = (action, value) ->
       preSendKeyEvent value
     when "bookmark"
       openBookmark value
+    when "command"
+      execCommand value
 
 setConfigPlugin fk.getConfig().keyConfigSet
 

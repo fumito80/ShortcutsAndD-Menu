@@ -62,13 +62,13 @@ var
     KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
     with KeyInputs[KeyInputCount - 1].ki do
     begin
-      wVk:= MapVirtualKeyEx(scanCode, 3, GetKeyboardLayout(0));
+      wVk:= MapVirtualKeyEx(scanCode, 3, kbdLayout);
       wScan := scanCode;
       dwFlags := Flags;
       if scanCode > $100 then begin
         dwFlags := dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
-        wVk:= MapVirtualKeyEx(wScan, 3, GetKeyboardLayout(0));
+        wVk:= MapVirtualKeyEx(wScan, 3, kbdLayout);
       end;
       time := 0;
       dwExtraInfo:= 0;
@@ -193,8 +193,8 @@ begin
         SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
       end else if keyConfig.mode = 'simEvent' then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
-      end else if keyConfig.mode = 'bookmark' then begin
-        browser.Invoke('pluginEvent', ['bookmark', scans]);
+      end else if (keyConfig.mode = 'bookmark') or (keyConfig.mode = 'command') then begin
+        browser.Invoke('pluginEvent', [keyConfig.mode, scans]);
       end else if keyConfig.mode = 'through' then begin
         Result:= False;
       end;
