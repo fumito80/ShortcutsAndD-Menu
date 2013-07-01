@@ -172,7 +172,7 @@ KeyConfigView = Backbone.View.extend
       mode = event.currentTarget.className
       @$(".selectMode").hide()
       if mode in ["bookmark", "command"]
-        @trigger "showUiDialog", mode, @model.id, @model.get(mode)
+        @trigger "showPopup", mode, @model.id, @model.get(mode)
         return
     @model.set "mode", mode
     @$(".mode")
@@ -235,7 +235,7 @@ KeyConfigView = Backbone.View.extend
         url = @model.get("bookmark").url
         tdDesc.append """<div class="bookmark" title="#{url}" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/#{url}) 1x);">#{@model.get("bookmark").title}</div>"""
       when "command"
-        desc = commandsDisp[@model.get("command").name]
+        desc = commandsDisp[@model.get("command").name][1]
         tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
       when "assignOrg", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
@@ -344,7 +344,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
-    keyConfigView.on "showUiDialog"  , @onShowUiDialog       , @
+    keyConfigView.on "showPopup"     , @onShowPopup          , @
     @$("tbody")
       .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
       .append(@tmplBorder)
@@ -393,8 +393,8 @@ KeyConfigSetView = Backbone.View.extend
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
-  onShowUiDialog: (name, modelId, options) ->
-    @trigger "showUiDialog", name, modelId, options
+  onShowPopup: (name, modelId, options) ->
+    @trigger "showPopup", name, modelId, options
   
   onSetBookmark: (modelId, options) ->
     @collection.get(modelId)
@@ -545,16 +545,19 @@ $ ->
     model: new Config(saveData.config)
     collection: new KeyConfigSet()
   keyConfigSetView.render(saveData.keyConfigSet)
-
+  
   bookmarksView = new BookmarksView {}
-  commandsView  = new CommandsView {}
+  commandsView = new CommandsView {}
+  commandInputView = new CommandInputView {}
   
   headerView.on       "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on       "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  keyConfigSetView.on "showUiDialog"     , bookmarksView.onShowUiDialog        , bookmarksView
-  keyConfigSetView.on "showUiDialog"     , commandsView.onShowUiDialog         , commandsView
+  keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
+  keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
   bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
   commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
+  commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
+  commandInputView.on "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action

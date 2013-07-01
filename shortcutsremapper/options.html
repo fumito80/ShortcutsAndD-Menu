@@ -33,7 +33,7 @@
     <div id="tiptip_content"></div>
   </div>
   <!-- <div class="footer"></div> -->
-  <div class="bookmarks">
+  <div class="popup bookmarks">
     <i class="icon-remove" title="Cancel"></i>
     <form>
       <label>Search bookmarks:
@@ -45,11 +45,23 @@
       <div class="result"></div>
     </div>
   </div>
-  <div class="commands">
+  <div class="popup commands">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <div>Select command:<button type="submit"><i class="icon-ok"></i> Done</button></div>
+      <div>Select a command:<button type="submit"><i class="icon-ok"></i> Done</button></div>
       <div class="commandRadios"></div>
+    </form>
+  </div>
+  <div class="popup commandInput">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div>
+        <span class="command"></span><button type="submit"><i class="icon-ok"></i> Done</button>
+      </div>
+      <div class="">
+        <input type="text" class="caption" placeholder="Title(Optional)" autofocus><br>
+        <textarea class="content" placeholder="Content"></textarea>
+      </div>
     </form>
   </div>
   <div class="backscreen"></div>

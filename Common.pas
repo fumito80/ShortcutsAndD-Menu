@@ -3,7 +3,7 @@ unit Common;
 interface
 
 uses
-  Classes, SyncObjs, Windows, NPPlugin;
+  SysUtils, Classes, SyncObjs, Windows, NPPlugin;
 
 type
   TKeyConfig = class
@@ -34,24 +34,26 @@ type
   end;
 
 const
-  keyPipeName   = '\\.\pipe\flexkbd';
-  mousePipeName = '\\.\pipe\flexmouse';
-  SCAN_LCONTROL =  $1D;
-  SCAN_RCONTROL = $11D;
-  SCAN_LMENU    =  $38;
-  SCAN_RMENU    = $138;
-  SCAN_LSHIFT   =  $2A;
-  SCAN_RSHIFT   =  $36;
-  SCAN_LWIN     = $15B;
-  SCAN_RWIN     = $15C;
-  FLAG_CONTROL  = 1;
-  FLAG_MENU     = 2;
-  FLAG_SHIFT    = 4;
-  FLAG_WIN      = 8;
+  keyPipeName    = '\\.\pipe\flexkbd';
+  mousePipeName  = '\\.\pipe\flexmouse';
+  SCAN_LCONTROL  =  $1D;
+  SCAN_RCONTROL  = $11D;
+  SCAN_LMENU     =  $38;
+  SCAN_RMENU     = $138;
+  SCAN_LSHIFT    =  $2A;
+  SCAN_RSHIFT    =  $36;
+  SCAN_LWIN      = $15B;
+  SCAN_RWIN      = $15C;
+  FLAG_CONTROL   = 1;
+  FLAG_MENU      = 2;
+  FLAG_SHIFT     = 4;
+  FLAG_WIN       = 8;
 
 var
   modifiersCode: array[0..7] of Cardinal;
   g_configMode: Boolean;
+  //g_reloadConfig: UInt64 = 1;
+  //g_pasteText   : UInt64 = 2;
 
 implementation
 
@@ -93,6 +95,10 @@ begin
             Self.keyConfigList:= keyConfigList;
             criticalSection.Release;
             Continue;
+          //end else if wPrm = 2 then begin // Paste TextŽž
+          //  Write2EventLog('FlexKbd', 'ok'); //IntToStr(wPrm and $00000000FFFFFFFF));
+          //  VaridateEvent(wPrm);
+          //  Continue;
           end;
           cancelFlag:= VaridateEvent(wPrm);
           WriteFile(pipeHandle, cancelFlag, SizeOf(Boolean), bytesWrite, nil);

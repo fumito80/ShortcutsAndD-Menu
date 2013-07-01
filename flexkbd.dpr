@@ -40,6 +40,8 @@ type
     // コンフィグモード開始
     procedure StartConfigMode;
     procedure EndConfigMode;
+    // 設定を反映 & コンフィグモード終了兼監視モード開始
+    procedure PasteText(const params: array of Variant);
   end;
 
 var
@@ -311,9 +313,9 @@ end;
 // Thread config reload
 procedure TMyClass.ReconfigHook(configMode: Boolean = False);
 var
-  reloadFlag: UInt64;
   dummyFlag: Boolean;
   bytesRead: Cardinal;
+  reloadFlag: UInt64;
 begin
   if keyHookTh = nil then begin
     g_configMode:= False;
@@ -324,6 +326,19 @@ begin
     CallNamedPipe(PAnsiChar(keyPipeName)  , @reloadFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     CallNamedPipe(PAnsiChar(MousePipeName), @reloadFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
   end;
+end;
+
+procedure TMyClass.PasteText(const params: array of Variant);
+var
+  dummyFlag: Boolean;
+  bytesRead: Cardinal;
+  pasteTextFlag: UInt64;
+begin
+  if params[0] = '' then Exit;
+  //Clipboard.AsText := params[0];
+  //Write2EventLog('FlexKbd', params[0]);
+  pasteTextFlag:= 2;
+  //CallNamedPipe(PAnsiChar(keyPipeName), @pasteTextFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
 end;
 
 begin

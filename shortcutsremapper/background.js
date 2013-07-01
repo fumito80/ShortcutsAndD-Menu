@@ -1,1 +1,474 @@
-(function(){var e,t,n,r,i,s,o,u,a,f,l,c,h,p,d,v,m,g;window.fk={},r=document.getElementById("flexkbd"),v=function(e){return chrome.tabs.query({active:!0},function(t){return chrome.tabs.sendMessage(t[0].id,e)})},s=function(){var e;return e=$.Deferred(),chrome.windows.getCurrent(null,function(t){return chrome.tabs.query({active:!0,windowId:t.id},function(n){return e.resolve(n[0],t.id)})}),e.promise()},o=function(e){var t;return t=$.Deferred(),chrome.windows.getCurrent(null,function(n){return e.windowId=n.id,chrome.tabs.query(e,function(e){return t.resolve(e)})}),t.promise()},a=null,chrome.tabs.onActivated.addListener(function(e){return chrome.tabs.get(e.tabId,function(t){if(t.url.indexOf(chrome.extension.getURL(""))===0)return r.StartConfigMode(),a=e.tabId;if(a)return chrome.tabs.sendMessage(a,{action:"saveConfig"}),a=null})}),chrome.windows.onFocusChanged.addListener(function(e){return a?(chrome.tabs.sendMessage(a,{action:"saveConfig"}),a=null):s().done(function(e){if(e.url.indexOf(chrome.extension.getURL(""))===0)return r.StartConfigMode(),a=e.id})}),chrome.tabs.onUpdated.addListener(function(e,t,n){if(n.url.indexOf(chrome.extension.getURL(""))===0&&(t.status="complete"))return r.StartConfigMode()}),d=function(e,t){var n,r,i,s,o,u,a;return s=fk.getConfig(),i=fk.getKeyCodes()[s.config.kbdtype].keys,o=parseInt(e.substring(0,2),16),u=e.substring(2),r=i[u],(a=(o&4)!==0)?n=r[1]||r[0]:n=r[0],chrome.tabs.sendMessage(t,{action:"keyEvent",keyIdentifier:n,ctrl:(o&1)!==0,alt:(o&2)!==0,shift:a,meta:(o&8)!==0})},f=function(e){return chrome.tabs.query({active:!0},function(t){var n;return n=t[0].id,chrome.tabs.sendMessage(n,{action:"askAlive"},function(t){return t==="hello"?d(e,n):chrome.tabs.executeScript(n,{file:"kbdagent.js",allFrames:!0},function(t){return d(e,n)})})})},u=function(e){var t;return t=fk.getConfig(),t.keyConfigSet.forEach(function(t){var n;if(t.proxy===e)return n=t.bookmark.url,chrome.tabs.query({active:!0},function(e){return chrome.tabs.update(e[0].id,{url:n})})})},t=function(e){return o({active:!1,currentWindow:!0,windowType:"normal"},e).done(function(t){var n;n=[],t.forEach(function(t){if(e(t))return n.push(t.id)});if(n.length>0)return chrome.tabs.remove(n)})},n=function(e){var n,r;return n=fk.getConfig(),r=0,n.keyConfigSet.forEach(function(n){var i;if(n.proxy===e)switch(i=n.command.name){case"closeOtherTabs":return t(function(){return!0});case"closeTabsRight":case"closeTabsLeft":return s().done(function(e){return r=e.index,i==="closeTabsRight"?t(function(e){return e.index>r}):t(function(e){return e.index<r})});case"moveTabRight":case"moveTabLeft":return s().done(function(e,t){var n;return n=e.index,i==="moveTabRight"?n+=1:n-=1,chrome.tabs.move(e.id,{windowId:t,index:n>-1?n:void 0})});case"moveTabFirst":return s().done(function(e,t){return chrome.tabs.move(e.id,{windowId:t,index:0})});case"moveTabLast":return s().done(function(e,t){return chrome.tabs.move(e.id,{windowId:t,index:1e3})});case"detachTab":return s().done(function(e,t){return chrome.windows.create({tabId:e.id,focused:!0,type:"normal"})});case"duplicateTab":return s().done(function(e,t){return chrome.tabs.duplicate(e.id)});case"duplicateTabWin":return s().done(function(e,t){return chrome.tabs.duplicate(e.id,function(e){return chrome.windows.create({tabId:e.id,focused:!0,type:"normal"})})});case"switchNextWin":return chrome.windows.getAll(null,function(e){var t,n,r,i;i=[];for(t=n=0,r=e.length;0<=r?n<r:n>r;t=0<=r?++n:--n){if(e[t].focused){t===e.length-1?chrome.windows.update(e[0].id,{focused:!0}):chrome.windows.update(e[t+1].id,{focused:!0});break}i.push(void 0)}return i});case"switchPrevWin":return chrome.windows.getAll(null,function(e){var t,n,r,i;i=[];for(t=n=0,r=e.length;0<=r?n<r:n>r;t=0<=r?++n:--n){if(e[t].focused){t===0?chrome.windows.update(e[e.length-1].id,{focused:!0}):chrome.windows.update(e[t-1].id,{focused:!0});break}i.push(void 0)}return i})}})},m=function(e){var t;t=[];if(e)return e.forEach(function(e){if(e.proxy)return t.push(e.proxy+";"+e.origin+";"+e.mode)}),r.SetKeyConfig(t.join("|"))},fk.saveConfig=function(e){return localStorage.flexkbd=JSON.stringify(e),m(e.keyConfigSet)},fk.getKeyCodes=function(){return{JP:{keys:keysJP,name:"JP 109 Keyboard"},US:{keys:keysUS,name:"US 104 Keyboard"}}},fk.getScHelp=function(){return l},fk.getScHelpSect=function(){return h},fk.getConfig=function(){return JSON.parse(localStorage.flexkbd||null)||{config:{kbdtype:"JP"}}},fk.startEditing=function(){return r.EndConfigMode()},fk.endEditing=function(){return r.StartConfigMode()},window.pluginEvent=function(e,t){switch(e){case"log":return console.log(t);case"configKeyEvent":return v({action:"kbdEvent",value:t});case"sendToDom":return f(t);case"bookmark":return u(t);case"command":return n(t)}},m(fk.getConfig().keyConfigSet),l={},h={},c="https://support.google.com/chrome/answer/157179?hl=",p=function(e,t,n){var r;return r=$(n).find("tr:has(td:first-child:has(strong))"),$.each(r,function(n,r){var i;return i=r.cells[1].textContent.replace(/^\s+|\s$/g,""),Array.prototype.forEach.call(r.childNodes[1].getElementsByTagName("strong"),function(n){var r,s;r=n.textContent.toUpperCase().replace(/\s/g,""),r=r.replace("PGUP","PAGEUP").replace("PGDOWN","PAGEDOWN").replace(/DEL$/,"DELETE").replace(/INS$/,"INSERT");if((s=l[r])!=null?!s[e]:!void 0)l[r]||(l[r]={}),l[r][e]=[];return l[r][e].push(t+"^"+i)})})},e=function(e,t){var n,r,i;return n=$(e),r=n.find("div.main-section"),i="",Array.prototype.forEach.call(r[0].children,function(e){switch(e.tagName){case"H3":switch(e.textContent){case"Tab and window shortcuts":case"タブとウィンドウのショートカット":i="T";break;case"Google Chrome feature shortcuts":case"Google Chrome 機能のショートカット":i="C";break;case"Address bar shortcuts":case"アドレスバーのショートカット":i="A";break;case"Webpage shortcuts":case"ウェブページのショートカット":i="W";break;case"Text shortcuts":case"テキストのショートカット":i="Tx"}return h[i]=e.textContent;case"TABLE":return p(t,i,e)}})},g=new XMLHttpRequest,i=function(t){var n;return g.onreadystatechange=function(){if(g.readyState===4&&g.status===200)return e(g.responseText,t),n.resolve()},g.open("GET",c+t,!0),g.send(),(n=$.Deferred()).promise()},i("ja").done(function(){return i("en")})}).call(this);
+// Generated by CoffeeScript 1.6.3
+(function() {
+  var analyzeScHelpPage, closeTabs, execCommand, flexkbd, forecast, getActiveTab, getTabs, openBookmark, optionsTabId, preSendKeyEvent, scHelp, scHelpPageUrl, scHelpSect, scrapeHelp, sendKeyEventToDom, sendMessage, setConfigPlugin, xhr;
+
+  window.fk = {};
+
+  flexkbd = document.getElementById("flexkbd");
+
+  sendMessage = function(message) {
+    return chrome.tabs.query({
+      active: true
+    }, function(tabs) {
+      return chrome.tabs.sendMessage(tabs[0].id, message);
+    });
+  };
+
+  /*
+  triggerShortcutKey = ->
+    #flexkbd.KeyEvent()
+  
+  chrome.contextMenus.create
+    title: "「%s」をページ内検索"
+    type: "normal"
+    contexts: ["selection"]
+    onclick: triggerShortcutKey
+  */
+
+
+  getActiveTab = function() {
+    var dfd;
+    dfd = $.Deferred();
+    chrome.windows.getCurrent(null, function(win) {
+      return chrome.tabs.query({
+        active: true,
+        windowId: win.id
+      }, function(tabs) {
+        return dfd.resolve(tabs[0], win.id);
+      });
+    });
+    return dfd.promise();
+  };
+
+  getTabs = function(options) {
+    var dfd;
+    dfd = $.Deferred();
+    chrome.windows.getCurrent(null, function(win) {
+      options.windowId = win.id;
+      return chrome.tabs.query(options, function(tabs) {
+        return dfd.resolve(tabs);
+      });
+    });
+    return dfd.promise();
+  };
+
+  optionsTabId = null;
+
+  chrome.tabs.onActivated.addListener(function(activeInfo) {
+    return chrome.tabs.get(activeInfo.tabId, function(tab) {
+      if (tab.url.indexOf(chrome.extension.getURL("")) === 0) {
+        flexkbd.StartConfigMode();
+        return optionsTabId = activeInfo.tabId;
+      } else {
+        if (optionsTabId) {
+          chrome.tabs.sendMessage(optionsTabId, {
+            action: "saveConfig"
+          });
+          return optionsTabId = null;
+        }
+      }
+    });
+  });
+
+  chrome.windows.onFocusChanged.addListener(function(windowId) {
+    if (optionsTabId) {
+      chrome.tabs.sendMessage(optionsTabId, {
+        action: "saveConfig"
+      });
+      return optionsTabId = null;
+    } else {
+      return getActiveTab().done(function(tab) {
+        if (tab.url.indexOf(chrome.extension.getURL("")) === 0) {
+          flexkbd.StartConfigMode();
+          return optionsTabId = tab.id;
+        }
+      });
+    }
+  });
+
+  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (tab.url.indexOf(chrome.extension.getURL("")) === 0 && (changeInfo.status = "complete")) {
+      return flexkbd.StartConfigMode();
+    }
+  });
+
+  sendKeyEventToDom = function(keyEvent, tabId) {
+    var keyIdentifier, keyIdentifiers, keys, local, modifiers, scanCode, shift;
+    local = fk.getConfig();
+    keys = fk.getKeyCodes()[local.config.kbdtype].keys;
+    modifiers = parseInt(keyEvent.substring(0, 2), 16);
+    scanCode = keyEvent.substring(2);
+    keyIdentifiers = keys[scanCode];
+    if (shift = (modifiers & 4) !== 0) {
+      keyIdentifier = keyIdentifiers[1] || keyIdentifiers[0];
+    } else {
+      keyIdentifier = keyIdentifiers[0];
+    }
+    return chrome.tabs.sendMessage(tabId, {
+      action: "keyEvent",
+      keyIdentifier: keyIdentifier,
+      ctrl: (modifiers & 1) !== 0,
+      alt: (modifiers & 2) !== 0,
+      shift: shift,
+      meta: (modifiers & 8) !== 0
+    });
+  };
+
+  preSendKeyEvent = function(keyEvent) {
+    return chrome.tabs.query({
+      active: true
+    }, function(tabs) {
+      var tabId;
+      tabId = tabs[0].id;
+      return chrome.tabs.sendMessage(tabId, {
+        action: "askAlive"
+      }, function(resp) {
+        if (resp === "hello") {
+          return sendKeyEventToDom(keyEvent, tabId);
+        } else {
+          return chrome.tabs.executeScript(tabId, {
+            file: "kbdagent.js",
+            allFrames: true
+          }, function(resp) {
+            return sendKeyEventToDom(keyEvent, tabId);
+          });
+        }
+      });
+    });
+  };
+
+  openBookmark = function(keyEvent) {
+    var local;
+    local = fk.getConfig();
+    return local.keyConfigSet.forEach(function(item) {
+      var url;
+      if (item.proxy === keyEvent) {
+        url = item.bookmark.url;
+        return chrome.tabs.query({
+          active: true
+        }, function(tabs) {
+          return chrome.tabs.update(tabs[0].id, {
+            url: url
+          });
+        });
+      }
+    });
+  };
+
+  closeTabs = function(fnWhere) {
+    return getTabs({
+      active: false,
+      currentWindow: true,
+      windowType: "normal"
+    }, fnWhere).done(function(tabs) {
+      var tabIds;
+      tabIds = [];
+      tabs.forEach(function(tab) {
+        if (fnWhere(tab)) {
+          return tabIds.push(tab.id);
+        }
+      });
+      if (tabIds.length > 0) {
+        return chrome.tabs.remove(tabIds);
+      }
+    });
+  };
+
+  execCommand = function(keyEvent) {
+    var local, pos;
+    local = fk.getConfig();
+    pos = 0;
+    return local.keyConfigSet.forEach(function(item) {
+      var command;
+      if (item.proxy === keyEvent) {
+        switch (command = item.command.name) {
+          case "closeOtherTabs":
+            return closeTabs(function() {
+              return true;
+            });
+          case "closeTabsRight":
+          case "closeTabsLeft":
+            return getActiveTab().done(function(tab) {
+              pos = tab.index;
+              if (command === "closeTabsRight") {
+                return closeTabs(function(tab) {
+                  return tab.index > pos;
+                });
+              } else {
+                return closeTabs(function(tab) {
+                  return tab.index < pos;
+                });
+              }
+            });
+          case "moveTabRight":
+          case "moveTabLeft":
+            return getActiveTab().done(function(tab, windowId) {
+              var newpos;
+              newpos = tab.index;
+              if (command === "moveTabRight") {
+                newpos = newpos + 1;
+              } else {
+                newpos = newpos - 1;
+              }
+              if (newpos > -1) {
+                return chrome.tabs.move(tab.id, {
+                  windowId: windowId,
+                  index: newpos
+                });
+              }
+            });
+          case "moveTabFirst":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.move(tab.id, {
+                windowId: windowId,
+                index: 0
+              });
+            });
+          case "moveTabLast":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.move(tab.id, {
+                windowId: windowId,
+                index: 1000
+              });
+            });
+          case "detachTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.windows.create({
+                tabId: tab.id,
+                focused: true,
+                type: "normal"
+              });
+            });
+          case "duplicateTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.duplicate(tab.id);
+            });
+          case "duplicateTabWin":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.duplicate(tab.id, function(tab) {
+                return chrome.windows.create({
+                  tabId: tab.id,
+                  focused: true,
+                  type: "normal"
+                });
+              });
+            });
+          case "pinTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.update(tab.id, {
+                pinned: true
+              });
+            });
+          case "unpinTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.update(tab.id, {
+                pinned: false
+              });
+            });
+          case "switchNextWin":
+            return chrome.windows.getAll(null, function(windows) {
+              var i, _i, _ref, _results;
+              _results = [];
+              for (i = _i = 0, _ref = windows.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                if (windows[i].focused) {
+                  if (i === windows.length - 1) {
+                    chrome.windows.update(windows[0].id, {
+                      focused: true
+                    });
+                  } else {
+                    chrome.windows.update(windows[i + 1].id, {
+                      focused: true
+                    });
+                  }
+                  break;
+                } else {
+                  _results.push(void 0);
+                }
+              }
+              return _results;
+            });
+          case "switchPrevWin":
+            return chrome.windows.getAll(null, function(windows) {
+              var i, _i, _ref, _results;
+              _results = [];
+              for (i = _i = 0, _ref = windows.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                if (windows[i].focused) {
+                  if (i === 0) {
+                    chrome.windows.update(windows[windows.length - 1].id, {
+                      focused: true
+                    });
+                  } else {
+                    chrome.windows.update(windows[i - 1].id, {
+                      focused: true
+                    });
+                  }
+                  break;
+                } else {
+                  _results.push(void 0);
+                }
+              }
+              return _results;
+            });
+        }
+      }
+    });
+  };
+
+  setConfigPlugin = function(keyConfigSet) {
+    var sendData;
+    sendData = [];
+    if (keyConfigSet) {
+      keyConfigSet.forEach(function(item) {
+        if (item.proxy) {
+          return sendData.push(item.proxy + ";" + item.origin + ";" + item.mode);
+        }
+      });
+      return flexkbd.SetKeyConfig(sendData.join("|"));
+    }
+  };
+
+  fk.saveConfig = function(saveData) {
+    localStorage.flexkbd = JSON.stringify(saveData);
+    return setConfigPlugin(saveData.keyConfigSet);
+  };
+
+  fk.getKeyCodes = function() {
+    return {
+      JP: {
+        keys: keysJP,
+        name: "JP 109 Keyboard"
+      },
+      US: {
+        keys: keysUS,
+        name: "US 104 Keyboard"
+      }
+    };
+  };
+
+  fk.getScHelp = function() {
+    return scHelp;
+  };
+
+  fk.getScHelpSect = function() {
+    return scHelpSect;
+  };
+
+  fk.getConfig = function() {
+    return JSON.parse(localStorage.flexkbd || null) || {
+      config: {
+        kbdtype: "JP"
+      }
+    };
+  };
+
+  fk.startEditing = function() {
+    return flexkbd.EndConfigMode();
+  };
+
+  fk.endEditing = function() {
+    return flexkbd.StartConfigMode();
+  };
+
+  window.pluginEvent = function(action, value) {
+    switch (action) {
+      case "log":
+        return console.log(value);
+      case "configKeyEvent":
+        return sendMessage({
+          action: "kbdEvent",
+          value: value
+        });
+      case "sendToDom":
+        return preSendKeyEvent(value);
+      case "bookmark":
+        return openBookmark(value);
+      case "command":
+        return execCommand(value);
+    }
+  };
+
+  setConfigPlugin(fk.getConfig().keyConfigSet);
+
+  scHelp = {};
+
+  scHelpSect = {};
+
+  scHelpPageUrl = "https://support.google.com/chrome/answer/157179?hl=";
+
+  scrapeHelp = function(lang, sectInit, elTab) {
+    var targets;
+    targets = $(elTab).find("tr:has(td:first-child:has(strong))");
+    return $.each(targets, function(i, elem) {
+      var content;
+      content = elem.cells[1].textContent.replace(/^\s+|\s$/g, "");
+      return Array.prototype.forEach.call(elem.childNodes[1].getElementsByTagName("strong"), function(strong) {
+        var scKey, _ref;
+        scKey = strong.textContent.toUpperCase().replace(/\s/g, "");
+        scKey = scKey.replace("PGUP", "PAGEUP").replace("PGDOWN", "PAGEDOWN").replace(/DEL$/, "DELETE").replace(/INS$/, "INSERT");
+        if (!((_ref = scHelp[scKey]) != null ? _ref[lang] : void 0)) {
+          if (!scHelp[scKey]) {
+            scHelp[scKey] = {};
+          }
+          scHelp[scKey][lang] = [];
+        }
+        return scHelp[scKey][lang].push(sectInit + "^" + content);
+      });
+    });
+  };
+
+  analyzeScHelpPage = function(resp, lang) {
+    var doc, mainSection, sectInit;
+    doc = $(resp);
+    mainSection = doc.find("div.main-section");
+    sectInit = "";
+    return Array.prototype.forEach.call(mainSection[0].children, function(el) {
+      switch (el.tagName) {
+        case "H3":
+          switch (el.textContent) {
+            case "Tab and window shortcuts":
+            case "タブとウィンドウのショートカット":
+              sectInit = "T";
+              break;
+            case "Google Chrome feature shortcuts":
+            case "Google Chrome 機能のショートカット":
+              sectInit = "C";
+              break;
+            case "Address bar shortcuts":
+            case "アドレスバーのショートカット":
+              sectInit = "A";
+              break;
+            case "Webpage shortcuts":
+            case "ウェブページのショートカット":
+              sectInit = "W";
+              break;
+            case "Text shortcuts":
+            case "テキストのショートカット":
+              sectInit = "Tx";
+          }
+          return scHelpSect[sectInit] = el.textContent;
+        case "TABLE":
+          return scrapeHelp(lang, sectInit, el);
+      }
+    });
+  };
+
+  xhr = new XMLHttpRequest();
+
+  forecast = function(lang) {
+    var dfd;
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        analyzeScHelpPage(xhr.responseText, lang);
+        return dfd.resolve();
+      }
+    };
+    xhr.open("GET", scHelpPageUrl + lang, true);
+    xhr.send();
+    return (dfd = $.Deferred()).promise();
+  };
+
+  forecast("ja").done(function() {
+    return forecast("en");
+  });
+
+}).call(this);

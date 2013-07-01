@@ -132,7 +132,7 @@ execCommand = (keyEvent) ->
               newpos = newpos + 1
             else
               newpos = newpos - 1
-            chrome.tabs.move tab.id, {windowId: windowId, index: newpos if newpos > -1}
+            chrome.tabs.move tab.id, {windowId: windowId, index: newpos} if newpos > -1
         when "moveTabFirst"
           getActiveTab().done (tab, windowId) ->
             chrome.tabs.move tab.id, {windowId: windowId, index: 0}
@@ -149,6 +149,12 @@ execCommand = (keyEvent) ->
           getActiveTab().done (tab, windowId) ->
             chrome.tabs.duplicate tab.id, (tab) ->
               chrome.windows.create {tabId: tab.id, focused: true, type: "normal"}
+        when "pinTab"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.update tab.id, pinned: true
+        when "unpinTab"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.update tab.id, pinned: false
         when "switchNextWin"
           chrome.windows.getAll null, (windows) ->
             for i in [0...windows.length]
@@ -167,6 +173,10 @@ execCommand = (keyEvent) ->
                 else
                   chrome.windows.update windows[i - 1].id, {focused: true}
                 break
+      #  when "pasteText"
+      #    setTimeout((->
+      #      flexkbd.PasteText item.command.content
+      #    ), 100)
       #  when "execJS"
       #  when "insertCSS"
 

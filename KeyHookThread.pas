@@ -89,9 +89,23 @@ var
     SetLength(newScans, Length(newScans) + 1);
     newScans[Length(newScans) - 1]:= scan;
   end;
+  procedure PasteText;
+  begin
+    KeybdInput($1D, 0);
+    KeybdInput($2F, 0);
+    KeybdInput($2F, KEYEVENTF_KEYUP);
+    KeybdInput($1D, KEYEVENTF_KEYUP);
+    SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
+  end;
 begin
   //Inc(seq);
   Result:= False;
+  // Paste Text Mode
+  //Write2EventLog('FlexKbd', IntToHex(wPrm, 8));
+  //if wPrm = 2 then begin
+  //  PasteText;
+  //  Exit;
+  //end;
   scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
   //Write2EventLog('FlexKbd', IntToHex(scanCode, 8));
   keyDownState:= 0;
