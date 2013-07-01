@@ -309,6 +309,10 @@
               }
               return _results;
             });
+          case "pasteText":
+            return setTimeout((function() {
+              return flexkbd.PasteText(item.command.content);
+            }), 1);
         }
       }
     });
@@ -320,7 +324,7 @@
     if (keyConfigSet) {
       keyConfigSet.forEach(function(item) {
         if (item.proxy) {
-          return sendData.push(item.proxy + ";" + item.origin + ";" + item.mode);
+          return sendData.push([item.proxy, item.origin, item.mode].join(";"));
         }
       });
       return flexkbd.SetKeyConfig(sendData.join("|"));

@@ -67,23 +67,27 @@
     CommandInputView.prototype.el = ".commandInput";
 
     CommandInputView.prototype.render = function() {
-      this.$(".caption").val("");
-      return this.$(".content").val("");
+      this.$(".command").text("Input for " + commandsDisp[this.command.name][1] + ":");
+      this.$(".caption").val(this.command.caption);
+      return this.$(".content").val(this.command.content);
     };
 
     CommandInputView.prototype.onShowPopup = function(name, id, options) {
+      this.command = options;
       if (!CommandInputView.__super__.onShowPopup.call(this, name, id)) {
         return;
       }
-      this.command = options.command, this.category = options.category;
-      this.$(".command").text("Input for " + commandsDisp[this.command][1] + ":");
-      return this.$(".caption").focus();
+      if (this.command.content) {
+        return this.$(".content").focus();
+      } else {
+        return this.$(".caption").focus();
+      }
     };
 
     CommandInputView.prototype.onSubmitForm = function() {
       this.trigger("setCommand", this.modelId, {
-        name: this.command,
-        category: this.catgory,
+        name: this.command.name,
+        category: this.command.category,
         caption: this.$(".caption").val(),
         content: this.$(".content").val()
       });
@@ -142,7 +146,7 @@
       if (command = this.$(".radioCommand:checked").val()) {
         if ((category = commandsDisp[command][0]) === "custom") {
           this.trigger("showPopup", "commandInput", this.modelId, {
-            command: command,
+            name: command,
             category: category
           });
           this.$el.hide();
@@ -419,9 +423,11 @@
     events: {
       "click .origin,.proxy": "onClickInput",
       "click div.mode": "onClickMode",
-      "click i.icon-pencil": "onClickEditDesc",
+      "click i.memo": "onClickEditMemoIcon",
+      "click i.custom": "onClickEditCustomIcon",
       "click .selectMode div": "onChangeMode",
       "click i.icon-remove": "onClickRemove",
+      "click input.memo": "onClickInputMemo",
       "submit .memo": "onSubmitMemo",
       "blur  .selectMode": "onBlurSelectMode",
       "blur  input.memo": "onBlurInputMemo"
@@ -496,16 +502,29 @@
     onUpdateOrder: function() {
       return this.model.set("ordernum", this.$el.parent().children().index(this.$el));
     },
-    onClickEditDesc: function() {
+    onClickEditCustomIcon: function() {
+      return this.trigger("showPopup", "commandInput", this.model.id, this.model.get("command"));
+    },
+    onClickInputMemo: function() {
+      return event.stopPropagation();
+    },
+    onClickEditMemoIcon: function() {
       var editing, input$, memo;
       (memo = this.$("div.memo")).toggle();
-      editing = (input$ = this.$("form.memo").toggle().find("input")).is(":visible");
+      editing = (input$ = this.$("form.memo").toggle().find("input.memo")).is(":visible");
       if (editing) {
         input$.focus().val(memo.text());
       } else {
         this.onSubmitMemo();
       }
       return event.stopPropagation();
+    },
+    onSubmitMemo: function() {
+      this.$("form.memo").hide();
+      this.model.set({
+        "memo": this.$("div.memo").show().html(escape(this.$("input.memo").val())).text()
+      });
+      return false;
     },
     onClickMode: function() {
       if (this.$(".selectMode").toggle().is(":visible")) {
@@ -546,13 +565,6 @@
       }
       return event != null ? event.stopPropagation() : void 0;
     },
-    onSubmitMemo: function() {
-      this.$("form.memo").hide();
-      this.model.set({
-        "memo": this.$("div.memo").show().html(escape(this.$("input.memo").val())).text()
-      });
-      return false;
-    },
     onBlurInputMemo: function() {
       return this.onSubmitMemo();
     },
@@ -582,7 +594,7 @@
       }
     },
     setDesc: function() {
-      var content, desc, help, i, key, keycombo, lang, mode, tdDesc, test, url, _i, _ref1;
+      var command, commandDisp, content, content3row, desc, help, i, key, keycombo, lang, lines, mode, tdDesc, test, url, _i, _j, _ref1, _ref2;
       (tdDesc = this.$(".desc")).empty();
       switch (mode = this.model.get("mode")) {
         case "bookmark":
@@ -590,8 +602,27 @@
           tdDesc.append("<div class=\"bookmark\" title=\"" + url + "\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/" + url + ") 1x);\">" + (this.model.get("bookmark").title) + "</div>");
           break;
         case "command":
-          desc = commandsDisp[this.model.get("command").name][1];
-          tdDesc.append("<div class=\"commandIcon\">Cmd</div><div class=\"command\">" + desc + "</div>");
+          desc = (commandDisp = commandsDisp[this.model.get("command").name])[1];
+          if (commandDisp[0] === "custom") {
+            command = this.model.get("command");
+            content3row = [];
+            lines = command.content.split("\n");
+            for (i = _i = 0, _ref1 = lines.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+              if (i > 2) {
+                content3row[i - 1] += " ...";
+                break;
+              } else {
+                content3row.push(lines[i]);
+              }
+            }
+            tdDesc.append(this.tmplCommandCustom({
+              desc: desc,
+              content3row: content3row.join("<br>"),
+              caption: command.caption
+            }));
+          } else {
+            tdDesc.append("<div class=\"commandIcon\">Cmd</div><div class=\"command\">" + desc + "</div>");
+          }
           break;
         case "assignOrg":
         case "through":
@@ -609,7 +640,7 @@
             }
           }
           if (help) {
-            for (i = _i = 0, _ref1 = help[lang].length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+            for (i = _j = 0, _ref2 = help[lang].length; 0 <= _ref2 ? _j < _ref2 : _j > _ref2; i = 0 <= _ref2 ? ++_j : --_j) {
               test = help[lang][i].match(/(^\w+)\^(.+)/);
               key = RegExp.$1;
               content = RegExp.$2;
@@ -631,7 +662,8 @@
         }));
       }
     },
-    tmplMemo: _.template("<div>\n  <i class=\"icon-pencil\" title=\"Edit description\"></i>\n</div>\n<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
+    tmplMemo: _.template("<div>\n  <i class=\"memo icon-pencil\" title=\"Edit description\"></i>\n</div>\n<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
+    tmplCommandCustom: _.template("<div class=\"commandIcon\">Cmd</div>\n<div class=\"command\"><%=desc%>: <span class=\"caption\"><%=caption%></span></div>\n<i class=\"custom icon-pencil\"></i><div class=\"content3row\"><%=content3row%></div>"),
     tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
     template: _.template("<tr class=\"data\">\n  <td>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </td>\n  <td>\n    <i class=\"icon-arrow-right\"></i>\n  </td>\n  <td class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </td>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(name, key) { %>\n      <div class=\"<%=key%>\"><%=name%></div>\n      <% }); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"remove\">\n    <i class=\"icon-remove\" title=\"Delete\"></i>\n  </td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
@@ -922,6 +954,7 @@
     headerView.on("changeSelKbd", keyConfigSetView.onChangeSelKbd, keyConfigSetView);
     keyConfigSetView.on("showPopup", bookmarksView.onShowPopup, bookmarksView);
     keyConfigSetView.on("showPopup", commandsView.onShowPopup, commandsView);
+    keyConfigSetView.on("showPopup", commandInputView.onShowPopup, commandInputView);
     bookmarksView.on("setBookmark", keyConfigSetView.onSetBookmark, keyConfigSetView);
     commandsView.on("setCommand", keyConfigSetView.onSetCommand, keyConfigSetView);
     commandsView.on("showPopup", commandInputView.onShowPopup, commandInputView);

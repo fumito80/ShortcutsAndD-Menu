@@ -77,9 +77,11 @@ KeyConfigView = Backbone.View.extend
   events:
     "click .origin,.proxy"  : "onClickInput"
     "click div.mode"        : "onClickMode"
-    "click i.icon-pencil"   : "onClickEditDesc"
+    "click i.memo"          : "onClickEditMemoIcon"
+    "click i.custom"        : "onClickEditCustomIcon"
     "click .selectMode div" : "onChangeMode"
     "click i.icon-remove"   : "onClickRemove"
+    "click input.memo"      : "onClickInputMemo"
     "submit .memo"          : "onSubmitMemo"
     "blur  .selectMode"     : "onBlurSelectMode"
     "blur  input.memo"      : "onBlurInputMemo"
@@ -148,15 +150,27 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
-  onClickEditDesc: ->
+  onClickEditCustomIcon: ->
+    @trigger "showPopup", "commandInput", @model.id, @model.get("command")
+  
+  onClickInputMemo: ->
+    event.stopPropagation()
+  
+  onClickEditMemoIcon: ->
     (memo = @$("div.memo")).toggle()
-    editing = (input$ = @$("form.memo").toggle().find("input")).is(":visible")
+    editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
     if editing
+      input$.focus().val memo.text()
       #startEditing()
-      input$.focus().val(memo.text())
     else
       @onSubmitMemo()
     event.stopPropagation()
+  
+  onSubmitMemo: ->
+    @$("form.memo").hide()
+    @model.set "memo": @$("div.memo").show().html(escape @$("input.memo").val()).text()
+    #endEditing()
+    false
   
   onClickMode: ->
     if @$(".selectMode").toggle().is(":visible")
@@ -195,12 +209,6 @@ KeyConfigView = Backbone.View.extend
       @$(".origin").focus()
     event?.stopPropagation()
   
-  onSubmitMemo: ->
-    @$("form.memo").hide()
-    @model.set "memo": @$("div.memo").show().html(escape @$("input.memo").val()).text()
-    #endEditing()
-    false
-  
   onBlurInputMemo: ->
     @onSubmitMemo()
   
@@ -235,8 +243,20 @@ KeyConfigView = Backbone.View.extend
         url = @model.get("bookmark").url
         tdDesc.append """<div class="bookmark" title="#{url}" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/#{url}) 1x);">#{@model.get("bookmark").title}</div>"""
       when "command"
-        desc = commandsDisp[@model.get("command").name][1]
-        tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
+        desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
+        if commandDisp[0] is "custom"
+          command = @model.get("command")
+          content3row = []
+          lines = command.content.split("\n")
+          for i in [0...lines.length]
+            if i > 2
+              content3row[i-1] += " ..."
+              break
+            else
+              content3row.push lines[i]
+          tdDesc.append @tmplCommandCustom desc: desc, content3row: content3row.join("<br>"), caption: command.caption
+        else
+          tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
       when "assignOrg", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "assignOrg"
@@ -259,15 +279,21 @@ KeyConfigView = Backbone.View.extend
               ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
     if tdDesc.html() is ""
       tdDesc.append @tmplMemo memo: @model.get("memo")
-
+  
   tmplMemo: _.template """
     <div>
-      <i class="icon-pencil" title="Edit description"></i>
+      <i class="memo icon-pencil" title="Edit description"></i>
     </div>
     <form class="memo">
       <input type="text" class="memo">
     </form>
     <div class="memo"><%=memo%></div>
+    """
+  
+  tmplCommandCustom: _.template """
+    <div class="commandIcon">Cmd</div>
+    <div class="command"><%=desc%>: <span class="caption"><%=caption%></span></div>
+    <i class="custom icon-pencil"></i><div class="content3row"><%=content3row%></div>
     """
   
   tmplHelp: _.template """
@@ -554,6 +580,7 @@ $ ->
   headerView.on       "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
   keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
   keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
+  keyConfigSetView.on "showPopup"        , commandInputView.onShowPopup        , commandInputView
   bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
   commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
   commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView

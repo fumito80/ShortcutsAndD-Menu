@@ -101,30 +101,33 @@ begin
   //Inc(seq);
   Result:= False;
   // Paste Text Mode
-  //Write2EventLog('FlexKbd', IntToHex(wPrm, 8));
-  //if wPrm = 2 then begin
-  //  PasteText;
-  //  Exit;
-  //end;
-  scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
-  //Write2EventLog('FlexKbd', IntToHex(scanCode, 8));
-  keyDownState:= 0;
-  if (scanCode and $8000) <> 0 then begin
-    keyDownState:= KEYEVENTF_KEYUP;
-    scanCode:= scanCode and $7FFF;
+  if wPrm = g_pasteText then begin
+    Write2EventLog('FlexKbd', IntToHex(wPrm, 8));
+    keyDownState:= 0;
+    modifierFlags:= FLAG_CONTROL;
+    scanCode:= 86;
+    scans:= '0186';
+  end else begin
+    scanCode:= HiWord(wPrm and $00000000FFFFFFFF);
+    //Write2EventLog('FlexKbd', IntToHex(scanCode, 8));
+    keyDownState:= 0;
+    if (scanCode and $8000) <> 0 then begin
+      keyDownState:= KEYEVENTF_KEYUP;
+      scanCode:= scanCode and $7FFF;
+    end;
+    if (scanCode and $6000) <> 0 then begin
+      scanCode:= scanCode and $1FFF; // リピート or Alt
+    end;
+    //Write2EventLog('FlexKbd', IntToStr(seq) + ') ' + IntToStr(scanCode) + ': ' + IntToHex(scanCode, 8) + ': '+ IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
+    GetKeyState(0);
+    GetKeyboardState(KeyState);
+    modifierFlags:= 0;
+    modifierFlags:= modifierFlags or (Ord((KeyState[VK_CONTROL] and 128) <> 0) * FLAG_CONTROL);
+    modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * FLAG_MENU);
+    modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * FLAG_SHIFT);
+    modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
+    scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
   end;
-  if (scanCode and $6000) <> 0 then begin
-    scanCode:= scanCode and $1FFF; // リピート or Alt
-  end;
-  //Write2EventLog('FlexKbd', IntToStr(seq) + ') ' + IntToStr(scanCode) + ': ' + IntToHex(scanCode, 8) + ': '+ IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
-  GetKeyState(0);
-  GetKeyboardState(KeyState);
-  modifierFlags:= 0;
-  modifierFlags:= modifierFlags or (Ord((KeyState[VK_CONTROL] and 128) <> 0) * FLAG_CONTROL);
-  modifierFlags:= modifierFlags or (Ord((KeyState[VK_MENU]    and 128) <> 0) * FLAG_MENU);
-  modifierFlags:= modifierFlags or (Ord((KeyState[VK_SHIFT]   and 128) <> 0) * FLAG_SHIFT);
-  modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
-  scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
   //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
 
   // Exit1 --> Modifierキー単独のとき
@@ -276,6 +279,12 @@ begin
         lastTarget:= scans;
         lastModified:= keyConfig.origin;
         virtualScanCode:= keyConfig.scanCode;
+        if wPrm = 2 then begin
+          SetLength(KeyInputs, 0);
+          KeybdInput(86, KEYEVENTF_KEYUP);
+          ReleaseModifier(VK_LCONTROL, SCAN_LCONTROL, KEYEVENTF_KEYUP);
+          SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
+        end;
       end else if (keyDownState = 0) and (keyConfig.mode = 'simEvent') then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end else if (keyDownState = 0) and ((keyConfig.mode = 'bookmark') or (keyConfig.mode = 'command')) then begin

@@ -173,10 +173,10 @@ execCommand = (keyEvent) ->
                 else
                   chrome.windows.update windows[i - 1].id, {focused: true}
                 break
-      #  when "pasteText"
-      #    setTimeout((->
-      #      flexkbd.PasteText item.command.content
-      #    ), 100)
+        when "pasteText"
+          setTimeout((->
+            flexkbd.PasteText item.command.content
+          ), 1)
       #  when "execJS"
       #  when "insertCSS"
 
@@ -185,7 +185,11 @@ setConfigPlugin = (keyConfigSet) ->
   if keyConfigSet
     keyConfigSet.forEach (item) ->
       if (item.proxy)
-        sendData.push item.proxy + ";" + item.origin + ";" + item.mode
+        sendData.push [item.proxy, item.origin, item.mode].join(";")
+        #if item.command?.name is "pasteText"
+        #  sendData.push [item.proxy, item.origin, item.mode, item.command.content].join(";")
+        #else
+        #  sendData.push [item.proxy, item.origin, item.mode].join(";")
     flexkbd.SetKeyConfig sendData.join("|")
 
 fk.saveConfig = (saveData) ->

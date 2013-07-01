@@ -13,7 +13,8 @@ uses
   Math,
   KeyHookThread in 'KeyHookThread.pas',
   MouseHookThread in 'MouseHookThread.pas',
-  Common in 'Common.pas';
+  Common in 'Common.pas',
+  ClipBrd;
 
 type
   TMyClass = class(TPlugin)
@@ -258,6 +259,13 @@ begin
         scanCode
       ));
     end;
+    keyConfigList.AddObject('0186', TKeyConfig.Create(
+      'assignOrg',
+      '0147',
+      '0186',
+      1,
+      47
+    ));
   finally
     paramsList.Free;
     paramList.Free;
@@ -315,16 +323,14 @@ procedure TMyClass.ReconfigHook(configMode: Boolean = False);
 var
   dummyFlag: Boolean;
   bytesRead: Cardinal;
-  reloadFlag: UInt64;
 begin
   if keyHookTh = nil then begin
     g_configMode:= False;
     StartHook(false);
   end else begin
     g_configMode:= configMode;
-    reloadFlag:= 1;
-    CallNamedPipe(PAnsiChar(keyPipeName)  , @reloadFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-    CallNamedPipe(PAnsiChar(MousePipeName), @reloadFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    CallNamedPipe(PAnsiChar(keyPipeName)  , @g_reloadConfig, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    CallNamedPipe(PAnsiChar(MousePipeName), @g_reloadConfig, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
   end;
 end;
 
@@ -332,13 +338,10 @@ procedure TMyClass.PasteText(const params: array of Variant);
 var
   dummyFlag: Boolean;
   bytesRead: Cardinal;
-  pasteTextFlag: UInt64;
 begin
   if params[0] = '' then Exit;
-  //Clipboard.AsText := params[0];
-  //Write2EventLog('FlexKbd', params[0]);
-  pasteTextFlag:= 2;
-  //CallNamedPipe(PAnsiChar(keyPipeName), @pasteTextFlag, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+  Clipboard.AsText := params[0];
+  CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
 end;
 
 begin

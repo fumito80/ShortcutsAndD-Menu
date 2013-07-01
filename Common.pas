@@ -52,8 +52,8 @@ const
 var
   modifiersCode: array[0..7] of Cardinal;
   g_configMode: Boolean;
-  //g_reloadConfig: UInt64 = 1;
-  //g_pasteText   : UInt64 = 2;
+  g_reloadConfig: UInt64 = 1;
+  g_pasteText   : UInt64 = 2;
 
 implementation
 
@@ -89,16 +89,15 @@ begin
     if ConnectNamedPipe(pipeHandle, nil) then begin
       try
         if ReadFile(pipeHandle, wPrm, SizeOf(UInt64), bytesRead, nil) then begin
-          if wPrm = 1 then begin // Config reloadŽž
+          if wPrm = g_reloadConfig then begin // Config reloadŽž
             criticalSection.Acquire;
             Self.configMode:= g_configMode;
             Self.keyConfigList:= keyConfigList;
             criticalSection.Release;
             Continue;
-          //end else if wPrm = 2 then begin // Paste TextŽž
-          //  Write2EventLog('FlexKbd', 'ok'); //IntToStr(wPrm and $00000000FFFFFFFF));
-          //  VaridateEvent(wPrm);
-          //  Continue;
+          end else if wPrm = g_pasteText then begin // Paste TextŽž
+            VaridateEvent(wPrm);
+            Continue;
           end;
           cancelFlag:= VaridateEvent(wPrm);
           WriteFile(pipeHandle, cancelFlag, SizeOf(Boolean), bytesWrite, nil);

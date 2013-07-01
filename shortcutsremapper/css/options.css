@@ -331,6 +331,13 @@ th i.icon-arrow-right {
   background-size: 16px;
   background-position-y: 2px;
 }
+.keyConfigSetView .caption {
+  color: #000000;
+  font-weight: bold;
+}
+.keyConfigSetView .content3row {
+  font-size: 1.0em;
+}
 .keyConfigSetView .remove {
   text-align: right;
   padding-right: 8px;
