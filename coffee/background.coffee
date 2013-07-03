@@ -5,16 +5,12 @@ sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
     chrome.tabs.sendMessage tabs[0].id, message
 
-###
-triggerShortcutKey = ->
-  #flexkbd.KeyEvent()
-
-chrome.contextMenus.create
-  title: "「%s」をページ内検索"
-  type: "normal"
-  contexts: ["selection"]
-  onclick: triggerShortcutKey
-###
+chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
+  switch request.action
+    when "callShortcut"
+      setTimeout((-> flexkbd.CallShortcut(request.scCode, request.msec)), 0)
+    when "setClipboard"
+      flexkbd.SetClipboard request.text
 
 getActiveTab = ->
   dfd = $.Deferred()
@@ -109,6 +105,34 @@ closeTabs = (fnWhere) ->
         tabIds.push tab.id if fnWhere(tab)
       chrome.tabs.remove tabIds if tabIds.length > 0
 
+jsUitlObj = """
+  scrmp = {
+    entry: function(scCode, sleepMSec) {
+      msec = 100;
+      if (sleepMSec != null) {
+        if (Number.isNaN(msec = parseInt(sleepMSec, 10))) {
+          alert(sleepMSec + " is not a number.");
+          return;
+        }
+      }
+      chrome.runtime.sendMessage({
+        action: "callShortcut",
+        scCode: scCode,
+        msec: msec
+      });
+    },
+    sleep: function(sleepMSec) {
+      this.entry("", sleepMSec);
+    },
+    clipbrd: function(text) {
+      chrome.runtime.sendMessage({
+        action: "setClipboard",
+        text: text
+      });
+    }
+  };
+  """
+
 execCommand = (keyEvent) ->
   local = fk.getConfig()
   pos = 0
@@ -176,9 +200,20 @@ execCommand = (keyEvent) ->
         when "pasteText"
           setTimeout((->
             flexkbd.PasteText item.command.content
-          ), 1)
-      #  when "execJS"
-      #  when "insertCSS"
+          ), 0)
+        when "insertCSS"
+          getActiveTab().done (tab) ->
+            chrome.tabs.insertCSS tab.id,
+              code: item.command.content
+              allFrames: item.command.allFrames
+        when "execJS"
+          code = item.command.content
+          if item.command.useUtilObj
+            code = jsUitlObj + code
+          getActiveTab().done (tab) ->
+            chrome.tabs.executeScript tab.id,
+              code: code
+              allFrames: item.command.allFrames
 
 setConfigPlugin = (keyConfigSet) ->
   sendData = []
@@ -186,10 +221,6 @@ setConfigPlugin = (keyConfigSet) ->
     keyConfigSet.forEach (item) ->
       if (item.proxy)
         sendData.push [item.proxy, item.origin, item.mode].join(";")
-        #if item.command?.name is "pasteText"
-        #  sendData.push [item.proxy, item.origin, item.mode, item.command.content].join(";")
-        #else
-        #  sendData.push [item.proxy, item.origin, item.mode].join(";")
     flexkbd.SetKeyConfig sendData.join("|")
 
 fk.saveConfig = (saveData) ->
@@ -213,9 +244,9 @@ fk.getScHelpSect = ->
 fk.getConfig = ->
   JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
 
-fk.startEditing = ->
+fk.startEdit = ->
   flexkbd.EndConfigMode()
-fk.endEditing = ->
+fk.endEdit = ->
   flexkbd.StartConfigMode()
 
 window.pluginEvent = (action, value) ->

@@ -19,7 +19,25 @@ escape = (html) ->
   ">": "&gt;"
   html.replace /[&<>]/g, (match) ->
     entity[match]
-  
+
+decodeKbdEvent = (value) ->
+  modifiers = parseInt(value.substring(0, 2), 16)
+  scanCode = value.substring(2)
+  keyIdenfiers = keys[scanCode]
+  keyCombo = []
+  keyCombo.push "Ctrl"    if modifiers &  1
+  keyCombo.push "Alt"     if modifiers &  2
+  keyCombo.push "Win"     if modifiers &  8
+  keyCombo.push "MouseL"  if modifiers & 16
+  keyCombo.push "MouseR"  if modifiers & 32
+  keyCombo.push "MouseM"  if modifiers & 64
+  if modifiers & 4
+    keyCombo.push "Shift"
+    keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
+  else
+    keyCombo.push keyIdenfiers[0]
+  keyCombo.join(" + ")
+
 HeaderView = Backbone.View.extend
 
   scHelpUrl: "https://support.google.com/chrome/answer/157179?hl="
@@ -128,8 +146,7 @@ KeyConfigView = Backbone.View.extend
     if input$.length > 0
       if input$.hasClass "proxy"
         if @model.id isnt value && @model.collection.findWhere(proxy: value)
-          @trigger "decodeKbdEvent", value, container = {}
-          $("#tiptip_content").text("\"#{container.result}\" is already exists.")
+          $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
           input$.tipTip()
           return
       else # Origin
@@ -151,7 +168,7 @@ KeyConfigView = Backbone.View.extend
   
   # DOM Events
   onClickEditCustomIcon: ->
-    @trigger "showPopup", "commandInput", @model.id, @model.get("command")
+    @trigger "showPopup", "commandInput", @model, @model.get("command")
   
   onClickInputMemo: ->
     event.stopPropagation()
@@ -161,7 +178,7 @@ KeyConfigView = Backbone.View.extend
     editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
     if editing
       input$.focus().val memo.text()
-      #startEditing()
+      startEdit()
     else
       @onSubmitMemo()
     event.stopPropagation()
@@ -169,7 +186,7 @@ KeyConfigView = Backbone.View.extend
   onSubmitMemo: ->
     @$("form.memo").hide()
     @model.set "memo": @$("div.memo").show().html(escape @$("input.memo").val()).text()
-    #endEditing()
+    endEdit()
     false
   
   onClickMode: ->
@@ -186,7 +203,7 @@ KeyConfigView = Backbone.View.extend
       mode = event.currentTarget.className
       @$(".selectMode").hide()
       if mode in ["bookmark", "command"]
-        @trigger "showPopup", mode, @model.id, @model.get(mode)
+        @trigger "showPopup", mode, @model, @model.get(mode)
         return
     @model.set "mode", mode
     @$(".mode")
@@ -223,17 +240,16 @@ KeyConfigView = Backbone.View.extend
       .addClass mode
     if mode is "assignOrg"
       @$(".origin").attr("tabIndex", "0")
-      @$("td:first").removeAttr("colspan")
-      @$("td:eq(1),td:eq(2)").show()
+      @$("th:first").removeAttr("colspan")
+      @$("th:eq(1),th:eq(2)").show()
     else
       @$(".origin").removeAttr("tabIndex")
-      @$("td:first").attr("colspan", "3")
-      @$("td:eq(1),td:eq(2)").hide()
+      @$("th:first").attr("colspan", "3")
+      @$("th:eq(1),th:eq(2)").hide()
   
   setKbdValue: (input$, value) ->
-    @trigger "decodeKbdEvent", value, container = {}
-    if container.result
-      input$.html _.map(container.result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
+    if result = decodeKbdEvent value
+      input$.html _.map(result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
   
   setDesc: ->
     (tdDesc = @$(".desc")).empty()
@@ -293,7 +309,7 @@ KeyConfigView = Backbone.View.extend
   tmplCommandCustom: _.template """
     <div class="commandIcon">Cmd</div>
     <div class="command"><%=desc%>: <span class="caption"><%=caption%></span></div>
-    <i class="custom icon-pencil"></i><div class="content3row"><%=content3row%></div>
+    <i class="custom icon-pencil" title="Edit command"></i><div class="content3row"><%=content3row%></div>
     """
   
   tmplHelp: _.template """
@@ -302,15 +318,15 @@ KeyConfigView = Backbone.View.extend
   
   template: _.template """
     <tr class="data">
-      <td>
+      <th>
         <div class="proxy" tabIndex="0"></div>
-      </td>
-      <td>
+      </th>
+      <th>
         <i class="icon-arrow-right"></i>
-      </td>
-      <td class="tdOrigin">
+      </th>
+      <th class="tdOrigin">
         <div class="origin" tabIndex="0"></div>
-      </td>
+      </th>
       <td class="options">
         <div class="mode"><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
@@ -367,7 +383,6 @@ KeyConfigSetView = Backbone.View.extend
   # Collection Events
   onAddRender: (model) ->
     keyConfigView = new KeyConfigView(model: model)
-    keyConfigView.on "decodeKbdEvent", @onChildDecodeKbdEvent, @
     keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
     keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
     keyConfigView.on "showPopup"     , @onShowPopup          , @
@@ -387,7 +402,7 @@ KeyConfigSetView = Backbone.View.extend
       else
         return
     if @collection.findWhere(proxy: value)
-      $("#tiptip_content").text("\"#{@decodeKbdEvent(value)}\" is already exists.")
+      $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
       return
     @$("div.addnew").blur()
@@ -406,9 +421,6 @@ KeyConfigSetView = Backbone.View.extend
     newitem.trigger "setFocus"
   
   # Child Model Events
-  onChildDecodeKbdEvent: (value, container) ->
-    container.result = @decodeKbdEvent value
-  
   onChildRemoveConfig: (model) ->
     @collection.remove model
     @onStopSort()
@@ -419,8 +431,8 @@ KeyConfigSetView = Backbone.View.extend
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
-  onShowPopup: (name, modelId, options) ->
-    @trigger "showPopup", name, modelId, options
+  onShowPopup: (name, model, options) ->
+    @trigger "showPopup", name, model, options
   
   onSetBookmark: (modelId, options) ->
     @collection.get(modelId)
@@ -438,7 +450,7 @@ KeyConfigSetView = Backbone.View.extend
       return
     if @collection.length > 50
       $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)")
-      $(event.currentTarget).tipTip(defaultPosition: "left")
+      $(event.currentTarget).tipTip defaultPosition: "left"
       return false
     $(@tmplAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
@@ -477,24 +489,6 @@ KeyConfigSetView = Backbone.View.extend
     @collection.sort()
   
   # Object Method
-  decodeKbdEvent: (value) ->
-    modifiers = parseInt(value.substring(0, 2), 16)
-    scanCode = value.substring(2)
-    keyIdenfiers = keys[scanCode]
-    keyCombo = []
-    keyCombo.push "Ctrl"    if modifiers &  1
-    keyCombo.push "Alt"     if modifiers &  2
-    keyCombo.push "Win"     if modifiers &  8
-    keyCombo.push "MouseL"  if modifiers & 16
-    keyCombo.push "MouseR"  if modifiers & 32
-    keyCombo.push "MouseM"  if modifiers & 64
-    if modifiers & 4
-      keyCombo.push "Shift"
-      keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
-    else
-      keyCombo.push keyIdenfiers[0]
-    keyCombo.join(" + ")
-  
   getSaveData: ->
     @collection.remove @collection.findWhere proxy: @placeholder
     config: @model.toJSON()
@@ -502,9 +496,9 @@ KeyConfigSetView = Backbone.View.extend
   
   tmplAddNew: _.template """
     <tr class="addnew">
-      <td colspan="3">
+      <th colspan="3">
         <div class="proxy addnew" tabIndex="0"><%=placeholder%></div>
-      </td>
+      </th>
       <td></td><td></td><td></td><td class="blank"></td>
     </tr>
     """
@@ -555,11 +549,11 @@ keyCodes = fk.getKeyCodes()
 scHelp   = fk.getScHelp()
 scHelpSect = fk.getScHelpSect()
 
-startEditing = ->
-  fk.startEditing()
+startEdit = ->
+  fk.startEdit()
 
-endEditing = ->
-  fk.endEditing()
+endEdit = ->
+  fk.endEdit()
 
 $ = jQuery
 $ ->
@@ -581,9 +575,9 @@ $ ->
   keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
   keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
   keyConfigSetView.on "showPopup"        , commandInputView.onShowPopup        , commandInputView
+  commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
   bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
   commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
-  commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
   commandInputView.on "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->

@@ -36,10 +36,10 @@
   <div class="popup bookmarks">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <label>Search bookmarks:
-        <input type="text" class="query" size="22" placeholder="Get all"><button type="submit"><i class="icon-search"></i></button>
-      </label>
-      <label><input type="checkbox" class="expand" checked> Expand all</label>
+      <div>Bookmark for <span class="shortcut"></span>:
+        <input type="text" class="query" size="20" placeholder="Get all"><button type="submit"><i class="icon-search"></i></button>
+        <label><input type="checkbox" class="expand" checked> Expand</label>
+      </div>
     </form>
     <div class="result_outer">
       <div class="result"></div>
@@ -48,20 +48,19 @@
   <div class="popup commands">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <div>Select a command:<button type="submit"><i class="icon-ok"></i> Done</button></div>
+      <div>Command for <span class="shortcut"></span>:<button type="submit" class="done blue"><i class="icon-ok"></i> Done</button></div>
       <div class="commandRadios"></div>
     </form>
   </div>
   <div class="popup commandInput">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <div>
-        <span class="command"></span><button type="submit"><i class="icon-ok"></i> Done</button>
+      <div class="panel1">
+        <span class="command"></span> for <span class="shortcut"></span>:<button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
+        <input type="text" class="caption" placeholder="Title(Optional)">
       </div>
-      <div class="">
-        <input type="text" class="caption" placeholder="Title(Optional)" autofocus><br>
-        <textarea class="content" placeholder="Content"></textarea>
-      </div>
+      <div class="commandOptions"></div>
+      <textarea class="content" placeholder="Content"></textarea>
     </form>
   </div>
   <div class="backscreen"></div>

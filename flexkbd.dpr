@@ -43,10 +43,12 @@ type
     procedure EndConfigMode;
     // 設定を反映 & コンフィグモード終了兼監視モード開始
     procedure PasteText(const params: array of Variant);
+    procedure CallShortcut(const params: array of Variant);
+    procedure SetClipboard(const params: array of Variant);
   end;
 
 var
-  hookKey, hookMouse: HHOOK;
+  hookKey, hookMouse, hookMouseWheel: HHOOK;
   keyConfigList: TStringList;
 
 constructor TMyClass.Create( AInstance         : PNPP ;
@@ -95,6 +97,7 @@ destructor TMyClass.Destroy;
 begin
   EndHook;
   CloseHandle(keyPipeHandle);
+  CloseHandle(mousePipeHandle);
   keyConfigList.Free;
   //Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
   inherited;
@@ -107,11 +110,11 @@ var
   hWindow: HWnd;
   buf: array[0..1000] of AnsiChar;
 begin
-  if (code < 0) then begin
+  if (code <> HC_ACTION) then begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
     Exit;
   end;
-  hWindow:= GetforegroundWindow;
+  hWindow:= GetActiveWindow;
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
   if AnsiEndsText('chrome.exe', buf) then begin
     CallNamedPipe(PAnsiChar(keypipename), @wPrm, SizeOf(wPrm), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
@@ -130,10 +133,8 @@ var
   bytesRead: Cardinal;
   hWindow: HWnd;
   buf: array[0..1000] of AnsiChar;
-  mouseInfo: TMsllHookStruct;
   msgAlt: Int64;
   msgFlag: UInt64;
-  mouseData: Smallint;
 begin
   if (code <> HC_ACTION) then begin
     Result:= CallNextHookEx(hookMouse, code, wPrm, lPrm);
@@ -144,20 +145,11 @@ begin
     Result:= CallNextHookEx(HookMouse, code, wPrm, lPrm);
     Exit;
   end;
-  hWindow:= GetforegroundWindow;
+  hWindow:= GetActiveWindow;
+  //Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText('chrome.exe', buf) then begin
-    mouseInfo:= PMsllHookStruct(lPrm)^;
-    //Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
-    if wPrm = WM_MOUSEWHEEL then begin
-      mouseData:= Hiword(mouseInfo.mouseData);
-      if mouseData > 0 then
-        msgFlag:= WM_WHEEL_UP
-      else
-        msgFlag:= WM_WHEEL_DOWN;
-    end else begin
-      msgFlag:= wPrm; //msg^.message;
-    end;
+  if AnsiEndsText('chrome.exe', buf) and (wPrm <> WM_MOUSEWHEEL) then begin
+    msgFlag:= wPrm;
     CallNamedPipe(PAnsiChar(mousepipename), @msgFlag, SizeOf(msgFlag), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     if cancelFlag then
       Result:= 1
@@ -166,6 +158,37 @@ begin
   end else begin
     Result:= CallNextHookEx(hookMouse, code, wPrm, lPrm);
   end;
+end;
+
+function MouseWheelHookFunc(code: Integer; wPrm: WPARAM; lPrm: LPARAM): LRESULT; stdcall;
+var
+  cancelFlag: Boolean;
+  bytesRead: Cardinal;
+  hWindow: HWnd;
+  buf: array[0..1000] of AnsiChar;
+  msgFlag: UInt64;
+  msg: TMsg;
+begin
+  if (code <> HC_ACTION) then begin
+    Result:= CallNextHookEx(hookMouseWheel, code, wPrm, lPrm);
+    Exit;
+  end;
+  msg:= PMsg(lPrm)^;
+  if msg.message = WM_MOUSEWHEEL then begin
+    hWindow:= GetActiveWindow;
+    GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
+    if AnsiEndsText('chrome.exe', buf) then begin
+      //Write2EventLog('FlexKbd', IntToStr(msg.wParam));
+      if msg.wParam > 0 then
+        msgFlag:= WM_WHEEL_UP
+      else
+        msgFlag:= WM_WHEEL_DOWN;
+      CallNamedPipe(PAnsiChar(mousepipename), @msgFlag, SizeOf(msgFlag), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+      if cancelFlag then
+        PMsg(lPrm)^.message:= WM_NULL;
+    end;
+  end;
+  Result:= CallNextHookEx(hookMouseWheel, code, wPrm, lPrm);
 end;
 
 procedure TMyClass.SetKeyConfig(const params: array of Variant);
@@ -259,7 +282,7 @@ begin
         scanCode
       ));
     end;
-    keyConfigList.AddObject('0186', TKeyConfig.Create(
+    keyConfigList.AddObject('0086', TKeyConfig.Create(
       'assignOrg',
       '0147',
       '0186',
@@ -289,7 +312,8 @@ end;
 procedure TMyClass.StartHook(configMode: Boolean);
 begin
   mouseHookTh:= TMouseHookTh.Create(mousePipeHandle, browser, keyConfigList, configMode);
-  hookMouse:= SetWindowsHookEx(14, @MouseHookFunc, hInstance, 0);
+  hookMouse:= SetWindowsHookEx(WH_MOUSE, @MouseHookFunc, hInstance, 0);
+  hookMouseWheel:= SetWindowsHookEx(WH_GETMESSAGE, @MouseWheelHookFunc, hInstance, 0);
   keyHookTh:= TKeyHookTh.Create(keyPipeHandle, browser, keyConfigList, configMode);
   hookKey:= SetWindowsHookEx(WH_KEYBOARD, @KeyHookFunc, hInstance, 0);
 end;
@@ -297,24 +321,29 @@ end;
 // Stop KeyHook
 procedure TMyClass.EndHook;
 var
-  cancelValue: UInt64;
   dummyFlag: Boolean;
   bytesRead: Cardinal;
 begin
   if hookKey <> 0 then
    	UnHookWindowsHookEX(hookKey);
    	UnHookWindowsHookEX(hookMouse);
+   	UnHookWindowsHookEX(hookMouseWheel);
   if keyHookTh <> nil then begin
-    cancelValue:= 0;
-    keyHookTh.Terminate;
-    CallNamedPipe(PAnsiChar(keyPipeName), @cancelValue, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-    keyHookTh.WaitFor;
-    FreeAndNil(keyHookTh);
+    try
+      keyHookTh.Terminate;
+      CallNamedPipe(PAnsiChar(keyPipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+      keyHookTh.WaitFor;
+      FreeAndNil(keyHookTh);
+    except
+    end;
     // Mouse hook
-    mouseHookTh.Terminate;
-    CallNamedPipe(PAnsiChar(mousePipeName), @cancelValue, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-    mouseHookTh.WaitFor;
-    FreeAndNil(mouseHookTh);
+    try
+      mouseHookTh.Terminate;
+      CallNamedPipe(PAnsiChar(mousePipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+      mouseHookTh.WaitFor;
+      FreeAndNil(mouseHookTh);
+    except
+    end;
   end;
 end;
 
@@ -340,8 +369,35 @@ var
   bytesRead: Cardinal;
 begin
   if params[0] = '' then Exit;
-  Clipboard.AsText := params[0];
+  Clipboard.AsText:= params[0];
   CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+end;
+
+procedure TMyClass.SetClipboard(const params: array of Variant);
+begin
+  Clipboard.AsText:= params[0];
+end;
+
+procedure TMyClass.CallShortcut(const params: array of Variant);
+var
+  dummyFlag: Boolean;
+  bytesRead: Cardinal;
+  scansInt64, scanCode: UInt64;
+  Modifiers: Cardinal;
+begin
+  try
+    //Write2EventLog('FlexKbd', params[0]);
+    if params[0] <> '' then begin
+      scanCode:= StrToInt(Copy(params[0], 3, 10));
+      scansInt64:= scanCode shl 16;
+      Modifiers:= StrToInt(LeftBStr(params[0], 2));
+      scansInt64:= scansInt64 + (Modifiers shl 8) + g_callShortcut;
+      Write2EventLog('FlexKbd', IntToStr(scansInt64));
+      CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    end;
+    sleep(params[1]);
+  except
+  end;
 end;
 
 begin

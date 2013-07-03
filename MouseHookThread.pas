@@ -36,8 +36,8 @@ const
   MSG_MOUSE_MUP   = WM_MBUTTONUP   - $0200;
   MSG_MOUSE_MDBL  = WM_MBUTTONDBLCLK - $0200;
   MSG_MOUSE_WHEEL = WM_MOUSEWHEEL  - $0200;
-  WM_WHEEL_UP   = $020B;
-  WM_WHEEL_DOWN = $020D;
+  WM_WHEEL_UP    = $020B;
+  WM_WHEEL_DOWN  = $020D;
   FLAG_LDOWN = 16;
   FLAG_RDOWN = 32;
   FLAG_MDOWN = 64;
@@ -114,6 +114,11 @@ begin
   modifierFlags:= modifierFlags or (Ord(stateDownR) * FLAG_RDOWN);
   modifierFlags:= modifierFlags or (Ord(stateDownM) * FLAG_MDOWN);
   //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(wPrm, 4) + ': ' + scans);
+  //if wPrm = WM_MOUSEWHEEL then begin
+  //  if configMode and (modifierFlags <> 0) then
+  //    Result:= True;
+  //  Exit;
+  //end;
   stateButton:= wPrm - $200;
   case stateButton of
     MSG_MOUSE_LDOWN: stateDownL:= True;
@@ -131,8 +136,7 @@ begin
     stateDownL:= False;
     Exit;
   end;
-
-
+  
   scans:= IntToHex(modifierFlags, 2) + IntToStr(wPrm);
   
   if configMode then begin

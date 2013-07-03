@@ -52,8 +52,10 @@ const
 var
   modifiersCode: array[0..7] of Cardinal;
   g_configMode: Boolean;
+  g_destroy     : UInt64 = 0;
   g_reloadConfig: UInt64 = 1;
   g_pasteText   : UInt64 = 2;
+  g_callShortcut: UInt64 = 4;
 
 implementation
 
@@ -89,7 +91,9 @@ begin
     if ConnectNamedPipe(pipeHandle, nil) then begin
       try
         if ReadFile(pipeHandle, wPrm, SizeOf(UInt64), bytesRead, nil) then begin
-          if wPrm = g_reloadConfig then begin // Config reloadŽž
+          if wPrm = g_destroy then begin // DestroyŽž
+            Break;
+          end else if wPrm = g_reloadConfig then begin // Config reloadŽž
             criticalSection.Acquire;
             Self.configMode:= g_configMode;
             Self.keyConfigList:= keyConfigList;
@@ -106,7 +110,6 @@ begin
         DisconnectNamedPipe(pipeHandle);
       end;
     end else begin
-
       Write2EventLog('FlexKbd', 'Error: Connect named pipe');
       Break;
     end;

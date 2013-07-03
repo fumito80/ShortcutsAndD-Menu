@@ -70,7 +70,7 @@ body {
   overflow-x: hidden;
   padding-bottom: 100px;
 }
-.keyConfigSetView th {
+.keyConfigSetView thead th {
   border: 0;
   font-weight: normal;
 }
@@ -104,6 +104,7 @@ tbody .data:hover {
   outline: 0;
   padding: 4px;
   display: inline-block;
+  border-radius: 3px;
   box-shadow: none;
   border: 1px solid rgba(0,0,0,0);
   cursor: pointer;
@@ -164,7 +165,7 @@ tbody .data:hover {
 .origin span {
   color: #000000;  
 }
-.addnew td {
+.addnew th td {
   padding-top: 10px;
   background: #FFFFFF;
   border: 0;
@@ -248,13 +249,13 @@ div.mode.selecting i {
 i.icon-arrow-right {
   color: #518BAB;
 }
-th i.icon-arrow-right {
+thead th i.icon-arrow-right {
   margin: 2px;
 }
 .keyConfigSetView thead tr {
   border: hidden;
 }
-.keyConfigSetView td {
+.keyConfigSetView tbody td, .keyConfigSetView tbody th {
   border: hidden;
   padding: 4px 5px;
 }
@@ -322,7 +323,7 @@ th i.icon-arrow-right {
   display: none;
 }
 .keyConfigSetView .desc input.memo {
-  font-family: 'Noto Sans', メイリオ, 'MS UI Gothic', Arial;
+  font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   width: 90%;
 }
 .keyConfigSetView .desc .bookmark {
@@ -390,12 +391,27 @@ th i.icon-arrow-right {
   box-shadow: 0 0 20px black;
   border-radius: 1px;
 }
+.popup .shortcut span {
+  padding: 1px 3px;
+  border: 1px solid lightblue;
+  border-radius: 3px;
+  min-width: 24px;
+  display: inline-block;
+  text-align: center;
+  margin: 0px 1px;
+  font: 1.0em verdana bold;
+  color: #000000;
+  background: #FFFFFF;
+}
 .popup .icon-remove {
   position: absolute;
   right: 10px;
   top: 10px;
   font-size: 1.3em;
   cursor: auto;
+}
+.popup .done {
+  padding: 7px 10px;
 }
 .bookmarks {
   width: 600px;
@@ -427,6 +443,7 @@ th i.icon-arrow-right {
 }
 .bookmarks .query {
   padding-right: 23px;
+  margin-left: 15px;
 }
 .bookmarks .expand {
   margin-left: 8px;
@@ -498,16 +515,24 @@ th i.icon-arrow-right {
 .commands .catname {
   text-decoration: underline;
   font-weight: bold;
-  color: navy;
+  color: #333333;
 }
 .commandInput .caption {
+  font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   width: 400px;
   margin-top: 5px;
 }
 .commandInput .content {
+  font: 1.0em 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   width: 600px;
   min-width: 400px;
   margin-top: 5px;
+}
+.commandInput .panel1 {
+  float: left;
+}
+.commandInput .commandOptions label {
+  padding-left: 15px;
 }
 .commandInput button[type='submit'] {
   margin-left: 15px;
