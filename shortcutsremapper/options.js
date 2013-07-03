@@ -71,10 +71,10 @@
       "custom", "Execute JavaScript", [
         {
           value: "allFrames",
-          caption: "All frames"
+          caption: "Apply all frames"
         }, {
           value: "useUtilObj",
-          caption: "Use utility object"
+          caption: "Use a utility object"
         }
       ]
     ]
@@ -151,7 +151,7 @@
       return CommandInputView.__super__.hidePopup.call(this);
     };
 
-    CommandInputView.prototype.tmplOptions = _.template("<label>\n  <input type=\"checkbox\" value=\"<%=value%>\" <%=checked%>> <%=caption%>\n</label>");
+    CommandInputView.prototype.tmplOptions = _.template("<label>\n  <input type=\"checkbox\" value=\"<%=value%>\" <%=checked%>> <%=caption%>\n</label><br>");
 
     return CommandInputView;
 

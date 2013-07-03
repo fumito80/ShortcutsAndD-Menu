@@ -135,7 +135,7 @@ begin
     end;
     scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
   end;
-  Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
+  //Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
 
   // Exit1 --> ModifierƒL[’P“Æ‚Ì‚Æ‚«
   for I:= 0 to 7 do begin

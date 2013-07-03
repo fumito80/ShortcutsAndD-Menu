@@ -25,18 +25,6 @@
     }
   });
 
-  /*
-  triggerShortcutKey = ->
-    #flexkbd.KeyEvent()
-  
-  chrome.contextMenus.create
-    title: "「%s」をページ内検索"
-    type: "normal"
-    contexts: ["selection"]
-    onclick: triggerShortcutKey
-  */
-
-
   getActiveTab = function() {
     var dfd;
     dfd = $.Deferred();
