@@ -5,13 +5,19 @@ WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
 optionsDisp =
-  assignOrg: "None"
-  command:   "Command"
-  bookmark:  "Bookmark"
-  simEvent:  "Simurate key event"
-  disabled:  "Disabled"
-  through:   "Through"
+  remap:    "None"
+  command:  "Command..."
+  bookmark: "Bookmark..."
+  simEvent: "Simurate key event"
+  disabled: "Disabled"
+  through:  "Through"
 
+bmOpenMode =
+  current:   "Open in current tab"
+  newtab:    "Open in new tab"
+  newwin:    "Open in new window"
+  incognito: "Open in incognito window"
+  
 escape = (html) ->
   entity =
   "&": "&amp;"
@@ -20,23 +26,30 @@ escape = (html) ->
   html.replace /[&<>]/g, (match) ->
     entity[match]
 
+modifierKeys  = ["Ctrl", "Alt", "Shift", "Win", "MouseL", "MouseR", "MouseM"]
+modifierInits = ["c"   , "a"  , "s"    , "w"]
+
 decodeKbdEvent = (value) ->
   modifiers = parseInt(value.substring(0, 2), 16)
   scanCode = value.substring(2)
-  keyIdenfiers = keys[scanCode]
+  keyIdentifier = keys[scanCode]
   keyCombo = []
-  keyCombo.push "Ctrl"    if modifiers &  1
-  keyCombo.push "Alt"     if modifiers &  2
-  keyCombo.push "Win"     if modifiers &  8
-  keyCombo.push "MouseL"  if modifiers & 16
-  keyCombo.push "MouseR"  if modifiers & 32
-  keyCombo.push "MouseM"  if modifiers & 64
+  for i in [0...modifierKeys.length]
+    keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
   if modifiers & 4
-    keyCombo.push "Shift"
-    keyCombo.push keyIdenfiers[1] || keyIdenfiers[0]
+    keyCombo.push keyIdentifier[1] || keyIdentifier[0]
   else
-    keyCombo.push keyIdenfiers[0]
+    keyCombo.push keyIdentifier[0]
   keyCombo.join(" + ")
+
+transKbdEvent = (value) ->
+  modifiers = parseInt(value.substring(0, 2), 16)
+  keyCombo = []
+  for i in [0...modifierInits.length]
+    keyCombo.push modifierInits[i] if modifiers & Math.pow(2, i)
+  scanCode = value.substring(2)
+  keyIdenfiers = keys[scanCode]
+  "[" + keyCombo.join("") + "]" + keyIdenfiers[0]
 
 HeaderView = Backbone.View.extend
 
@@ -82,7 +95,7 @@ Config = Backbone.Model.extend({})
 KeyConfig = Backbone.Model.extend
   idAttribute: "proxy"
   defaults:
-    mode: "assignOrg"
+    mode: "remap"
 
 KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
 
@@ -95,13 +108,15 @@ KeyConfigView = Backbone.View.extend
   events:
     "click .origin,.proxy"  : "onClickInput"
     "click div.mode"        : "onClickMode"
-    "click i.memo"          : "onClickEditMemoIcon"
-    "click i.custom"        : "onClickEditCustomIcon"
     "click .selectMode div" : "onChangeMode"
-    "click i.icon-remove"   : "onClickRemove"
+    "click div.delete"      : "onClickRemove"
+    "click div.edit"        : "onClickEdit"
+    "click div.copySC"      : "onClickCopySC"
     "click input.memo"      : "onClickInputMemo"
+    "click button.cog"      : "onClickCog"
     "submit .memo"          : "onSubmitMemo"
     "blur  .selectMode"     : "onBlurSelectMode"
+    "blur  .selectCog"      : "onBlurSelectCog"
     "blur  input.memo"      : "onBlurInputMemo"
   
   initialize: (options) ->
@@ -167,20 +182,19 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
-  onClickEditCustomIcon: ->
-    @trigger "showPopup", "commandInput", @model, @model.get("command")
+  onClickCopySC: ->
+    keycombo = (decodeKbdEvent @model.id).replace /\s/g, ""
+    command = @$("td.options .mode").text().replace "None", ""
+    command = " " + command + ":" if command
+    desc = @$(".desc").find(".content,.command,.bookmark,.memo").text()
+    desc = " " + desc if desc
+    body = "tsc.send('" + transKbdEvent(@model.id) + "');"
+    text = body + " /* " + keycombo + command + desc + " */"
+    chrome.runtime.sendMessage
+      action: "setClipboard"
+      value1: text
   
   onClickInputMemo: ->
-    event.stopPropagation()
-  
-  onClickEditMemoIcon: ->
-    (memo = @$("div.memo")).toggle()
-    editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
-    if editing
-      input$.focus().val memo.text()
-      startEdit()
-    else
-      @onSubmitMemo()
     event.stopPropagation()
   
   onSubmitMemo: ->
@@ -229,16 +243,47 @@ KeyConfigView = Backbone.View.extend
   onBlurInputMemo: ->
     @onSubmitMemo()
   
+  onClickCog: (event) ->
+    if @$(".selectCog").toggle().is(":visible")
+      @$(".selectCog").focus()
+      $(event.currentTarget).addClass("selecting")
+    else
+      $(event.currentTarget).removeClass("selecting")
+    event.stopPropagation()
+    
+  onBlurSelectCog: ->
+    @$(".selectCog").hide()
+    @$("button.cog").removeClass("selecting")
+  
+  onClickEdit: (event) ->
+    switch mode = @model.get "mode"
+      when "bookmark"
+        @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
+      when "command"
+        @trigger "showPopup", "commandOptions", @model, @model.get("command")  
+      #when "remap", "through", "disabled"
+      else
+        (memo = @$("div.memo")).toggle()
+        editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
+        if editing
+          input$.focus().val memo.text()
+          startEdit()
+        else
+          @onSubmitMemo()
+        event.stopPropagation()
+  
   onClickRemove: ->
-    @trigger "removeConfig", @model
+    shortcut = decodeKbdEvent @model.id
+    if confirm "Are you sure you want to delete this shortcut?\n\n '#{shortcut}'"
+      @trigger "removeConfig", @model
   
   # Object Method
   setDispMode: (mode) ->
-    @$("div.mode").addClass(mode).find("span").text optionsDisp[mode]
+    @$("div.mode").addClass(mode).find("span").text optionsDisp[mode].replace("...", "")
     @$(".proxy,.origin,.icon-arrow-right")
       .removeClass(@optionKeys.join(" "))
       .addClass mode
-    if mode is "assignOrg"
+    if mode is "remap"
       @$(".origin").attr("tabIndex", "0")
       @$("th:first").removeAttr("colspan")
       @$("th:eq(1),th:eq(2)").show()
@@ -253,29 +298,35 @@ KeyConfigView = Backbone.View.extend
   
   setDesc: ->
     (tdDesc = @$(".desc")).empty()
+    editOption = iconName: "", command: ""
     switch mode = @model.get "mode"
       #when "simEvent"
       when "bookmark"
-        url = @model.get("bookmark").url
-        tdDesc.append """<div class="bookmark" title="#{url}" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/#{url}) 1x);">#{@model.get("bookmark").title}</div>"""
+        bookmark = @model.get("bookmark")
+        tdDesc.append @tmplBookmark
+          openmode: bmOpenMode[bookmark.openmode]
+          url: bookmark.url
+          title: bookmark.title
+        editOption = iconName: "icon-cog", command: "Edit bookmark..."
       when "command"
         desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
         if commandDisp[0] is "custom"
-          command = @model.get("command")
           content3row = []
+          command = @model.get("command")
           lines = command.content.split("\n")
           for i in [0...lines.length]
             if i > 2
               content3row[i-1] += " ..."
               break
             else
-              content3row.push lines[i]
-          tdDesc.append @tmplCommandCustom desc: desc, content3row: content3row.join("<br>"), caption: command.caption
+              content3row.push lines[i].replace(/"/g, "'")
+          tdDesc.append @tmplCommandCustom desc: desc, content3row: content3row.join("\n"), caption: command.caption
+          editOption = iconName: "icon-cog", command: "Edit command..."
         else
           tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
-      when "assignOrg", "through", "disabled"
+      when "remap", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
-        if mode is "assignOrg"
+        if mode is "remap"
           keycombo = @$(".origin").text()
         else
           keycombo = @$(".proxy").text()
@@ -295,21 +346,35 @@ KeyConfigView = Backbone.View.extend
               ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
     if tdDesc.html() is ""
       tdDesc.append @tmplMemo memo: @model.get("memo")
+      editOption = iconName: "icon-pencil", command: "Edit description..."
+    tdDesc.append @tmplDesc editOption
+    if editOption.iconName is ""
+      tdDesc.find(".edit").remove()
+  
+  tmplDesc: _.template """
+    <button class="cog small"><i class="icon-caret-down"></i></button>
+    <div class="selectCog" tabIndex="0">
+      <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
+      <div class="copySC"><i class="icon-paper-clip"></i> Copy shortcut command</div>
+      <span class="seprater"><hr style="margin:3px 1px" noshade></span>
+      <div class="delete"><i class="icon-remove"></i> Delete</div>
+    </div>
+    """
   
   tmplMemo: _.template """
-    <div>
-      <i class="memo icon-pencil" title="Edit description"></i>
-    </div>
     <form class="memo">
       <input type="text" class="memo">
     </form>
     <div class="memo"><%=memo%></div>
     """
   
+  tmplBookmark: _.template """
+    <div class="bookmark" title="<<%=openmode%>>\n<%=url%>" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></div>
+    """
+
   tmplCommandCustom: _.template """
-    <div class="commandIcon">Cmd</div>
-    <div class="command"><%=desc%>: <span class="caption"><%=caption%></span></div>
-    <i class="custom icon-pencil" title="Edit command"></i><div class="content3row"><%=content3row%></div>
+    <div class="customIcon">Cmd</div>
+    <div class="command" title="<%=content3row%>"><%=desc%>: <span class="caption"><%=caption%></span></div>
     """
   
   tmplHelp: _.template """
@@ -335,9 +400,6 @@ KeyConfigView = Backbone.View.extend
           <% }); %>
         </div>
       <td class="desc"></td>
-      <td class="remove">
-        <i class="icon-remove" title="Delete"></i>
-      </td>
       <td class="blank">&nbsp;</td>
     </tr>
     """
@@ -349,7 +411,8 @@ KeyConfigSetView = Backbone.View.extend
   el: "table.keyConfigSetView"
   
   events:
-    "blur div.addnew": "onBlurAddnew"
+    "click .addnew": "onClickAddnew"
+    "blur  .addnew": "onBlurAddnew"
     "click": "onClickBlank"
     
   initialize: (options) ->
@@ -460,6 +523,9 @@ KeyConfigSetView = Backbone.View.extend
   onClickBlank: ->
     @$(":focus").blur()
   
+  onClickAddnew: (event) ->
+    event.stopPropagation()
+  
   onBlurAddnew: ->
     @$(".addnew").remove()
     @$("tbody").sortable "enable"
@@ -499,13 +565,13 @@ KeyConfigSetView = Backbone.View.extend
       <th colspan="3">
         <div class="proxy addnew" tabIndex="0"><%=placeholder%></div>
       </th>
-      <td></td><td></td><td></td><td class="blank"></td>
+      <td></td><td></td><td class="blank"></td>
     </tr>
     """
   
   tmplBorder: """
     <tr class="border">
-      <td colspan="6"><div class="border"></div></td>
+      <td colspan="5"><div class="border"></div></td>
       <td></td>
     </tr>
     """
@@ -524,7 +590,6 @@ KeyConfigSetView = Backbone.View.extend
         <th>
           <div class="th_inner desc">Description</div>
         </th>
-        <th></th>
         <th><div class="th_inner blank">&nbsp;</div></th>
       </tr>
     </thead>
@@ -567,18 +632,22 @@ $ ->
   keyConfigSetView.render(saveData.keyConfigSet)
   
   bookmarksView = new BookmarksView {}
+  bookmarkOptionsView = new BookmarkOptionsView {}
   commandsView = new CommandsView {}
-  commandInputView = new CommandInputView {}
+  commandOptionsView = new CommandOptionsView {}
   
   headerView.on       "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on       "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
-  keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
-  keyConfigSetView.on "showPopup"        , commandInputView.onShowPopup        , commandInputView
-  commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
-  bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
+  #keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
+  #keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
+  #keyConfigSetView.on "showPopup"        , commandInputView.onShowPopup        , commandInputView
+  #keyConfigSetView.on "showPopup"        , commandFreeInputView.onShowPopup    , commandFreeInputView
+  #commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
+  #commandsView.on     "showPopup"        , commandFreeInputView.onShowPopup    , commandFreeInputView
+  #bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
   commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
-  commandInputView.on "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
+  commandOptionsView.on "setCommand"     , keyConfigSetView.onSetCommand       , keyConfigSetView
+  bookmarkOptionsView.on "setBookmark"   , keyConfigSetView.onSetBookmark      , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action

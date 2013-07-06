@@ -45,6 +45,7 @@ type
     procedure PasteText(const params: array of Variant);
     procedure CallShortcut(const params: array of Variant);
     procedure SetClipboard(const params: array of Variant);
+    procedure Sleep(const params: array of Variant);
   end;
 
 var
@@ -99,8 +100,8 @@ begin
   CloseHandle(keyPipeHandle);
   CloseHandle(mousePipeHandle);
   keyConfigList.Free;
+  inherited Destroy;
   //Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
-  inherited;
 end;
 
 function KeyHookFunc(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
@@ -252,7 +253,7 @@ begin
       scanCode:= StrToInt(Copy(origin, 3, 10));
       orgModified:= LeftBStr(origin, 2) + Copy(target, 3, 10);
 
-      if (scanCode = targetScanCode) and (modifierFlags <> targetModifierFlags) and (mode = 'assignOrg') then begin
+      if (scanCode = targetScanCode) and (modifierFlags <> targetModifierFlags) and (mode = 'remap') then begin
         // Make Proxy
         proxyScanCode:= GetProxyScanCode($5A);
         proxyTarget:= LeftBStr(target, 2) + IntToStr(proxyScanCode);
@@ -283,7 +284,7 @@ begin
       ));
     end;
     keyConfigList.AddObject('0086', TKeyConfig.Create(
-      'assignOrg',
+      'remap',
       '0147',
       '0186',
       1,
@@ -324,26 +325,23 @@ var
   dummyFlag: Boolean;
   bytesRead: Cardinal;
 begin
-  if hookKey <> 0 then
+  if keyHookTh <> nil then begin
+    keyHookTh.Terminate;
+    CallNamedPipe(PAnsiChar(keyPipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    keyHookTh.WaitFor;
+    keyHookTh.Free;
+    FreeAndNil(keyHookTh);
+    // Mouse hook
+    mouseHookTh.Terminate;
+    CallNamedPipe(PAnsiChar(mousePipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+    mouseHookTh.WaitFor;
+    mouseHookTh.Free;
+    FreeAndNil(mouseHookTh);
+  end;
+  if hookKey <> 0 then begin
    	UnHookWindowsHookEX(hookKey);
    	UnHookWindowsHookEX(hookMouse);
    	UnHookWindowsHookEX(hookMouseWheel);
-  if keyHookTh <> nil then begin
-    try
-      keyHookTh.Terminate;
-      CallNamedPipe(PAnsiChar(keyPipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-      keyHookTh.WaitFor;
-      FreeAndNil(keyHookTh);
-    except
-    end;
-    // Mouse hook
-    try
-      mouseHookTh.Terminate;
-      CallNamedPipe(PAnsiChar(mousePipeName), @g_destroy, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-      mouseHookTh.WaitFor;
-      FreeAndNil(mouseHookTh);
-    except
-    end;
   end;
 end;
 
@@ -378,6 +376,11 @@ begin
   Clipboard.AsText:= params[0];
 end;
 
+procedure TMyClass.Sleep(const params: array of Variant);
+begin
+  Windows.Sleep(params[0]);
+end;
+
 procedure TMyClass.CallShortcut(const params: array of Variant);
 var
   dummyFlag: Boolean;
@@ -392,10 +395,9 @@ begin
       scansInt64:= scanCode shl 16;
       Modifiers:= StrToInt(LeftBStr(params[0], 2));
       scansInt64:= scansInt64 + (Modifiers shl 8) + g_callShortcut;
-      Write2EventLog('FlexKbd', IntToStr(scansInt64));
+      //Write2EventLog('FlexKbd', IntToStr(scansInt64));
       CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     end;
-    sleep(params[1]);
   except
   end;
 end;

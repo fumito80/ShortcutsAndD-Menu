@@ -19,21 +19,33 @@ body {
   pointer-events: none;
   background: -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.0)), to(rgba(255,255,255,1.0)));
 }
-.header div.h1 {
+.header .h1 {
   position: fixed;
-  top: -1px;
+  top: 8px;
   left: 37px;
   padding: 4px;
-  font: 14px 'Michroma', Arial;
-  color: #FFFFFF;
-  background: rgb(31, 98, 129);
-  border-radius: 1px;
+  border-radius: 1px;  
+  /* background: rgb(31, 98, 129); */
 }
-.header div.h1 div {
+.header .title1 {
+  font: 20px 'Michroma', Arial;
+  color: #222222;
+  /* background: rgb(31, 98, 129); */
+}
+.header .title2 {
+  font: 24px 'Noto Sans', Arial;
+  font-weight: bold;
+  color: #1E90FF;
+  margin: 0 2px;
+  border-radius: 1px;  
+  /* background: rgb(31, 98, 129); */
+}
+.header .h1 div {
   line-height: 1.0em;
 }
 .beta {
-  font-family: 'Noto Sans', Arial;
+  font: 18px 'Noto Sans', Arial;
+  color: #999;
 }
 .addKeyConfig {
   margin: 5px;
@@ -68,7 +80,7 @@ body {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 100px;
+  padding-bottom: 120px;
 }
 .keyConfigSetView thead th {
   border: 0;
@@ -109,17 +121,6 @@ tbody .data:hover {
   border: 1px solid rgba(0,0,0,0);
   cursor: pointer;
 }
-/*
-.proxy.assignOrg span {
-  color: #000000;
-}
-.proxy.simEvent span {
-  color: #00AA00;
-}
-.proxy.bookmark span {
-  color: rgb(255, 192, 0);
-}
-*/
 .proxy.disabled span {
   color: #CC0000;
 }
@@ -139,11 +140,11 @@ tbody .data:hover {
 .origin.bookmark, .icon-arrow-right.bookmark {
   display: none;
 }
-.proxy:not(:focus):hover span, .origin.assignOrg:not(:focus):hover span {
+.proxy:not(:focus):hover span, .origin.remap:not(:focus):hover span {
   box-shadow: 0 0 4px #6DB9FF;
   border: 1px solid #50B1FE;
 }
-.proxy:focus span, .origin.assignOrg:focus span {
+.proxy:focus span, .origin.remap:focus span {
   box-shadow: 0 0 7px #6DB9FF;
   border: 1px solid #50B1FE;
   background: #FFFFFF;
@@ -183,7 +184,7 @@ div.addnew:focus {
   white-space: nowrap;
   position: relative;
 }
-.selectMode {
+.selectMode, .selectCog {
   position: absolute;
   z-index: 2;
   display: none;
@@ -194,12 +195,12 @@ div.addnew:focus {
   border: 1px solid #50B1FE;
   border-radius: 3px;
 }
-.selectMode div {
+.selectMode div, .selectCog div {
   padding: 3px 5px;
   font-family: 'Arial';
   cursor: default;
 }
-.selectMode div:hover {
+.selectMode div:hover, .selectCog div:hover {
   background: #E3F2FF;
 }
 div.mode {
@@ -213,22 +214,22 @@ div.mode i {
   font-size: 1.1em;
   color: rgba(0,0,0,0);
 }
-div.mode.assignOrg:hover {
+div.mode.remap:hover {
   color: 333;
 }
 div.mode:hover i {
   color: 333;
 }
-div.mode.assignOrg.selecting {
+div.mode.remap.selecting {
   color: 333;
 }
 div.mode.selecting i {
   color: 333;
 }
-.mode.assignOrg {
+.mode.remap {
   color: #CCCCCC;
 }
-.origin .assignOrg {
+.origin .remap {
   color: #000000;
 }
 .options .simEvent {
@@ -269,12 +270,13 @@ thead th i.icon-arrow-right {
 .keyConfigSetView .tdOrigin {
   padding-right: 12px;
 }
-.keyConfigSetView .desc {
+.keyConfigSetView tbody .desc {
+  position: relative;
   width: 80%;
   padding-left: 10px;
   cursor: default;
 }
-.sectInit, .commandIcon {
+.sectInit, .commandIcon, .customIcon {
   border-radius: 3px;
   color: white;
   padding: 0 3px;
@@ -291,8 +293,66 @@ thead th i.icon-arrow-right {
   background: rgb(122, 122, 160);  
 }
 .commandIcon {
-  background: rgb(133, 203, 241);
+  background: rgb(133, 203, 241); /* light blue */
 }
+.customIcon {
+  background: rgb(62, 226, 120); /* light green */
+}
+button.cog.small {
+  position: absolute;
+  top: 11px;
+  right: 6px;  
+  left: auto;
+  padding: 2px 5px;
+  display: none;
+}
+tbody .data:hover button.cog {
+  display: inline-block;
+}
+button.cog.selecting {
+  display: inline-block;
+}
+.selectCog {
+  position: absolute;
+  right: 6px;
+  top: 30px;
+  background: white;  
+  padding: 2px 0;
+}
+.selectCog i {
+  color: #BBBBBB;
+}
+.selectCog div:hover i {
+  color: #222222;
+}
+/*
+.desc .edit, .desc .delete {
+  cursor: pointer;
+  position: absolute;
+  color: rgba(0,0,0,0);
+  top: 5px;
+  font-size: 1.3em;
+}
+.keyConfigSetView .edit {
+  top: 6px;
+  right: 27px;
+}
+.keyConfigSetView .delete {
+  right: 6px;
+}
+tbody .data:hover .edit {
+  color: #CCCCCC;
+}
+tbody .data:hover .delete {
+  color: #CCCCCC;
+}
+.keyConfigSetView .data .edit:hover {
+  color: #222222;
+}
+.keyConfigSetView .data .delete:hover {
+  color: #222222;
+}
+*/
 .keyConfigSetView .desc .content {
   overflow: auto;
 }
@@ -300,24 +360,11 @@ thead th i.icon-arrow-right {
   color: gold;
   margin: 0 5px 0 2px;
 }
-.keyConfigSetView .desc div:first-child {
+.keyConfigSetView .desc > div:first-child {
   float:left;
 }
-.keyConfigSetView .desc div:last-child {
+.keyConfigSetView .desc > div:last-child {
   overflow: auto;
-}
-.keyConfigSetView .desc .icon-pencil {
-  font-size: 18px;
-  float: left;
-  cursor: pointer;
-  color: rgba(0,0,0,0);
-  margin-right: 4px;
-}
-.keyConfigSetView .desc:hover .icon-pencil {
-  color: #999999;
-}
-.keyConfigSetView .desc .icon-pencil:hover {
-  color: #000000;
 }
 .keyConfigSetView .desc form.memo {
   display: none;
@@ -326,7 +373,7 @@ thead th i.icon-arrow-right {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   width: 90%;
 }
-.keyConfigSetView .desc .bookmark {
+.desc .bookmark, .bookmarkOptions .bookmark {
   -webkit-padding-start: 20px;
   background-repeat: no-repeat;
   background-size: 16px;
@@ -347,14 +394,6 @@ thead th i.icon-arrow-right {
   border: hidden;
   background: #FFF;
   padding: 0 12px;
-}
-.icon-remove {
-  float: right;
-  cursor: pointer;
-  color: #ccc;
-}
-.icon-remove:hover {
-  color: #666;
 }
 .custom-scroll-bar::-webkit-scrollbar {
   width: 10px;
@@ -391,6 +430,9 @@ thead th i.icon-arrow-right {
   box-shadow: 0 0 20px black;
   border-radius: 1px;
 }
+.popup input[type='text'], .popup textarea {
+  font: 1.0em 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
+}
 .popup .shortcut span {
   padding: 1px 3px;
   border: 1px solid lightblue;
@@ -403,14 +445,22 @@ thead th i.icon-arrow-right {
   color: #000000;
   background: #FFFFFF;
 }
+.popup .panel1 {
+  font-size: 1.0em;
+}
 .popup .icon-remove {
   position: absolute;
   right: 10px;
   top: 10px;
   font-size: 1.3em;
   cursor: auto;
+  color: #ccc;
+}
+.popup .icon-remove:hover {
+  color: #666;
 }
 .popup .done {
+  margin-left: 15px;
   padding: 7px 10px;
 }
 .bookmarks {
@@ -493,7 +543,34 @@ thead th i.icon-arrow-right {
 .bookmarks .folder span {
   cursor: pointer;
 }
-.commands button[type='submit'] {
+.bookmarkOptions {
+  max-width: 600px;
+}
+.bookmarkPanel {
+  padding: 5px;
+  background-color: white;
+  border-radius: 5px;
+  border: 1px solid #999999;
+  margin-bottom: 6px;
+  font-size: 1.0em;
+}
+.bookmarkOptions .inputs {
+  padding: 10px;
+  line-height: 1.8em;
+}
+.bookmarkOptions .inputs label {
+  padding-left: 2px;
+}
+.bookmarkOptions .url {
+  padding-left: 20px;
+  color: #999999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bookmarkOptions .findStr {
+  width: 400px;
+}
+.bookmarkOptions .labelFindStr {
   margin-left: 15px;
 }
 .commands {
@@ -517,23 +594,23 @@ thead th i.icon-arrow-right {
   font-weight: bold;
   color: #333333;
 }
-.commandInput .caption {
-  font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
+.commandOptions .caption {
   width: 400px;
   margin-top: 5px;
 }
-.commandInput .content {
-  font: 1.0em 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
+.commandOptions .content {
   width: 600px;
-  min-width: 400px;
   margin-top: 5px;
 }
-.commandInput .panel1 {
+.commandOptions .otherinput input[type='text'] {
+  width: 600px;
+}
+.commandOptions .otherinput label {
+  margin-top: 5px;
+}
+.commandOptions .panel1 {
   float: left;
 }
-.commandInput .commandOptions label {
+.commandOptions .inputs label {
   padding-left: 15px;
-}
-.commandInput button[type='submit'] {
-  margin-left: 15px;
 }

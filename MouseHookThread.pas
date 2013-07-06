@@ -113,12 +113,6 @@ begin
   modifierFlags:= modifierFlags or (Ord(stateDownL) * FLAG_LDOWN);
   modifierFlags:= modifierFlags or (Ord(stateDownR) * FLAG_RDOWN);
   modifierFlags:= modifierFlags or (Ord(stateDownM) * FLAG_MDOWN);
-  //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(wPrm, 4) + ': ' + scans);
-  //if wPrm = WM_MOUSEWHEEL then begin
-  //  if configMode and (modifierFlags <> 0) then
-  //    Result:= True;
-  //  Exit;
-  //end;
   stateButton:= wPrm - $200;
   case stateButton of
     MSG_MOUSE_LDOWN: stateDownL:= True;
@@ -147,7 +141,7 @@ begin
     if index > -1 then begin
       Result:= True;
       keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
-      if keyConfig.mode = 'assignOrg' then begin
+      if keyConfig.mode = 'remap' then begin
         modifiersBoth:= modifierFlags and keyConfig.modifierFlags;
         // CONTROL
         if (modifiersBoth and FLAG_CONTROL) <> 0 then begin

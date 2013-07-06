@@ -186,14 +186,14 @@ begin
       Result:= True;
       if (index = -1) and scriptMode then begin
         keyConfig:= TKeyConfig.Create(
-          'assignOrg',
+          'remap',
           scans,
           '',
           modifierFlags2,
           scanCode);
       end else
         keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
-      if keyConfig.mode = 'assignOrg' then begin
+      if keyConfig.mode = 'remap' then begin
         modifierRelCount:= 0;
         if keyDownState = KEYEVENTF_KEYUP then
           AddScan(keyConfig.scanCode);
