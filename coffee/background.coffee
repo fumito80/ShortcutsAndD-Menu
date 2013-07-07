@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
       if (transCode = request.value1) is ""
         srCode = ""
       else
-        test = transCode.match(/\[(\w*)\](.+)/, "g")
+        test = transCode.match(/\[(\w*?)\](.+)/, "g")
         if (test)
           local = fk.getConfig()
           modifiersCode = 0
