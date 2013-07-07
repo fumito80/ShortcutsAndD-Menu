@@ -8,7 +8,7 @@
 
 
 
-❏ソフト概要
+❏ソフトの概要
 
   あらかじめキーが固定されているChromeのショートカットキーを
 
@@ -27,12 +27,14 @@
 ❏動作環境
   Windows版GoogleChrome
 
+  OADG 日本語109/英語106キーボード
+
 
 
 
   WindowsXP32bit、Windows7-32bit、WIndows8-64bit環境で動作確認しています。
 
-  なお、Chrome以外の派生ブラウザでは動作致しません。
+  Windows版以外のChromeや、Chrome以外の派生ブラウザでは動作致しません。
 
 
 
@@ -52,15 +54,12 @@
 
 
 ❏注意事項
-
   - Alt+Tab、Ctrl+Esc、Win+EなどのWindowsショートカットキーは利用できません。
-
-  - ペーストテキスト、ExecuteScript、InsertCSS機能ではキーリピートは効きません。
-
-  - ペーストテキスト機能ではクリップボードにテキストが残ります。
 
   - マウスホイールイベントでホイール高分解能マウスは未検証です。
 
+
+  - PasteText、ExecuteScript、InsertCSS機能ではキーリピートは効きません。
 
 
 ❏免責
