@@ -200,8 +200,15 @@ div.addnew:focus {
   font-family: 'Arial';
   cursor: default;
 }
+.selectMode .icon {
+  color: #999999;
+  margin-right: 2px;
+}
 .selectMode div:hover, .selectCog div:hover {
   background: #E3F2FF;
+}
+.selectMode div:hover .icon {
+  color: #000000;
 }
 div.mode {
   font-family: 'Arial';
@@ -209,7 +216,10 @@ div.mode {
   margin-bottom: 3px;
   padding-left: 6px;
 }
-div.mode i {
+div.mode .icon {
+  color: #333333;
+}
+div.mode .icon-caret-down {
   margin-left: 4px;
   font-size: 1.1em;
   color: rgba(0,0,0,0);
@@ -217,20 +227,21 @@ div.mode i {
 div.mode.remap:hover {
   color: 333;
 }
-div.mode:hover i {
+div.mode:hover .icon-caret-down {
   color: 333;
 }
 div.mode.remap.selecting {
   color: 333;
 }
-div.mode.selecting i {
+div.mode.selecting .icon-caret-down {
   color: 333;
-}
-.mode.remap {
-  color: #CCCCCC;
 }
 .origin .remap {
   color: #000000;
+}
+/*
+.mode.remap {
+  color: #CCCCCC;
 }
 .options .simEvent {
   color: #00AA00;
@@ -247,6 +258,7 @@ div.mode.selecting i {
 .options .bookmark {
   color: rgb(255, 192, 0);
 }
+*/
 i.icon-arrow-right {
   color: #518BAB;
 }
@@ -276,7 +288,7 @@ thead th i.icon-arrow-right {
   padding-left: 10px;
   cursor: default;
 }
-.sectInit, .commandIcon, .customIcon {
+.sectInit, .ctgIcon {
   border-radius: 3px;
   color: white;
   padding: 0 3px;
@@ -292,11 +304,23 @@ thead th i.icon-arrow-right {
   width: 17px;
   background: rgb(122, 122, 160);  
 }
-.commandIcon {
+.ctgIcon {
+  min-width: 17px;
+}
+.tab {
   background: rgb(133, 203, 241); /* light blue */
 }
-.customIcon {
+.win {
   background: rgb(62, 226, 120); /* light green */
+}
+.CSS {
+  background: rgb(105, 138, 69); /* light green */
+}
+.JS {
+  background: rgb(223, 165, 79); /* orange */
+}
+.Clip {
+  background: rgb(213, 114, 193); /* purple */
 }
 button.cog.small {
   position: absolute;
@@ -372,6 +396,14 @@ tbody .data:hover .delete {
 .keyConfigSetView .desc input.memo {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   width: 90%;
+}
+.keyConfigSetView .desc div.command {
+  float: left;
+}
+.keyConfigSetView .desc div.commandCaption {
+  overflow: auto;
+  padding-left: 5px;
+  font-weight: bold;
 }
 .desc .bookmark, .bookmarkOptions .bookmark {
   -webkit-padding-start: 20px;
@@ -586,7 +618,7 @@ tbody .data:hover .delete {
 .commands .cattab {
   float: left;
 }
-.commands .catwin, .commands .catcustom {
+.commands .catwin, .commands .catcustom, .catclip {
   overflow: auto;
 }
 .commands .catname {

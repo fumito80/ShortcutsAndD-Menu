@@ -19,6 +19,15 @@ triggerKeyEvent = (keyIdentifier, ctrlKey, altKey, shiftKey, metaKey) ->
   
   document.dispatchEvent(kbdEvent)
 
+tmplCopyHist = """
+  <div class="frame">
+  </div>
+  """
+
+showCopyHistory = (history) ->
+  unless window is parent && window is window.top
+    return
+
 chrome.runtime.onMessage.addListener (req, sender, sendResponse) ->
   switch req.action
     when "askAlive"
@@ -26,3 +35,11 @@ chrome.runtime.onMessage.addListener (req, sender, sendResponse) ->
     when "keyEvent"
       #console.log req
       triggerKeyEvent req.keyIdentifier, req.ctrl, req.alt, req.shift, req.meta
+    when "copyText"
+      selection = ""
+      if (range = window.getSelection())?.type is "Range"
+        selection = range.getRangeAt(0).toString()
+        sendResponse selection
+    when "showCopyHistory"
+      showCopyHistory req.history
+  true

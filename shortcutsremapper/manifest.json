@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "Shortcuts Remapper β",
-  "version": "0.1.0",
+  "name": "Turbo Shortcuts β",
+  "version": "1.0.0",
   "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
   "icons": {
      "128": "images/key_bindings.png"
@@ -15,11 +15,12 @@
     { "path": "flexkbd.dll" }
   ],
   "web_accessible_resources": ["kbdagent.js"],
-  "content_security_policy": "script-src https://ajax.googleapis.com 'unsafe-eval' 'self'; object-src 'self';",
+  "content_security_policy": "script-src 'unsafe-eval' 'self'; object-src 'self';",
   "permissions": [
     "bookmarks",
     "tabs",
     "*://*/*",
-    "chrome://favicon/*"
+    "chrome://favicon/*",
+    "notifications"
   ]
 }

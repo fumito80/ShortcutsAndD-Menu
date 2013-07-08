@@ -68,14 +68,16 @@
     attachTab: ["tab", "Attaches a current tab to the next window"],
     switchPrevWin: ["win", "Switches to the previous window"],
     switchNextWin: ["win", "Switches to the next window"],
-    pasteText: ["custom", "Paste text", []],
+    pasteText: ["clip", "Paste text", [], "Clip"],
+    copyText: ["clip", "Copy text with history", "Clip"],
+    showHistory: ["clip", "Show copy history", "Clip"],
     insertCSS: [
       "custom", "Insert CSS", [
         {
           value: "allFrames",
           caption: "All frames"
         }
-      ]
+      ], "CSS"
     ],
     execJS: [
       "custom", "Execute script", [
@@ -86,13 +88,14 @@
           value: "useUtilObj",
           caption: "Use a utility object"
         }
-      ]
+      ], "JS"
     ]
   };
 
   catnames = {
     tab: "Tab commands",
     win: "Window commands",
+    clip: "Clipboard commands",
     custom: "Custom commands"
   };
 
@@ -138,17 +141,20 @@
     };
 
     CommandOptionsView.prototype.onSubmitForm = function() {
-      var content, options,
+      var caption, content, options,
         _this = this;
       if ((content = this.$(".content").val()) !== "") {
         options = {};
         $.each(this.$(".inputs input[type='checkbox']"), function(i, option) {
           options[option.value] = option.checked;
         });
+        if (!(caption = this.$(".caption").val())) {
+          caption = content.split("\n")[0];
+        }
         this.trigger("setCommand", this.model.id, _.extend({
           name: this.command.name,
           category: this.command.category,
-          caption: this.$(".caption").val(),
+          caption: caption,
           content: content
         }, options));
         this.hidePopup();
@@ -213,7 +219,7 @@
       var category, command;
       if (command = this.$(".radioCommand:checked").val()) {
         this.hidePopup();
-        if ((category = commandsDisp[command][0]) === "custom") {
+        if ((category = commandsDisp[command][0]) === "custom" || command === "pasteText") {
           this.trigger("showPopup", "commandOptions", this.model, {
             name: command
           });
@@ -489,12 +495,12 @@
   };
 
   optionsDisp = {
-    remap: "None",
-    command: "Command...",
-    bookmark: "Bookmark...",
-    simEvent: "Simurate key event",
-    disabled: "Disabled",
-    through: "Through"
+    remap: ["Remap", "icon-random"],
+    command: ["Command...", "icon-cog"],
+    bookmark: ["Bookmark...", "icon-bookmark"],
+    simEvent: ["Simurate key event", "icon-font"],
+    disabled: ["Disabled", "icon-ban-circle"],
+    through: ["Pause", "icon-pause"]
   };
 
   bmOpenMode = {
@@ -797,7 +803,7 @@
       }
     },
     setDispMode: function(mode) {
-      this.$("div.mode").addClass(mode).find("span").text(optionsDisp[mode].replace("...", ""));
+      this.$("div.mode").attr("title", optionsDisp[mode][0].replace("...", "")).find(".icon")[0].className = "icon " + optionsDisp[mode][1];
       this.$(".proxy,.origin,.icon-arrow-right").removeClass(this.optionKeys.join(" ")).addClass(mode);
       if (mode === "remap") {
         this.$(".origin").attr("tabIndex", "0");
@@ -818,7 +824,7 @@
       }
     },
     setDesc: function() {
-      var bookmark, command, commandDisp, content, content3row, desc, editOption, help, i, key, keycombo, lang, lines, mode, tdDesc, test, _i, _j, _ref1, _ref2;
+      var bookmark, command, commandDisp, commandName, content, content3row, ctg, desc, editOption, help, i, key, keycombo, lang, lines, mode, tdDesc, test, _i, _j, _ref1, _ref2;
       (tdDesc = this.$(".desc")).empty();
       editOption = {
         iconName: "",
@@ -838,8 +844,8 @@
           };
           break;
         case "command":
-          desc = (commandDisp = commandsDisp[this.model.get("command").name])[1];
-          if (commandDisp[0] === "custom") {
+          desc = (commandDisp = commandsDisp[commandName = this.model.get("command").name])[1];
+          if ((ctg = commandDisp[0]) === "custom") {
             content3row = [];
             command = this.model.get("command");
             lines = command.content.split("\n");
@@ -852,16 +858,22 @@
               }
             }
             tdDesc.append(this.tmplCommandCustom({
+              ctg: commandDisp[3],
               desc: desc,
               content3row: content3row.join("\n"),
               caption: command.caption
             }));
+          } else {
+            tdDesc.append(this.tmplCommand({
+              desc: desc,
+              ctg: ctg.substring(0, 1).toUpperCase() + ctg.substring(1)
+            }));
+          }
+          if (ctg === "custom" || commandName === "pasteText") {
             editOption = {
               iconName: "icon-cog",
               command: "Edit command..."
             };
-          } else {
-            tdDesc.append("<div class=\"commandIcon\">Cmd</div><div class=\"command\">" + desc + "</div>");
           }
           break;
         case "remap":
@@ -913,9 +925,10 @@
     tmplDesc: _.template("<button class=\"cog small\"><i class=\"icon-caret-down\"></i></button>\n<div class=\"selectCog\" tabIndex=\"0\">\n  <div class=\"edit\"><i class=\"<%=iconName%>\"></i> <%=command%></div>\n  <div class=\"copySC\"><i class=\"icon-paper-clip\"></i> Copy shortcut command</div>\n  <span class=\"seprater\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"delete\"><i class=\"icon-remove\"></i> Delete</div>\n</div>"),
     tmplMemo: _.template("<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
     tmplBookmark: _.template("<div class=\"bookmark\" title=\"<<%=openmode%>>\n<%=url%>\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);\"><%=title%></div>"),
-    tmplCommandCustom: _.template("<div class=\"customIcon\">Cmd</div>\n<div class=\"command\" title=\"<%=content3row%>\"><%=desc%>: <span class=\"caption\"><%=caption%></span></div>"),
+    tmplCommand: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div><div class=\"command\"><%=desc%></div>"),
+    tmplCommandCustom: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div>\n<div class=\"command\"><%=desc%>:</div><div class=\"commandCaption\" title=\"<%=content3row%>\"><%=caption%></div>"),
     tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(name, key) { %>\n      <div class=\"<%=key%>\"><%=name%></div>\n      <% }); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"proxy\" tabIndex=\"0\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"0\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i><%=option[0]%></div>\n      <% }); %>\n      <!--\n      <span class=\"seprater\"><hr style=\"margin:3px 1px; color: #000\" noshade></span>\n      <div class=\"edit\"><i class=\"icon icon-pencil\"></i>Edit</div>\n      <div class=\"copySC\"><i class=\"icon icon-paper-clip\"></i>Copy shortcut command</div>\n      <span class=\"seprater\"><hr style=\"margin:3px 1px; color: #000\" noshade></span>\n      <div class=\"delete\"><i class=\"icon icon-remove\"></i>Delete</div>\n      -->\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -1114,7 +1127,7 @@
     },
     tmplAddNew: _.template("<tr class=\"addnew\">\n  <th colspan=\"3\">\n    <div class=\"proxy addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </th>\n  <td></td><td></td><td class=\"blank\"></td>\n</tr>"),
     tmplBorder: "<tr class=\"border\">\n  <td colspan=\"5\"><div class=\"border\"></div></td>\n  <td></td>\n</tr>",
-    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Options</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
+    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 
   marginBottom = 0;

@@ -283,6 +283,7 @@ begin
         scanCode
       ));
     end;
+    // For Paste Text
     keyConfigList.AddObject('0086', TKeyConfig.Create(
       'remap',
       '0147',
@@ -290,6 +291,16 @@ begin
       1,
       47
     ));
+    // For Copy Text
+    {
+    keyConfigList.AddObject('0085', TKeyConfig.Create(
+      'remap',
+      '0146',
+      '0185',
+      1,
+      46
+    ));
+    }
   finally
     paramsList.Free;
     paramList.Free;

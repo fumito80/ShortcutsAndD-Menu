@@ -62,12 +62,6 @@
   - PasteText、ExecuteScript、InsertCSS機能ではキーリピートは効きません。
 
 
-❏免責
-
-  本プログラムを利用して発生した障害や損害に対して、作者は一切責任を負わないものとします。
-
-
-
 ❏作者連絡先メール
 
   fumito80@gmail.com

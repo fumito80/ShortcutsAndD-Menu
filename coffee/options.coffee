@@ -5,12 +5,12 @@ WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
 optionsDisp =
-  remap:    "None"
-  command:  "Command..."
-  bookmark: "Bookmark..."
-  simEvent: "Simurate key event"
-  disabled: "Disabled"
-  through:  "Through"
+  remap:    ["Remap", "icon-random"]
+  command:  ["Command...", "icon-cog"]
+  bookmark: ["Bookmark...", "icon-bookmark"]
+  simEvent: ["Simurate key event", "icon-font"]
+  disabled: ["Disabled", "icon-ban-circle"]
+  through:  ["Pause", "icon-pause"]
 
 bmOpenMode =
   current:   "Open in current tab"
@@ -279,7 +279,10 @@ KeyConfigView = Backbone.View.extend
   
   # Object Method
   setDispMode: (mode) ->
-    @$("div.mode").addClass(mode).find("span").text optionsDisp[mode].replace("...", "")
+    #@$("div.mode").addClass(mode).find("span").text(optionsDisp[mode].replace("...", ""))
+    @$("div.mode")
+      .attr("title", optionsDisp[mode][0].replace("...", ""))
+      .find(".icon")[0].className = "icon " + optionsDisp[mode][1]
     @$(".proxy,.origin,.icon-arrow-right")
       .removeClass(@optionKeys.join(" "))
       .addClass mode
@@ -309,8 +312,8 @@ KeyConfigView = Backbone.View.extend
           title: bookmark.title
         editOption = iconName: "icon-cog", command: "Edit bookmark..."
       when "command"
-        desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
-        if commandDisp[0] is "custom"
+        desc = (commandDisp = commandsDisp[commandName = @model.get("command").name])[1]
+        if (ctg= commandDisp[0]) is "custom"
           content3row = []
           command = @model.get("command")
           lines = command.content.split("\n")
@@ -320,10 +323,15 @@ KeyConfigView = Backbone.View.extend
               break
             else
               content3row.push lines[i].replace(/"/g, "'")
-          tdDesc.append @tmplCommandCustom desc: desc, content3row: content3row.join("\n"), caption: command.caption
-          editOption = iconName: "icon-cog", command: "Edit command..."
+          tdDesc.append @tmplCommandCustom
+            ctg: commandDisp[3]
+            desc: desc
+            content3row: content3row.join("\n")
+            caption: command.caption
         else
-          tdDesc.append """<div class="commandIcon">Cmd</div><div class="command">#{desc}</div>"""
+          tdDesc.append @tmplCommand desc: desc, ctg: ctg.substring(0,1).toUpperCase() + ctg.substring(1)
+        if ctg is "custom" || commandName is "pasteText"
+          editOption = iconName: "icon-cog", command: "Edit command..."
       when "remap", "through", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "remap"
@@ -372,9 +380,11 @@ KeyConfigView = Backbone.View.extend
     <div class="bookmark" title="<<%=openmode%>>\n<%=url%>" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></div>
     """
 
+  tmplCommand: _.template """<div class="ctgIcon <%=ctg%>"><%=ctg%></div><div class="command"><%=desc%></div>"""
+
   tmplCommandCustom: _.template """
-    <div class="customIcon">Cmd</div>
-    <div class="command" title="<%=content3row%>"><%=desc%>: <span class="caption"><%=caption%></span></div>
+    <div class="ctgIcon <%=ctg%>"><%=ctg%></div>
+    <div class="command"><%=desc%>:</div><div class="commandCaption" title="<%=content3row%>"><%=caption%></div>
     """
   
   tmplHelp: _.template """
@@ -393,11 +403,18 @@ KeyConfigView = Backbone.View.extend
         <div class="origin" tabIndex="0"></div>
       </th>
       <td class="options">
-        <div class="mode"><span></span><i class="icon-caret-down"></i></div>
+        <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
-          <% _.each(options, function(name, key) { %>
-          <div class="<%=key%>"><%=name%></div>
+          <% _.each(options, function(option, key) { %>
+          <div class="<%=key%>"><i class="icon <%=option[1]%>"></i><%=option[0]%></div>
           <% }); %>
+          <!--
+          <span class="seprater"><hr style="margin:3px 1px; color: #000" noshade></span>
+          <div class="edit"><i class="icon icon-pencil"></i>Edit</div>
+          <div class="copySC"><i class="icon icon-paper-clip"></i>Copy shortcut command</div>
+          <span class="seprater"><hr style="margin:3px 1px; color: #000" noshade></span>
+          <div class="delete"><i class="icon icon-remove"></i>Delete</div>
+          -->
         </div>
       <td class="desc"></td>
       <td class="blank">&nbsp;</td>
@@ -585,7 +602,7 @@ KeyConfigSetView = Backbone.View.extend
         <th></th>
         <th></th>
         <th>
-          <div class="th_inner options">Options</div>
+          <div class="th_inner options">Mode</div>
         </th>
         <th>
           <div class="th_inner desc">Description</div>

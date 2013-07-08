@@ -1,185 +1,133 @@
 flexkbd = document.getElementById("flexkbd")
 
-(dfdCommandQueue = $.Deferred()).resolve()
+execShortcut = (dfd, doneCallback, transCode, sleepMSec, batchIndex) ->
+  if transCode
+    scCode = ""
+    test = transCode.match(/\[(\w*?)\](.+)/, "g")
+    if (test)
+      local = fk.getConfig()
+      modifiersCode = 0
+      if modifiers = RegExp.$1
+        modifierChars = modifiers.toLowerCase().split("")
+        if ("c" in modifierChars) then modifiersCode  = 1
+        if ("a" in modifierChars) then modifiersCode += 2
+        if ("s" in modifierChars) then modifiersCode += 4
+        if ("w" in modifierChars) then modifiersCode += 8
+      if keyIdentifier = RegExp.$2
+        kbdtype = local.config.kbdtype
+        keys = fk.getKeyCodes()[kbdtype].keys
+        scanCode = -1
+        for i in [0...keys.length]
+          if keys[i] && (keyIdentifier is keys[i][0] || keyIdentifier is keys[i][1])
+            scanCode = i
+            break
+        if scanCode is -1
+          throw new Error "Key identifier code '" + keyIdentifier + "' is unregistered code."
+        else
+          if modifiersCode is 0 && !(scanCode in [0x3B..0x44]) && !(scanCode in [0x57, 0x58])
+            throw new Error "Modifier code is not included in '#{transCode}'."
+          else
+            scCode = "0" + modifiersCode.toString(16) + scanCode
+      else
+        throw new Error "Key identifier code '" + transCode + "' is not found."
+    else
+      throw new Error "Shortcut code '" + transCode + "' is invalid."
+    modeExec = null
+    for i in [0...local.keyConfigSet.length]
+      if (item = local.keyConfigSet[i]).proxy is scCode
+        modeExec = item.mode
+        break
+    switch modeExec
+      when "command"
+        execCommand(scCode).done ->
+          doneCallback dfd, sleepMSec, batchIndex
+      when "bookmark"
+        preOpenBookmark(scCode).done ->
+          doneCallback dfd, sleepMSec, batchIndex
+      when "sendToDom"
+        preSendKeyEvent(scCode).done ->
+          doneCallback dfd, sleepMSec, batchIndex
+      else
+        setTimeout((->
+          flexkbd.CallShortcut scCode
+          doneCallback dfd, sleepMSec, batchIndex
+        ), 0)
+  else
+    throw new Error "Command argument is not found."  
+
+execBatch = (dfdCaller, request, sendResponse) ->
+  doneCallback = (dfd, sleepMSec, batchIndex) ->
+    dfd.resolve(batchIndex + 1)
+  (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
+  commands = request.value1
+  for i in [0...commands.length]
+    dfdBatchQueue = dfdBatchQueue.then (batchIndex) ->
+      dfd = $.Deferred()
+      try
+        if isNaN(command = commands[batchIndex])
+          execShortcut dfd, doneCallback, command, 0, batchIndex
+        else
+          sleepMSec = Math.round command
+          if (-1 < sleepMSec < 60000)
+            setTimeout((->
+              flexkbd.Sleep sleepMSec
+              dfd.resolve(batchIndex + 1)
+            ), 0)
+          else
+            throw new Error "Range of Sleep millisecond is up to 6000-0."
+      catch e
+        dfd.reject()
+        sendResponse e.message
+        dfdCaller.resolve()
+      dfd.promise()
+  dfdBatchQueue = dfdBatchQueue.then ->
+    sendResponse "done"
+    dfdCaller.resolve()
+  dfdKicker.resolve(0)
+
+dfdCommandQueue = $.Deferred().resolve()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-  switch request.action
-    when "callShortcut"
-      if (transCode = request.value1) is ""
-        srCode = ""
-      else
-        test = transCode.match(/\[(\w*?)\](.+)/, "g")
-        if (test)
-          local = fk.getConfig()
-          modifiersCode = 0
-          scCode = ""
-          if modifiers = RegExp.$1
-            modifierChars = modifiers.toLowerCase().split("")
-            if ("c" in modifierChars) then modifiersCode  = 1
-            if ("a" in modifierChars) then modifiersCode += 2
-            if ("s" in modifierChars) then modifiersCode += 4
-            if ("w" in modifierChars) then modifiersCode += 8
-          if keyIdentifier = RegExp.$2
-            kbdtype = local.config.kbdtype
-            keys = fk.getKeyCodes()[kbdtype].keys
-            scanCode = -1
-            for i in [0...keys.length]
-              if keys[i] && (keyIdentifier is keys[i][0] || keyIdentifier is keys[i][1])
-                scanCode = i
-                break
-            if scanCode is -1
-              sendResponse "Key identifier code '" + keyIdentifier + "' is unregistered code."
-              return
-            else
-              if modifiersCode is 0 && !(scanCode in [0x3B..0x44]) && !(scanCode in [0x57, 0x58])
-                sendResponse "Modifier code is not included in '#{transCode}'."
-                return
-              else
-                scCode = "0" + modifiersCode.toString(16) + scanCode
-          else
-            sendResponse "Key identifier code '" + transCode + "' is not found."
-            return
-        else
-          sendResponse "Shortcut code '" + transCode + "' is invalid."
-          return
-      dfdCommandQueue = dfdCommandQueue.then ->
-        dfd = $.Deferred()
-        try
-          if (preSleep = request.value3) > 0
-            flexkbd.Sleep preSleep
-          found = false
-          for i in [0...local.keyConfigSet.length]
-            if (item = local.keyConfigSet[i]).proxy is scCode
-              found = true
-              switch item.mode
-                when "command"
-                  execCommand(scCode).done ->
-                    if (postSleep = request.value2) > 0
-                      flexkbd.Sleep postSleep
-                    dfd.resolve()
-                    sendResponse "done"
-                when "bookmark"
-                  preOpenBookmark(scCode).done ->
-                    if (postSleep = request.value2) > 0
-                      flexkbd.Sleep postSleep
-                    dfd.resolve()
-                    sendResponse "done"
-                when "sendToDom"
-                  preSendKeyEvent(scCode).done ->
-                    if (postSleep = request.value2) > 0
-                      flexkbd.Sleep postSleep
-                    dfd.resolve()
-                    sendResponse "done"
-                else
-                  setTimeout((->
-                    flexkbd.CallShortcut scCode
-                    if (postSleep = request.value2) > 0
-                      flexkbd.Sleep postSleep
-                    dfd.resolve()
-                    sendResponse "done"
-                  ), 0)
-              break
-          unless found
-            setTimeout((->
-              flexkbd.CallShortcut scCode
-              if (postSleep = request.value2) > 0
-                flexkbd.Sleep postSleep
-                dfd.resolve()
-                sendResponse "done"
-            ), 0)
-        catch e
-          sendResponse e.message
-          dfd.resolve()
-        dfd.promise()
-    when "sleep"
-      dfdCommandQueue = dfdCommandQueue.then ->
-        dfd = $.Deferred()
-        setTimeout((->
-          flexkbd.Sleep request.msec
-          dfd.resolve()
-        ), 0)
-        dfd.promise()
-    when "setClipboard"
-      dfdCommandQueue = dfdCommandQueue.then ->
-        dfd = $.Deferred()
-        setTimeout((->
-          flexkbd.SetClipboard request.value1
-          dfd.resolve()
-          sendResponse "done"
-        ), 0)
-        dfd.promise()
+  doneCallback = (dfd, sleepMSec) ->
+    flexkbd.Sleep sleepMSec if sleepMSec > 0
+    sendResponse "done"
+    dfd.resolve()
+  
+  dfdCommandQueue = dfdCommandQueue.then ->
+    dfd = $.Deferred()
+    try
+      switch request.action
+        when "batch"
+          execBatch dfd, request, sendResponse
+        when "callShortcut"
+          execShortcut dfd, doneCallback, request.value1, request.value2
+        when "sleep"
+          setTimeout((->
+            flexkbd.Sleep request.msec
+            doneCallback dfd, 0
+          ), 0)
+        when "setClipboard"
+          setTimeout((->
+            flexkbd.SetClipboard request.value1
+            doneCallback dfd, 0
+          ), 0)
+        when "setClipboard"
+          setTimeout((->
+            flexkbd.SetClipboard request.value1
+            doneCallback dfd, 0
+          ), 0)
+        when "pasteText"
+          notification.onclose = ->
+            notifDisplay = false
+            flexkbd.PasteText request.value1
+          doneCallback dfd, 0
+    catch e
+      sendResponse e.message
+      dfd.resolve()
+    dfd.promise()
   true
 
-jsUitlObj = """
-  var Messenger = function() {
-    this.doneCallback = null;
-    this.done = function(callback) {
-      this.doneCallback = callback;
-      return this;
-    }
-    this.failCallback = null;
-    this.fail = function(callback) {
-      this.failCallback = callback;
-      return this;
-    }
-    this.sendMessage = function(action, value1, value2, value3) {
-      var that = this;
-      chrome.runtime.sendMessage({
-        action: action,
-        value1: value1,
-        value2: value2,
-        value3: value3
-      }, function(resp) {
-        if (resp === "done") {
-          if (that.doneCallback) {
-            that.doneCallback(resp);
-          }
-        } else {
-          if (that.failCallback) {
-            that.failCallback(resp);
-          }
-        }
-      });
-      return this;
-    }
-  }
-  tsc = {
-    send: function(transCode, postSleep, preSleep) {
-      var postMsec = 100, preMsec = 0;
-      if (postSleep != null) {
-        if (Number.isNaN(postMsec = parseInt(postSleep, 10))) {
-          alert(postSleep + " is not a number.");
-          return;
-        }
-      }
-      if (preSleep != null) {
-        if (Number.isNaN(preMsec = parseInt(preSleep, 10))) {
-          alert(preSleep + " is not a number.");
-          return;
-        }
-      }
-      return (new Messenger()).sendMessage("callShortcut", transCode, postMsec, preMsec);
-    },
-    sleep: function(sleepMSec) {
-      var msec = 0;
-      if (sleepMSec != null) {
-        if (Number.isNaN(msec = parseInt(sleepMSec, 10))) {
-          alert(sleepMSec + " is not a number.");
-          return;
-        }
-      }
-      if (msec !== 0) {
-        chrome.runtime.sendMessage({
-          action: "sleep",
-          msec: sleepMSec
-        });
-      }
-    },
-    clipbd: function(text) {
-      return (new Messenger()).sendMessage("setClipboard", text);
-    }
-  };
-  """
+jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if(e==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},sleep:function(t){if(t!=null){if(isNaN(t))return new e(t+" is not a number.");t=Math.round(t);if(t<0||t>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else t=100;return chrome.runtime.sendMessage({action:"sleep",msec:t})},clipbd:function(e){return(new t).sendMessage("setClipboard",e)}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -243,6 +191,50 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
     flexkbd.StartConfigMode()
 
+notification = null
+notifDisplay = false
+showNotification = ->
+  if notifDisplay
+    notification.ondisplay = null
+    notification.onclose = null
+    notification.close()  
+  notification = webkitNotifications.createHTMLNotification("copyhistory.html")
+  notification.ondisplay = ->
+    notifDisplay = true
+  notification.onclose = ->
+    notifDisplay = false
+  notification.show()
+  notifDisplay = true
+
+showCopyHistory = (dfd, tabId) ->
+  #copyHist = JSON.parse(localStorage.copyHistory || null) || []  
+  #chrome.tabs.sendMessage tabId,
+  #  action: "showCopyHistory"
+  #  history: copyHist
+  showNotification()
+  dfd.resolve()
+
+setClipboardWithHistory = (dfd, tabId) ->
+  setTimeout((->
+    if dfd.state() is "pending"
+      dfd.resolve()
+  ), 200)
+  chrome.tabs.sendMessage tabId, action: "copyText", (text) ->
+    unless text is ""
+      flexkbd.SetClipboard text
+      copyHist = JSON.parse(localStorage.copyHistory || null) || []
+      for i in [0...copyHist.length]
+        if copyHist[i] is text
+          copyHist.splice i, 1
+          break
+      copyHist.unshift text
+      if copyHist.length > 20
+        copyHist.pop()
+      localStorage.copyHistory = JSON.stringify copyHist
+      if notifDisplay
+        showNotification()
+    dfd.resolve()
+
 sendKeyEventToDom = (keyEvent, tabId) ->
   local = fk.getConfig()
   keys = fk.getKeyCodes()[local.config.kbdtype].keys
@@ -263,18 +255,17 @@ sendKeyEventToDom = (keyEvent, tabId) ->
 
 preSendKeyEvent = (keyEvent) ->
   dfd = $.Deferred()
-  chrome.tabs.query {active: true}, (tabs) ->
-    tabId = tabs[0].id
-    chrome.tabs.sendMessage tabId, action: "askAlive", (resp) ->
+  getActiveTab().done (tab) ->
+    chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
       if resp is "hello"
-        sendKeyEventToDom(keyEvent, tabId)
+        sendKeyEventToDom(keyEvent, tab.id)
         dfd.resolve()
       else
-        chrome.tabs.executeScript tabId,
+        chrome.tabs.executeScript tab.id,
           file: "kbdagent.js"
           allFrames: true
           (resp) ->
-            sendKeyEventToDom(keyEvent, tabId)
+            sendKeyEventToDom(keyEvent, tab.id)
             dfd.resolve()
   dfd.promise()
 
@@ -415,6 +406,26 @@ execCommand = (keyEvent) ->
             flexkbd.PasteText item.command.content
             dfd.resolve()
           ), 0)
+        when "copyText"
+          getActiveTab().done (tab) ->
+            chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
+              if resp is "hello"
+                setClipboardWithHistory dfd, tab.id
+              else
+                chrome.tabs.executeScript tab.id,
+                  file: "kbdagent.js"
+                  allFrames: true
+                  (resp) -> setClipboardWithHistory dfd, tab.id
+        when "showHistory"
+          getActiveTab().done (tab) ->
+            chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
+              if resp is "hello"
+                showCopyHistory dfd, tab.id
+              else
+                chrome.tabs.executeScript tab.id,
+                  file: "kbdagent.js"
+                  allFrames: true
+                  (resp) -> showCopyHistory dfd, tab.id
         when "insertCSS"
           getActiveTab().done (tab) ->
             chrome.tabs.insertCSS tab.id,
