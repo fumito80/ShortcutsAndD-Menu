@@ -4,13 +4,13 @@ keys = null
 WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
-optionsDisp =
+modeDisp =
   remap:    ["Remap", "icon-random"]
   command:  ["Command...", "icon-cog"]
   bookmark: ["Bookmark...", "icon-bookmark"]
-  simEvent: ["Simurate key event", "icon-font"]
+  simEvent: ["DOM Key Event", "icon-font"]
   disabled: ["Disabled", "icon-ban-circle"]
-  through:  ["Pause", "icon-pause"]
+  through:  ["Pause", "icon-pause", "nodisp"]
 
 bmOpenMode =
   current:   "Open in current tab"
@@ -109,9 +109,11 @@ KeyConfigView = Backbone.View.extend
     "click .origin,.proxy"  : "onClickInput"
     "click div.mode"        : "onClickMode"
     "click .selectMode div" : "onChangeMode"
-    "click div.delete"      : "onClickRemove"
     "click div.edit"        : "onClickEdit"
     "click div.copySC"      : "onClickCopySC"
+    "click div.pause"       : "onClickPause"
+    "click div.resume"      : "onClickResume"
+    "click div.delete"      : "onClickRemove"
     "click input.memo"      : "onClickInputMemo"
     "click button.cog"      : "onClickCog"
     "submit .memo"          : "onSubmitMemo"
@@ -120,7 +122,7 @@ KeyConfigView = Backbone.View.extend
     "blur  input.memo"      : "onBlurInputMemo"
   
   initialize: (options) ->
-    @optionKeys = _.keys optionsDisp
+    @optionKeys = _.keys modeDisp
     @model.on
       "change:bookmark": @onChangeBookmark
       "change:command":  @onChangeCommand
@@ -134,7 +136,7 @@ KeyConfigView = Backbone.View.extend
       @
   
   render: (kbdtype) ->
-    @setElement @template({options: optionsDisp})
+    @setElement @template({options: modeDisp})
     mode = @model.get("mode")
     #@$("select.mode").val mode
     @setKbdValue @$(".proxy"), @model.id
@@ -193,6 +195,7 @@ KeyConfigView = Backbone.View.extend
     chrome.runtime.sendMessage
       action: "setClipboard"
       value1: text
+      (msg) ->
   
   onClickInputMemo: ->
     event.stopPropagation()
@@ -220,9 +223,6 @@ KeyConfigView = Backbone.View.extend
         @trigger "showPopup", mode, @model, @model.get(mode)
         return
     @model.set "mode", mode
-    @$(".mode")
-      .removeClass(@optionKeys.join(" "))
-      .addClass(mode)
     @setDispMode mode
     @setDesc()
     @trigger "resizeInput"
@@ -261,8 +261,7 @@ KeyConfigView = Backbone.View.extend
         @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
       when "command"
         @trigger "showPopup", "commandOptions", @model, @model.get("command")  
-      #when "remap", "through", "disabled"
-      else
+      else #when "remap", "through", "disabled"
         (memo = @$("div.memo")).toggle()
         editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
         if editing
@@ -272,6 +271,13 @@ KeyConfigView = Backbone.View.extend
           @onSubmitMemo()
         event.stopPropagation()
   
+  onClickPause: ->
+    @model.set("lastMode", @model.get("mode"))
+    @onChangeMode(null, "through")
+  
+  onClickResume: ->
+    @onChangeMode(null, @model.get("lastMode"))
+  
   onClickRemove: ->
     shortcut = decodeKbdEvent @model.id
     if confirm "Are you sure you want to delete this shortcut?\n\n '#{shortcut}'"
@@ -279,14 +285,18 @@ KeyConfigView = Backbone.View.extend
   
   # Object Method
   setDispMode: (mode) ->
-    #@$("div.mode").addClass(mode).find("span").text(optionsDisp[mode].replace("...", ""))
-    @$("div.mode")
-      .attr("title", optionsDisp[mode][0].replace("...", ""))
-      .find(".icon")[0].className = "icon " + optionsDisp[mode][1]
+    #@$(".mode")
+    #  .removeClass(@optionKeys.join(" "))
+    #  .addClass(mode)
+    @$(".mode")
+      .attr("title", modeDisp[mode][0].replace("...", ""))
+      .find(".icon")[0].className = "icon " + modeDisp[mode][1]
+    if mode is "through"
+      mode = @model.get("lastMode") + " through"
     @$(".proxy,.origin,.icon-arrow-right")
       .removeClass(@optionKeys.join(" "))
       .addClass mode
-    if mode is "remap"
+    if /remap/.test mode
       @$(".origin").attr("tabIndex", "0")
       @$("th:first").removeAttr("colspan")
       @$("th:eq(1),th:eq(2)").show()
@@ -302,7 +312,10 @@ KeyConfigView = Backbone.View.extend
   setDesc: ->
     (tdDesc = @$(".desc")).empty()
     editOption = iconName: "", command: ""
-    switch mode = @model.get "mode"
+    if (mode = @model.get("mode")) is "through"
+      pause = true
+      mode = @model.get("lastMode")
+    switch mode
       #when "simEvent"
       when "bookmark"
         bookmark = @model.get("bookmark")
@@ -313,7 +326,7 @@ KeyConfigView = Backbone.View.extend
         editOption = iconName: "icon-cog", command: "Edit bookmark..."
       when "command"
         desc = (commandDisp = commandsDisp[commandName = @model.get("command").name])[1]
-        if (ctg= commandDisp[0]) is "custom"
+        if (ctg = commandDisp[0]) is "custom" || commandName is "pasteText"
           content3row = []
           command = @model.get("command")
           lines = command.content.split("\n")
@@ -332,7 +345,7 @@ KeyConfigView = Backbone.View.extend
           tdDesc.append @tmplCommand desc: desc, ctg: ctg.substring(0,1).toUpperCase() + ctg.substring(1)
         if ctg is "custom" || commandName is "pasteText"
           editOption = iconName: "icon-cog", command: "Edit command..."
-      when "remap", "through", "disabled"
+      when "remap", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "remap"
           keycombo = @$(".origin").text()
@@ -358,12 +371,19 @@ KeyConfigView = Backbone.View.extend
     tdDesc.append @tmplDesc editOption
     if editOption.iconName is ""
       tdDesc.find(".edit").remove()
+    if pause
+      tdDesc.find(".pause").remove()
+    else
+      tdDesc.find(".resume").remove()
   
   tmplDesc: _.template """
     <button class="cog small"><i class="icon-caret-down"></i></button>
     <div class="selectCog" tabIndex="0">
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
       <div class="copySC"><i class="icon-paper-clip"></i> Copy shortcut command</div>
+      <span class="seprater"><hr style="margin:3px 1px" noshade></span>
+      <div class="pause"><i class="icon-pause"></i> Pause</div>
+      <div class="resume"><i class="icon-play"></i> Resume</div>
       <span class="seprater"><hr style="margin:3px 1px" noshade></span>
       <div class="delete"><i class="icon-remove"></i> Delete</div>
     </div>
@@ -405,16 +425,9 @@ KeyConfigView = Backbone.View.extend
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
-          <% _.each(options, function(option, key) { %>
-          <div class="<%=key%>"><i class="icon <%=option[1]%>"></i><%=option[0]%></div>
-          <% }); %>
-          <!--
-          <span class="seprater"><hr style="margin:3px 1px; color: #000" noshade></span>
-          <div class="edit"><i class="icon icon-pencil"></i>Edit</div>
-          <div class="copySC"><i class="icon icon-paper-clip"></i>Copy shortcut command</div>
-          <span class="seprater"><hr style="margin:3px 1px; color: #000" noshade></span>
-          <div class="delete"><i class="icon icon-remove"></i>Delete</div>
-          -->
+          <% _.each(options, function(option, key) { if (option[2] != "nodisp") { %>
+          <div class="<%=key%>"><i class="icon <%=option[1]%>"></i> <%=option[0]%></div>
+          <% }}); %>
         </div>
       <td class="desc"></td>
       <td class="blank">&nbsp;</td>
@@ -463,9 +476,9 @@ KeyConfigSetView = Backbone.View.extend
   # Collection Events
   onAddRender: (model) ->
     keyConfigView = new KeyConfigView(model: model)
-    keyConfigView.on "removeConfig"  , @onChildRemoveConfig  , @
-    keyConfigView.on "resizeInput"   , @onChildResizeInput   , @
-    keyConfigView.on "showPopup"     , @onShowPopup          , @
+    keyConfigView.on "removeConfig", @onChildRemoveConfig, @
+    keyConfigView.on "resizeInput" , @onChildResizeInput , @
+    keyConfigView.on "showPopup"   , @onShowPopup        , @
     @$("tbody")
       .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
       .append(@tmplBorder)
@@ -653,18 +666,11 @@ $ ->
   commandsView = new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
   
-  headerView.on       "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
-  headerView.on       "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  #keyConfigSetView.on "showPopup"        , bookmarksView.onShowPopup           , bookmarksView
-  #keyConfigSetView.on "showPopup"        , commandsView.onShowPopup            , commandsView
-  #keyConfigSetView.on "showPopup"        , commandInputView.onShowPopup        , commandInputView
-  #keyConfigSetView.on "showPopup"        , commandFreeInputView.onShowPopup    , commandFreeInputView
-  #commandsView.on     "showPopup"        , commandInputView.onShowPopup        , commandInputView
-  #commandsView.on     "showPopup"        , commandFreeInputView.onShowPopup    , commandFreeInputView
-  #bookmarksView.on    "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
-  commandsView.on     "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
-  commandOptionsView.on "setCommand"     , keyConfigSetView.onSetCommand       , keyConfigSetView
-  bookmarkOptionsView.on "setBookmark"   , keyConfigSetView.onSetBookmark      , keyConfigSetView
+  headerView.on          "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
+  headerView.on          "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
+  commandsView.on        "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
+  commandOptionsView.on  "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
+  bookmarkOptionsView.on "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action

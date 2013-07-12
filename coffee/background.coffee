@@ -1,43 +1,43 @@
 flexkbd = document.getElementById("flexkbd")
 
-execShortcut = (dfd, doneCallback, transCode, sleepMSec, batchIndex) ->
+execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) ->
   if transCode
     scCode = ""
-    test = transCode.match(/\[(\w*?)\](.+)/, "g")
+    modifiersCode = 0
+    local = fk.getConfig()
+    test = transCode.match(/\[(\w*?)\](.+)/)
     if (test)
-      local = fk.getConfig()
-      modifiersCode = 0
-      if modifiers = RegExp.$1
-        modifierChars = modifiers.toLowerCase().split("")
-        if ("c" in modifierChars) then modifiersCode  = 1
-        if ("a" in modifierChars) then modifiersCode += 2
-        if ("s" in modifierChars) then modifiersCode += 4
-        if ("w" in modifierChars) then modifiersCode += 8
-      if keyIdentifier = RegExp.$2
-        kbdtype = local.config.kbdtype
-        keys = fk.getKeyCodes()[kbdtype].keys
-        scanCode = -1
-        for i in [0...keys.length]
-          if keys[i] && (keyIdentifier is keys[i][0] || keyIdentifier is keys[i][1])
-            scanCode = i
-            break
-        if scanCode is -1
-          throw new Error "Key identifier code '" + keyIdentifier + "' is unregistered code."
-        else
-          if modifiersCode is 0 && !(scanCode in [0x3B..0x44]) && !(scanCode in [0x57, 0x58])
-            throw new Error "Modifier code is not included in '#{transCode}'."
-          else
-            scCode = "0" + modifiersCode.toString(16) + scanCode
-      else
-        throw new Error "Key identifier code '" + transCode + "' is not found."
+      modifiers = RegExp.$1
+      keyIdentifier = RegExp.$2
+      modifierChars = modifiers.toLowerCase().split("")
+      if ("c" in modifierChars) then modifiersCode  = 1
+      if ("a" in modifierChars) then modifiersCode += 2
+      if ("s" in modifierChars) then modifiersCode += 4
+      if ("w" in modifierChars) then modifiersCode += 8
     else
-      throw new Error "Shortcut code '" + transCode + "' is invalid."
-    modeExec = null
-    for i in [0...local.keyConfigSet.length]
-      if (item = local.keyConfigSet[i]).proxy is scCode
-        modeExec = item.mode
+      modifiersCode = 0
+      keyIdentifier = transCode
+    kbdtype = local.config.kbdtype
+    keys = fk.getKeyCodes()[kbdtype].keys
+    scanCode = -1
+    for i in [0...keys.length]
+      if keys[i] && (keyIdentifier is keys[i][0] || keyIdentifier is keys[i][1])
+        scanCode = i
         break
-    switch modeExec
+    if scanCode is -1
+      throw new Error "Key identifier code '" + keyIdentifier + "' is unregistered code."
+    else
+      if execMode isnt "keydown" && modifiersCode is 0 && !(scanCode in [0x3B..0x44]) && !(scanCode in [0x57, 0x58])
+        throw new Error "Modifier code is not included in '#{transCode}'."
+      else
+        scCode = "0" + modifiersCode.toString(16) + scanCode
+    
+    unless execMode
+      for i in [0...local.keyConfigSet.length]
+        if (item = local.keyConfigSet[i]).proxy is scCode
+          execMode = item.mode
+          break
+    switch execMode
       when "command"
         execCommand(scCode).done ->
           doneCallback dfd, sleepMSec, batchIndex
@@ -47,9 +47,14 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, batchIndex) ->
       when "sendToDom"
         preSendKeyEvent(scCode).done ->
           doneCallback dfd, sleepMSec, batchIndex
+      when "keydown"
+        setTimeout((->
+          flexkbd.CallShortcut scCode, 8
+          doneCallback dfd, sleepMSec, batchIndex
+        ), 0)
       else
         setTimeout((->
-          flexkbd.CallShortcut scCode
+          flexkbd.CallShortcut scCode, 4
           doneCallback dfd, sleepMSec, batchIndex
         ), 0)
   else
@@ -65,7 +70,7 @@ execBatch = (dfdCaller, request, sendResponse) ->
       dfd = $.Deferred()
       try
         if isNaN(command = commands[batchIndex])
-          execShortcut dfd, doneCallback, command, 0, batchIndex
+          execShortcut dfd, doneCallback, command, 0, null, batchIndex
         else
           sleepMSec = Math.round command
           if (-1 < sleepMSec < 60000)
@@ -101,9 +106,11 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
           execBatch dfd, request, sendResponse
         when "callShortcut"
           execShortcut dfd, doneCallback, request.value1, request.value2
+        when "keydown"
+          execShortcut dfd, doneCallback, request.value1, request.value2, "keydown"
         when "sleep"
           setTimeout((->
-            flexkbd.Sleep request.msec
+            flexkbd.Sleep request.value1
             doneCallback dfd, 0
           ), 0)
         when "setClipboard"
@@ -111,23 +118,13 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
             flexkbd.SetClipboard request.value1
             doneCallback dfd, 0
           ), 0)
-        when "setClipboard"
-          setTimeout((->
-            flexkbd.SetClipboard request.value1
-            doneCallback dfd, 0
-          ), 0)
-        when "pasteText"
-          notification.onclose = ->
-            notifDisplay = false
-            flexkbd.PasteText request.value1
-          doneCallback dfd, 0
     catch e
       sendResponse e.message
       dfd.resolve()
     dfd.promise()
   true
 
-jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if(e==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},sleep:function(t){if(t!=null){if(isNaN(t))return new e(t+" is not a number.");t=Math.round(t);if(t<0||t>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else t=100;return chrome.runtime.sendMessage({action:"sleep",msec:t})},clipbd:function(e){return(new t).sendMessage("setClipboard",e)}};"""
+jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if(e==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -167,7 +164,7 @@ getAllTabs2 = ->
 optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
   chrome.tabs.get activeInfo.tabId, (tab) ->
-    if tab.url.indexOf(chrome.extension.getURL("")) is 0
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
       flexkbd.StartConfigMode()
       optionsTabId = activeInfo.tabId
     else
@@ -191,20 +188,47 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
     flexkbd.StartConfigMode()
 
-notification = null
-notifDisplay = false
+notifications = {}
+notifications.state = "closed"
+
+chrome.notifications.onButtonClicked.addListener (notifId, index) ->
+  if notifId is chrome.runtime.id
+    copyHist = JSON.parse(localStorage.copyHistory || null) || []
+    flexkbd.PasteText copyHist[index]
+    chrome.notifications.clear chrome.runtime.id, ->
+      notifications.state = "closed"
+  
+chrome.notifications.onClosed.addListener (notifId, byUser) ->
+  if notifId is chrome.runtime.id
+    notifications.state = "closed"
+
+#notification = null
 showNotification = ->
-  if notifDisplay
-    notification.ondisplay = null
-    notification.onclose = null
-    notification.close()  
-  notification = webkitNotifications.createHTMLNotification("copyhistory.html")
-  notification.ondisplay = ->
-    notifDisplay = true
-  notification.onclose = ->
-    notifDisplay = false
-  notification.show()
-  notifDisplay = true
+  copyHist = JSON.parse(localStorage.copyHistory || null) || []
+  buttons = []
+  copyHist.forEach (item) ->
+    buttons.push title: item, message: "msg" if item
+  if notifications.state in ["opened", "created"]
+    chrome.notifications.clear chrome.runtime.id, ->
+      chrome.notifications.create chrome.runtime.id,
+        type: "list"
+        iconUrl: "images/key_bindings.png"
+        message: "Select text to paste"
+        eventTime: 60000
+        title: "Copy history"
+        items: buttons  
+        ->
+          notifications.state = "opened"
+  else
+    chrome.notifications.create chrome.runtime.id,
+      type: "list"
+      iconUrl: "images/key_bindings.png"
+      message: "Select text to paste"
+      eventTime: 60000
+      title: "Copy history"
+      items: buttons
+      ->
+        notifications.state = "opened"
 
 showCopyHistory = (dfd, tabId) ->
   #copyHist = JSON.parse(localStorage.copyHistory || null) || []  
@@ -231,7 +255,7 @@ setClipboardWithHistory = (dfd, tabId) ->
       if copyHist.length > 20
         copyHist.pop()
       localStorage.copyHistory = JSON.stringify copyHist
-      if notifDisplay
+      if notifications.state is "opened"
         showNotification()
     dfd.resolve()
 
@@ -264,6 +288,7 @@ preSendKeyEvent = (keyEvent) ->
         chrome.tabs.executeScript tab.id,
           file: "kbdagent.js"
           allFrames: true
+          runAt: "document_end"
           (resp) ->
             sendKeyEventToDom(keyEvent, tab.id)
             dfd.resolve()
@@ -280,6 +305,8 @@ openBookmark = (dfd, openmode, url) ->
       chrome.windows.create url: url, -> dfd.resolve()
     when "incognito"
       chrome.windows.create url: url, incognito: true, -> dfd.resolve()
+    else
+      dfd.resolve()
 
 preOpenBookmark = (keyEvent) ->
   dfd = $.Deferred()
@@ -380,9 +407,6 @@ execCommand = (keyEvent) ->
         when "pinTab"
           getActiveTab().done (tab, windowId) ->
             chrome.tabs.update tab.id, pinned: !tab.pinned, -> dfd.resolve()
-        #when "unpinTab"
-        #  getActiveTab().done (tab, windowId) ->
-        #    chrome.tabs.update tab.id, pinned: false
         when "switchNextWin"
           chrome.windows.getAll null, (windows) ->
             for i in [0...windows.length]
@@ -415,6 +439,7 @@ execCommand = (keyEvent) ->
                 chrome.tabs.executeScript tab.id,
                   file: "kbdagent.js"
                   allFrames: true
+                  runAt: "document_end"
                   (resp) -> setClipboardWithHistory dfd, tab.id
         when "showHistory"
           getActiveTab().done (tab) ->
@@ -425,6 +450,7 @@ execCommand = (keyEvent) ->
                 chrome.tabs.executeScript tab.id,
                   file: "kbdagent.js"
                   allFrames: true
+                  runAt: "document_end"
                   (resp) -> showCopyHistory dfd, tab.id
         when "insertCSS"
           getActiveTab().done (tab) ->
@@ -440,6 +466,7 @@ execCommand = (keyEvent) ->
             chrome.tabs.executeScript tab.id,
               code: code
               allFrames: item.command.allFrames
+              runAt: "document_end"
               -> dfd.resolve()
   dfd.promise()
 

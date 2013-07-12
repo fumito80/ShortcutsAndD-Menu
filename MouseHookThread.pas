@@ -28,7 +28,7 @@ type
 const
   MSG_MOUSE_LDOWN = WM_LBUTTONDOWN - $0200;
   MSG_MOUSE_LUP   = WM_LBUTTONUP   - $0200;
-  MSG_MOUSE_LDBL  = WM_LBUTTONDBLCLK - $200;
+  MSG_MOUSE_LDBL  = WM_LBUTTONDBLCLK - $0200;
   MSG_MOUSE_RDOWN = WM_RBUTTONDOWN - $0200;
   MSG_MOUSE_RUP   = WM_RBUTTONUP   - $0200;
   MSG_MOUSE_RDBL  = WM_RBUTTONDBLCLK - $0200;
@@ -126,10 +126,10 @@ begin
   if (modifierFlags = 0) or (stateButton in [MSG_MOUSE_LUP, MSG_MOUSE_RUP, MSG_MOUSE_MUP]) then
     Exit;
   // Exit 2
-  if (modifierFlags = FLAG_LDOWN) and (wPrm = WM_LBUTTONDOWN) then begin
-    stateDownL:= False;
-    Exit;
-  end;
+  //if (modifierFlags = FLAG_LDOWN) and (wPrm = WM_LBUTTONDOWN) then begin
+  //  stateDownL:= False;
+  //  Exit;
+  //end;
   
   scans:= IntToHex(modifierFlags, 2) + IntToStr(wPrm);
   

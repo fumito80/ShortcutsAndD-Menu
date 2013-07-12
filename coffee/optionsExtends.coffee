@@ -1,6 +1,7 @@
 keyConfigSetView = null
 commandsView = null
 bookmarksView = null
+commandOptionsView = null
 
 PopupBaseView = Backbone.View.extend
 
@@ -37,6 +38,12 @@ PopupBaseView = Backbone.View.extend
   hidePopup: ->
     $(".backscreen").hide()
     @$el.hide()
+  
+  tmplHelp: _.template """
+    <a href="helpview.html#<%=name%>" target="_blank" class="help" title="help">
+      <i class="icon-question-sign" title="Help"></i>
+    </a>
+    """
 
 commandsDisp =
   closeOtherTabs: ["tab", "Close other tabs"]
@@ -56,20 +63,20 @@ commandsDisp =
   #findOrNewTab:   ["tab", "Find or new tab by URL", []]
   switchPrevWin:  ["win", "Switches to the previous window"]
   switchNextWin:  ["win", "Switches to the next window"]
-  pasteText:      ["clip", "Paste text"            , [], "Clip"]
-  copyText:       ["clip", "Copy text with history", "Clip"]
-  showHistory:    ["clip", "Show copy history"     , "Clip"]
+  pasteText:      ["custom", "Paste text"            , [], "Clip"]
+  #copyText:       ["clip", "Copy text with history", "Clip"]
+  #showHistory:    ["clip", "Show copy history"     , "Clip"]
   insertCSS:      ["custom", "Insert CSS", [{value:"allFrames", caption:"All frames"}], "CSS"]
   execJS:         ["custom", "Execute script", [
     {value:"allFrames",  caption:"All frames"}
-    {value:"useUtilObj", caption:"Use a utility object"}
+    {value:"useUtilObj", caption:"Use Utility Object"}
   ], "JS"]
 
 catnames =
   tab: "Tab commands"
   win: "Window commands"
   clip: "Clipboard commands"
-  custom: "Custom commands"
+  custom: "Other"
 
 class CommandOptionsView extends PopupBaseView
   name: "commandOptions"
@@ -87,6 +94,7 @@ class CommandOptionsView extends PopupBaseView
       if @command[option.value]
         option.checked = "checked"
       commandOption.append @tmplOptions option
+    @$el.append @tmplHelp @
   onShowPopup: (name, model, options) ->
     @command = options
     unless super(name, model)
@@ -184,6 +192,7 @@ class BookmarkOptionsView extends PopupBaseView
     @$("input[value='#{(@bookmark.openmode || 'current')}']")[0].checked = true
     (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @bookmark.findtab) is undefined then true else findtab
     @onClickFindTab currentTarget: elFindtab
+    @$el.append @tmplHelp @
   onShowPopup: (name, model, options) ->
     @bookmark = options
     unless super(name, model)

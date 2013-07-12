@@ -17,8 +17,8 @@
     </div>
     <select class="kbdtype"></select>
     <a href="#" target="_blank" class="scHelp"></a>
+    <a href="helpview.html" target="_blank" class="helpview">ヘルプ</a>
     <button class="addKeyConfig"><i class="icon-plus-sign"></i> Add new</button>
-    <!--<button class="save">Save</button>-->
   </div>
   <div class="fixed-table-container">
     <div class="header-background"></div>
@@ -79,7 +79,8 @@
           <label><input type="radio" name="openmode" value="current" checked="checked"> Open in current tab</label><br>
           <label><input type="radio" name="openmode" value="newtab"> Open in new tab</label><br>
           <label><input type="radio" name="openmode" value="newwin"> Open in new window</label><br>
-          <label><input type="radio" name="openmode" value="incognito"> Open in incognito window</label>
+          <label><input type="radio" name="openmode" value="incognito"> Open in incognito window</label><br>
+          <label><input type="radio" name="openmode" value="findonly"> Only to find the tab</label>
         </fieldset>
         <label>
           <input type="checkbox" value="findtab" checked="checked"> Activate the tab if already open<br>
@@ -91,6 +92,13 @@
       </div>
     </form>
   </div>
+  <div class="popup helpView">
+    <i class="icon-remove" title="Cancel"></i>
+    <div class="panel1">
+      <span class="title"></span>
+    </div>
+    <div class="content"></div>
+  </div>
   <div class="backscreen"></div>
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery-2.0.0.min.js"></script>
@@ -99,6 +107,7 @@
   <script src="lib/jquery.nicescroll.min.js"></script>
   <script src="lib/jquery.tipTip.js"></script>
   <!--<script src="indexedDB.js"></script>-->
+  <script src="lib/showdown.js"></script>  
   <script src="options.js"></script>
 </body>
 </html>

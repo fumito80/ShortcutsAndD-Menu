@@ -113,8 +113,11 @@ keys[0x15F] = ["Sleep"];
 keys[0x163] = ["Wake"];
 // Mouse events
 keys[0x201] = ["MouseL"]
+keys[0x203] = ["MouseLDbl"]
 keys[0x204] = ["MouseR"]
+keys[0x206] = ["MouseRDbl"]
 keys[0x207] = ["MouseM"]
+keys[0x209] = ["MouseLDbl"]
 keys[0x20B] = ["WheelUp"]
 keys[0x20D] = ["WheelDown"]
 var keysUS = keys;

@@ -28,7 +28,7 @@ var
   KeyInputs: array of TInput;
   KeyInputCount: Integer;
   newScans: TArrayCardinal;
-  scriptMode: Boolean;
+  scriptMode, keydownMode: Boolean;
   procedure  KeybdInput(scanCode: Cardinal; Flags: DWord);
   begin
     Inc(KeyInputCount);
@@ -113,13 +113,17 @@ begin
   modifierFlags:= modifierFlags or (Ord(((KeyState[VK_LWIN]   and 128) <> 0) or ((KeyState[VK_RWIN] and 128) <> 0)) * FLAG_WIN);
   keyDownState:= 0;
   scriptMode:= False;
+  keydownMode:= False;
   modifierFlags2:= 0;
   // Paste Text Mode
   if wPrm = g_pasteText then begin
     scanCode:= 86;
     scans:= '0086';
-  end else if (wPrm and g_callShortcut) <> 0 then begin
-    scriptMode:= True;
+  end else if ((wPrm and g_callShortcut) <> 0) or ((wPrm and g_keydown) <> 0) then begin
+    if (wPrm and g_callShortcut) <> 0 then
+      scriptMode:= True
+    else
+      keydownMode:= True;
     scanCode:= HiWord(wPrm);
     modifierFlags2:= HiByte(LoWord(wPrm));
     scans:= IntToHex(modifierFlags2, 2) + IntToStr(scanCode);
@@ -154,7 +158,7 @@ begin
   if (modifierFlags in [0, 4])
     and not(scancode in [$3B..$44, $56, $57, $58])
     and not((keyDownState = 0) and (virtualScanCode in [$3B..$44, $56, $57, $58]))
-    and not(scriptMode) then
+    and not(scriptMode) and not(keydownMode) then
       Exit;
 
   if configMode and (keyDownState = 0) then begin
@@ -182,17 +186,26 @@ begin
     end;
 
     index:= keyConfigList.IndexOf(scans);
-    if (index > -1) or scriptMode then begin
+    if (index > -1) or scriptMode or keydownMode then begin
       Result:= True;
-      if (index = -1) and scriptMode then begin
+      if ((index = -1) and scriptMode) or keydownMode then begin
         keyConfig:= TKeyConfig.Create(
           'remap',
           scans,
           '',
           modifierFlags2,
           scanCode);
-      end else
+      end else begin
         keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
+        if scriptMode and (keyConfig.mode = 'through') then begin
+          keyConfig:= TKeyConfig.Create(
+            'remap',
+            scans,
+            '',
+            modifierFlags2,
+            scanCode);
+        end;
+      end;
       if keyConfig.mode = 'remap' then begin
         modifierRelCount:= 0;
         if keyDownState = KEYEVENTF_KEYUP then
@@ -283,9 +296,13 @@ begin
         //if (wPrm and g_callShortcut) <> 0 then begin
         //  ClearAll;
         //end;
-        if (wPrm = g_pasteText) or scriptMode then begin
+        if (wPrm = g_pasteText) or scriptMode or keydownMode then begin
           SetLength(KeyInputs, 0);
           AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
+          if scriptMode or keydownMode then
+            keyConfig.scanCode:= 0;
+            AlterModified(keyConfig.modifierFlags, keyConfig.scanCode, KEYEVENTF_KEYUP);
+            keyConfig.Free;
         end;
       end else if (keyDownState = 0) and (keyConfig.mode = 'simEvent') then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);

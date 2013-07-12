@@ -253,26 +253,28 @@ begin
       scanCode:= StrToInt(Copy(origin, 3, 10));
       orgModified:= LeftBStr(origin, 2) + Copy(target, 3, 10);
 
-      if (scanCode = targetScanCode) and (modifierFlags <> targetModifierFlags) and (mode = 'remap') then begin
-        // Make Proxy
-        proxyScanCode:= GetProxyScanCode($5A);
-        proxyTarget:= LeftBStr(target, 2) + IntToStr(proxyScanCode);
-        proxyOrgModified:= LeftBStr(origin, 2) + IntToStr(proxyScanCode);
-        //Write2EventLog('FlexKbd', 'MakeProxy: ' + proxyTarget + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
-        keyConfigList.AddObject(proxyTarget, TKeyConfig.Create(
-          mode,
-          origin,
-          proxyOrgModified,
-          modifierFlags,
-          scanCode
-        ));
-        // Make Origin
-        orgModified:= LeftBStr(target, 2) + Copy(target, 3, 10);
-        modifierFlags:= StrToInt('$' + LeftBStr(target, 2));;
-        scanCode:= proxyScanCode;
-        //Write2EventLog('FlexKbd', 'MakeProxy: ' + target + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
-      end else begin
-        //Write2EventLog('FlexKbd', 'Normal: ' + target + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
+      if (scanCode = targetScanCode) and (mode = 'remap') then begin
+        if (modifierFlags = targetModifierFlags) then begin
+          mode:= 'through'
+        end else begin
+          // Make Proxy
+          proxyScanCode:= GetProxyScanCode($5A);
+          proxyTarget:= LeftBStr(target, 2) + IntToStr(proxyScanCode);
+          proxyOrgModified:= LeftBStr(origin, 2) + IntToStr(proxyScanCode);
+          //Write2EventLog('FlexKbd', 'MakeProxy: ' + proxyTarget + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
+          keyConfigList.AddObject(proxyTarget, TKeyConfig.Create(
+            mode,
+            origin,
+            proxyOrgModified,
+            modifierFlags,
+            scanCode
+          ));
+          // Make Origin
+          orgModified:= LeftBStr(target, 2) + Copy(target, 3, 10);
+          modifierFlags:= StrToInt('$' + LeftBStr(target, 2));
+          scanCode:= proxyScanCode;
+          //Write2EventLog('FlexKbd', 'MakeProxy: ' + target + ': ' + IntToHex(scanCode, 4) + ': ' + IntToStr(modifierFlags) + ': ' + orgModified);
+        end;
       end;
 
       keyConfigList.AddObject(target, TKeyConfig.Create(
@@ -401,11 +403,11 @@ var
 begin
   try
     //Write2EventLog('FlexKbd', params[0]);
-    if params[0] <> '' then begin
+    if (params[0] <> VarEmpty) and (params[1] <> VarEmpty) then begin
       scanCode:= StrToInt(Copy(params[0], 3, 10));
       scansInt64:= scanCode shl 16;
       Modifiers:= StrToInt(LeftBStr(params[0], 2));
-      scansInt64:= scansInt64 + (Modifiers shl 8) + g_callShortcut;
+      scansInt64:= scansInt64 + (Modifiers shl 8) + params[1];
       //Write2EventLog('FlexKbd', IntToStr(scansInt64));
       CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     end;

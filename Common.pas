@@ -11,7 +11,13 @@ type
     mode, origin, orgModified: string;
     modifierFlags: Byte;
     scanCode: Cardinal;
-    constructor Create(mode, origin, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);
+    constructor Create(
+      mode,
+      origin,
+      orgModified: string;
+      modifierFlags: Byte;
+      scanCode: Cardinal
+    );
   end;
 
   TArrayCardinal = array of Cardinal;
@@ -56,6 +62,7 @@ var
   g_reloadConfig: UInt64 = 1;
   g_pasteText   : UInt64 = 2;
   g_callShortcut: UInt64 = 4;
+  g_keydown     : UInt64 = 8;
 
 implementation
 

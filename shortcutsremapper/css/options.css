@@ -53,7 +53,7 @@ body {
   padding: 7px 10px;
   float: right;
 }
-.kbdtype, .scHelp {
+.kbdtype, .scHelp, .helpview {
   margin: 8px;
   float: right;  
 }
@@ -124,7 +124,7 @@ tbody .data:hover {
 .proxy.disabled span {
   color: #CC0000;
 }
-.proxy.through span {
+.through span {
   color: #333333;
   background: #DDDDDD;
 }
@@ -134,9 +134,11 @@ tbody .data:hover {
 .origin.disabled, .icon-arrow-right.disabled {
   display: none;
 }
+/*
 .origin.through, .icon-arrow-right.through {
   display: none;
 }
+*/
 .origin.bookmark, .icon-arrow-right.bookmark {
   display: none;
 }
@@ -202,7 +204,6 @@ div.addnew:focus {
 }
 .selectMode .icon {
   color: #999999;
-  margin-right: 2px;
 }
 .selectMode div:hover, .selectCog div:hover {
   background: #E3F2FF;
@@ -224,22 +225,25 @@ div.mode .icon-caret-down {
   font-size: 1.1em;
   color: rgba(0,0,0,0);
 }
-div.mode.remap:hover {
+div.mode:hover .icon-caret-down {
   color: 333;
 }
-div.mode:hover .icon-caret-down {
+div.mode:hover .icon {
+  color: #000000;
+}
+div.mode.selecting .icon-caret-down {
+  color: 333;
+}
+/*
+div.mode.remap:hover {
   color: 333;
 }
 div.mode.remap.selecting {
   color: 333;
 }
-div.mode.selecting .icon-caret-down {
-  color: 333;
-}
 .origin .remap {
   color: #000000;
 }
-/*
 .mode.remap {
   color: #CCCCCC;
 }
@@ -491,9 +495,18 @@ tbody .data:hover .delete {
 .popup .icon-remove:hover {
   color: #666;
 }
+.popup .help {
+  position: absolute;
+  right: 34px;
+  top: 11px;
+  font-size: 1.3em;
+}
 .popup .done {
   margin-left: 15px;
   padding: 7px 10px;
+}
+.popup input[type='radio'] {
+  box-shadow: none;
 }
 .bookmarks {
   width: 600px;

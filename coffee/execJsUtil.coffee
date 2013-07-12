@@ -45,6 +45,16 @@ tsc =
         return (new FailImmediate("Range of Sleep millisecond is up to 6000-0."))  if msec < 0 or msec > 6000
     (new Messenger()).sendMessage "callShortcut", transCode, msec
 
+  keydown: (transCode, sleepMSec) ->
+    msec = 100
+    if sleepMSec?
+      if isNaN(msec = sleepMSec)
+        return (new FailImmediate(sleepMSec + " is not a number."))
+      else
+        msec = Math.round(sleepMSec)
+        return (new FailImmediate("Range of Sleep millisecond is up to 6000-0."))  if msec < 0 or msec > 6000
+    (new Messenger()).sendMessage "keydown", transCode, msec
+
   sleep: (sleepMSec) ->
     if sleepMSec?
       if isNaN(sleepMSec)
@@ -54,9 +64,7 @@ tsc =
         return (new FailImmediate("Range of Sleep millisecond is up to 6000-0."))  if sleepMSec < 0 or sleepMSec > 6000
     else
       sleepMSec = 100
-    chrome.runtime.sendMessage
-      action: "sleep"
-      msec: sleepMSec
+    (new Messenger()).sendMessage "sleep", sleepMSec
 
   clipbd: (text) ->
     (new Messenger()).sendMessage "setClipboard", text
