@@ -20,12 +20,12 @@ class Messenger
       value2: value2
       value3: value3
     , (resp) =>
-      if resp is "done"
+      if resp?.msg is "done"
         if callback = @doneCallback
-          setTimeout((-> callback resp), 0)
+          setTimeout((-> callback(resp.text || resp.msg)), 0)
       else
         if callback = @failCallback
-          setTimeout((-> callback resp), 0)
+          setTimeout((-> callback resp.msg), 0)
     @
 
 tsc =
@@ -68,3 +68,6 @@ tsc =
 
   clipbd: (text) ->
     (new Messenger()).sendMessage "setClipboard", text
+
+  getClipbd: ->
+    (new Messenger()).sendMessage "getClipboard"

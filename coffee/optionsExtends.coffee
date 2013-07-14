@@ -18,7 +18,7 @@ PopupBaseView = Backbone.View.extend
     unless name is @name
       return false
     @model = model
-    shortcut = decodeKbdEvent model.get("proxy")
+    shortcut = decodeKbdEvent model.get("new")
     @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+")
     @render()
     @$el.show().draggable
@@ -56,13 +56,11 @@ commandsDisp =
   duplicateTab:   ["tab", "Duplicate a current tab"]
   duplicateTabWin:["tab", "Duplicate a current tab to a new window"]
   pinTab:         ["tab", "Pin/Unpin a current tab"]
-  #unpinTab:       ["tab", "Unpin a current tab"]
   detachTab:      ["tab", "Detaches a current tab"]
   attachTab:      ["tab", "Attaches a current tab to the next window"]
-  #findTab:        ["tab", "Find the tab", []]
-  #findOrNewTab:   ["tab", "Find or new tab by URL", []]
   switchPrevWin:  ["win", "Switches to the previous window"]
   switchNextWin:  ["win", "Switches to the next window"]
+  closeOtherWins: ["win", "Close other windows"]
   pasteText:      ["custom", "Paste text"            , [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
@@ -154,6 +152,7 @@ class CommandsView extends PopupBaseView
     unless super(name, model)
       return
     @$(".radioCommand").val [options.name] if options
+    @$el.append @tmplHelp @
   
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
@@ -335,6 +334,7 @@ class BookmarksView extends PopupBaseView
       title: target.text()
       url:   target.attr("title")
       bmId:  target.attr("data-id")
+    false
   
   onStopSort: ->
     @$(".result_outer").getNiceScroll().resize()

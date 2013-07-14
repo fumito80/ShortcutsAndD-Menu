@@ -1,0 +1,36 @@
+#content {
+  font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
+  padding: 5px 15px;
+  background: #FFFFFF;
+  line-height: 1.3em;
+}
+#content blockquote {
+  font-size: 1.0em;
+  font-style: normal;
+  line-height: 1.3em;
+  margin: 15px 5px 30px 5px;
+  padding-left: 10px;
+  border-left: 0;
+}
+#content blockquote pre.prettyprint {
+  background: whitesmoke;
+  border: 0;
+  border-radius: 0;
+  padding: 10px;
+  box-shadow: none;
+}
+#content blockquote span {
+  font-size: 1.0em;
+  display: inline;
+}
+#content ul, #content ol {
+  margin: 0 0 10px 25px;
+}
+#content h6 {
+}
+#content code {
+  padding: 5px 8px;
+  font-weight: normal;
+  background: #ddf;
+  color: #000000;
+}

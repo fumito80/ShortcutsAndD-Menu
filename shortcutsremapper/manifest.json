@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
   "icons": {
-     "128": "images/key_bindings.png"
+     "128": "images/shortcuts.png"
   },
   "options_page": "options.html",
   "background": {

@@ -107,7 +107,7 @@ tbody .data:hover {
   padding: 0 12px;
   right: 0;
 }
-.proxy, .origin {
+.new, .origin {
   /* color: #518BAB; */
   color: #000000;
   min-width: 80px;
@@ -121,7 +121,7 @@ tbody .data:hover {
   border: 1px solid rgba(0,0,0,0);
   cursor: pointer;
 }
-.proxy.disabled span {
+.new.disabled span {
   color: #CC0000;
 }
 .through span {
@@ -142,16 +142,16 @@ tbody .data:hover {
 .origin.bookmark, .icon-arrow-right.bookmark {
   display: none;
 }
-.proxy:not(:focus):hover span, .origin.remap:not(:focus):hover span {
+.new:not(:focus):hover span, .origin.remap:not(:focus):hover span {
   box-shadow: 0 0 4px #6DB9FF;
   border: 1px solid #50B1FE;
 }
-.proxy:focus span, .origin.remap:focus span {
+.new:focus span, .origin.remap:focus span {
   box-shadow: 0 0 7px #6DB9FF;
   border: 1px solid #50B1FE;
   background: #FFFFFF;
 }
-.proxy span, .origin span {
+.new span, .origin span {
   padding: 1px 3px;
   border: 1px solid lightblue;
   border-radius: 3px;
@@ -161,7 +161,7 @@ tbody .data:hover {
   margin: 0px 1px;
   font-family: verdana;
 }
-.proxy span {
+.new span {
   /* color: #518BAB; */
   font-weight: bold;
 }
@@ -321,7 +321,8 @@ thead th i.icon-arrow-right {
   background: rgb(105, 138, 69); /* light green */
 }
 .JS {
-  background: rgb(223, 165, 79); /* orange */
+  /* background: rgb(255, 175, 56);  orange */
+  background: rgb(255, 184, 79);
 }
 .Clip {
   background: rgb(213, 114, 193); /* purple */
@@ -353,34 +354,6 @@ button.cog.selecting {
 .selectCog div:hover i {
   color: #222222;
 }
-/*
-.desc .edit, .desc .delete {
-  cursor: pointer;
-  position: absolute;
-  color: rgba(0,0,0,0);
-  top: 5px;
-  font-size: 1.3em;
-}
-.keyConfigSetView .edit {
-  top: 6px;
-  right: 27px;
-}
-.keyConfigSetView .delete {
-  right: 6px;
-}
-tbody .data:hover .edit {
-  color: #CCCCCC;
-}
-tbody .data:hover .delete {
-  color: #CCCCCC;
-}
-.keyConfigSetView .data .edit:hover {
-  color: #222222;
-}
-.keyConfigSetView .data .delete:hover {
-  color: #222222;
-}
-*/
 .keyConfigSetView .desc .content {
   overflow: auto;
 }

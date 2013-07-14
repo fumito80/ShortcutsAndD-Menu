@@ -67,3 +67,18 @@
 ❏更新履歴
 
 　1.0.0 2013/7/15 公開
+
+
+My Fav Shortcuts
+Luv Shortcuts
+Shortcuts++
+Freeing 
+Magik 
+Hack
+
+zoom
+browsingData
+thema
+
+キーボードタイプ
+ヘルプランゲージ

@@ -1,4 +1,18 @@
+
 flexkbd = document.getElementById("flexkbd")
+plugin = 
+  invoke: (name, value1, value2, value3) ->
+    try
+      flexkbd[name](value1 || null, value2 || null, value3 || null)
+      return "done"
+    catch e
+      console.log
+        name: name
+        value1: value1
+        value2: value2
+        value3: value3
+        error: e
+      return e.message
 
 execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) ->
   if transCode
@@ -34,34 +48,34 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
     
     unless execMode
       for i in [0...local.keyConfigSet.length]
-        if (item = local.keyConfigSet[i]).proxy is scCode
+        if (item = local.keyConfigSet[i]).new is scCode
           execMode = item.mode
           break
     switch execMode
       when "command"
         execCommand(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
+          doneCallback "done", dfd, sleepMSec, batchIndex
       when "bookmark"
         preOpenBookmark(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
+          doneCallback "done", dfd, sleepMSec, batchIndex
       when "sendToDom"
         preSendKeyEvent(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
+          doneCallback "done", dfd, sleepMSec, batchIndex
       when "keydown"
         setTimeout((->
-          flexkbd.CallShortcut scCode, 8
-          doneCallback dfd, sleepMSec, batchIndex
+          result = plugin.invoke "CallShortcut", scCode, 8
+          doneCallback result, dfd, sleepMSec, batchIndex
         ), 0)
       else
         setTimeout((->
-          flexkbd.CallShortcut scCode, 4
-          doneCallback dfd, sleepMSec, batchIndex
+          result = plugin.invoke "CallShortcut", scCode, 4
+          doneCallback result, dfd, sleepMSec, batchIndex
         ), 0)
   else
     throw new Error "Command argument is not found."  
 
 execBatch = (dfdCaller, request, sendResponse) ->
-  doneCallback = (dfd, sleepMSec, batchIndex) ->
+  doneCallback = (result, dfd, sleepMSec, batchIndex) ->
     dfd.resolve(batchIndex + 1)
   (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
   commands = request.value1
@@ -75,29 +89,28 @@ execBatch = (dfdCaller, request, sendResponse) ->
           sleepMSec = Math.round command
           if (-1 < sleepMSec < 60000)
             setTimeout((->
-              flexkbd.Sleep sleepMSec
+              plugin.invoke "Sleep", sleepMSec
               dfd.resolve(batchIndex + 1)
             ), 0)
           else
             throw new Error "Range of Sleep millisecond is up to 6000-0."
       catch e
         dfd.reject()
-        sendResponse e.message
+        sendResponse msg: e.message
         dfdCaller.resolve()
       dfd.promise()
   dfdBatchQueue = dfdBatchQueue.then ->
-    sendResponse "done"
+    sendResponse msg: "done"
     dfdCaller.resolve()
   dfdKicker.resolve(0)
 
 dfdCommandQueue = $.Deferred().resolve()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-  doneCallback = (dfd, sleepMSec) ->
-    flexkbd.Sleep sleepMSec if sleepMSec > 0
-    sendResponse "done"
+  doneCallback = (result, dfd, sleepMSec) ->
+    plugin.invoke "Sleep", sleepMSec if sleepMSec > 0
+    sendResponse msg: result
     dfd.resolve()
-  
   dfdCommandQueue = dfdCommandQueue.then ->
     dfd = $.Deferred()
     try
@@ -110,21 +123,32 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
           execShortcut dfd, doneCallback, request.value1, request.value2, "keydown"
         when "sleep"
           setTimeout((->
-            flexkbd.Sleep request.value1
-            doneCallback dfd, 0
+            result = plugin.invoke "Sleep", request.value1
+            doneCallback result, dfd, 0
           ), 0)
         when "setClipboard"
           setTimeout((->
-            flexkbd.SetClipboard request.value1
-            doneCallback dfd, 0
+            result = plugin.invoke "SetClipboard", request.value1
+            doneCallback result, dfd, 0
+          ), 0)
+        when "getClipboard"
+          setTimeout((->
+            try
+              text = flexkbd.GetClipboard()
+              result = "done"
+            catch e
+              text = ""
+              result = e.message
+            sendResponse msg: result, text: text
+            dfd.resolve()
           ), 0)
     catch e
-      sendResponse e.message
+      sendResponse msg: e.message
       dfd.resolve()
     dfd.promise()
   true
 
-jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if(e==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)}};"""
+jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -180,12 +204,12 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
     optionsTabId = null
   else
     getActiveTab().done (tab) ->
-      if tab.url.indexOf(chrome.extension.getURL("")) is 0
+      if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
         flexkbd.StartConfigMode()
         optionsTabId = tab.id
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
-  if tab.url.indexOf(chrome.extension.getURL("")) is 0 && changeInfo.status = "complete"
+  if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && changeInfo.status = "complete"
     flexkbd.StartConfigMode()
 
 notifications = {}
@@ -194,7 +218,7 @@ notifications.state = "closed"
 chrome.notifications.onButtonClicked.addListener (notifId, index) ->
   if notifId is chrome.runtime.id
     copyHist = JSON.parse(localStorage.copyHistory || null) || []
-    flexkbd.PasteText copyHist[index]
+    plugin.invoke "PasteText", copyHist[index]
     chrome.notifications.clear chrome.runtime.id, ->
       notifications.state = "closed"
   
@@ -245,7 +269,7 @@ setClipboardWithHistory = (dfd, tabId) ->
   ), 200)
   chrome.tabs.sendMessage tabId, action: "copyText", (text) ->
     unless text is ""
-      flexkbd.SetClipboard text
+      plugin.invoke "SetClipboard", text
       copyHist = JSON.parse(localStorage.copyHistory || null) || []
       for i in [0...copyHist.length]
         if copyHist[i] is text
@@ -312,7 +336,7 @@ preOpenBookmark = (keyEvent) ->
   dfd = $.Deferred()
   local = fk.getConfig()
   local.keyConfigSet.forEach (item) ->
-    if item.proxy is keyEvent
+    if item.new is keyEvent
       {openmode, url, findtab, findStr} = item.bookmark
       if findtab
         getActiveTab().done (activeTab) ->
@@ -339,6 +363,16 @@ preOpenBookmark = (keyEvent) ->
         openBookmark(dfd, openmode, url)
   dfd.promise()
 
+closeWindow = (dfd, windows, index) ->
+  if win = windows[index]
+    if win.focused
+      closeWindow dfd, windows, index + 1
+    else
+      chrome.windows.remove win.id, ->
+        closeWindow dfd, windows, index + 1
+  else
+    dfd.resolve()
+
 closeTabs = (dfd, fnWhere) ->
   getWindowTabs({active: false, currentWindow: true, windowType: "normal"}, fnWhere)
     .done (tabs) ->
@@ -354,7 +388,7 @@ execCommand = (keyEvent) ->
   pos = 0
   local.keyConfigSet.forEach (item) ->
     #console.log keyEvent + ": " + key
-    if item.proxy is keyEvent
+    if item.new is keyEvent
       switch command = item.command.name
         when "closeOtherTabs"
           closeTabs dfd, -> true
@@ -425,9 +459,12 @@ execCommand = (keyEvent) ->
                 else
                   chrome.windows.update windows[i - 1].id, {focused: true}, -> dfd.resolve()
                 break
+        when "closeOtherWins"
+          chrome.windows.getAll null, (windows) ->
+            closeWindow dfd, windows, 0
         when "pasteText"
           setTimeout((->
-            flexkbd.PasteText item.command.content
+            plugin.invoke "PasteText", item.command.content
             dfd.resolve()
           ), 0)
         when "copyText"
@@ -474,8 +511,8 @@ setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
     keyConfigSet.forEach (item) ->
-      if (item.proxy)
-        sendData.push [item.proxy, item.origin, item.mode].join(";")
+      if (item.new)
+        sendData.push [item.new, item.origin, item.mode].join(";")
     flexkbd.SetKeyConfig sendData.join("|")
 
 window.fk =
@@ -570,9 +607,9 @@ forecast = (lang) ->
   (dfd = $.Deferred()).promise()
 
 forecast("ja").done ->
-  forecast "en"
+  #forecast "en"
 
 #indexedDB = new db.IndexedDB
 #  schema_name: "scremapper"
 #  schema_version: 1
-#  keyPath: "proxy"
+#  keyPath: "new"

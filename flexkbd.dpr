@@ -45,6 +45,7 @@ type
     procedure PasteText(const params: array of Variant);
     procedure CallShortcut(const params: array of Variant);
     procedure SetClipboard(const params: array of Variant);
+    function GetClipboard(const params: array of Variant): Variant;
     procedure Sleep(const params: array of Variant);
   end;
 
@@ -379,7 +380,6 @@ var
   dummyFlag: Boolean;
   bytesRead: Cardinal;
 begin
-  if params[0] = '' then Exit;
   Clipboard.AsText:= params[0];
   CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
 end;
@@ -387,6 +387,18 @@ end;
 procedure TMyClass.SetClipboard(const params: array of Variant);
 begin
   Clipboard.AsText:= params[0];
+end;
+
+function TMyClass.GetClipboard(const params: array of Variant): Variant;
+begin
+  try
+    if Clipboard.HasFormat(CF_TEXT) then
+      Result:= Clipboard.AsText
+    else
+      Result:= '';
+  except
+    Result:= '';
+  end;
 end;
 
 procedure TMyClass.Sleep(const params: array of Variant);
@@ -401,18 +413,13 @@ var
   scansInt64, scanCode: UInt64;
   Modifiers: Cardinal;
 begin
-  try
-    //Write2EventLog('FlexKbd', params[0]);
-    if (params[0] <> VarEmpty) and (params[1] <> VarEmpty) then begin
-      scanCode:= StrToInt(Copy(params[0], 3, 10));
-      scansInt64:= scanCode shl 16;
-      Modifiers:= StrToInt(LeftBStr(params[0], 2));
-      scansInt64:= scansInt64 + (Modifiers shl 8) + params[1];
-      //Write2EventLog('FlexKbd', IntToStr(scansInt64));
-      CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
-    end;
-  except
-  end;
+  //Write2EventLog('FlexKbd', params[0]);
+  scanCode:= StrToInt(Copy(params[0], 3, 10));
+  scansInt64:= scanCode shl 16;
+  Modifiers:= StrToInt(LeftBStr(params[0], 2));
+  scansInt64:= scansInt64 + (Modifiers shl 8) + params[1];
+  //Write2EventLog('FlexKbd', IntToStr(scansInt64));
+  CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
 end;
 
 begin

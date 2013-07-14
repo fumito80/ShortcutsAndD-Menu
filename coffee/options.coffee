@@ -32,15 +32,15 @@ modifierInits = ["c"   , "a"  , "s"    , "w"]
 decodeKbdEvent = (value) ->
   modifiers = parseInt(value.substring(0, 2), 16)
   scanCode = value.substring(2)
-  keyIdentifier = keys[scanCode]
-  keyCombo = []
-  for i in [0...modifierKeys.length]
-    keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
-  if modifiers & 4
-    keyCombo.push keyIdentifier[1] || keyIdentifier[0]
-  else
-    keyCombo.push keyIdentifier[0]
-  keyCombo.join(" + ")
+  if keyIdentifier = keys[scanCode]
+    keyCombo = []
+    for i in [0...modifierKeys.length]
+      keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+    if modifiers & 4
+      keyCombo.push keyIdentifier[1] || keyIdentifier[0]
+    else
+      keyCombo.push keyIdentifier[0]
+    keyCombo.join(" + ")
 
 transKbdEvent = (value) ->
   modifiers = parseInt(value.substring(0, 2), 16)
@@ -60,7 +60,7 @@ HeaderView = Backbone.View.extend
   
   events:
     "click button.addKeyConfig": "onClickAddKeyConfig"
-    "change select.kbdtype"    : "onChangeSelKbd"
+    #"change select.kbdtype"    : "onChangeSelKbd"
   
   initialize: (options) ->
     # キーボード設定
@@ -81,6 +81,10 @@ HeaderView = Backbone.View.extend
   
   # Object method
   setScHelp: (kbdtype) ->
+    @$(".scHelp")
+      .text("ショートカットキー一覧")
+      .attr "href", @scHelpUrl + "ja"
+  setScHelp0: (kbdtype) ->
     if kbdtype is "JP"
       @$(".scHelp")
         .text("ショートカットキー一覧")
@@ -93,7 +97,7 @@ HeaderView = Backbone.View.extend
 Config = Backbone.Model.extend({})
 
 KeyConfig = Backbone.Model.extend
-  idAttribute: "proxy"
+  idAttribute: "new"
   defaults:
     mode: "remap"
 
@@ -106,20 +110,20 @@ KeyConfigView = Backbone.View.extend
   
   # Backbone Buitin Events
   events:
-    "click .origin,.proxy"  : "onClickInput"
-    "click div.mode"        : "onClickMode"
-    "click .selectMode div" : "onChangeMode"
-    "click div.edit"        : "onClickEdit"
-    "click div.copySC"      : "onClickCopySC"
-    "click div.pause"       : "onClickPause"
-    "click div.resume"      : "onClickResume"
-    "click div.delete"      : "onClickRemove"
-    "click input.memo"      : "onClickInputMemo"
-    "click button.cog"      : "onClickCog"
-    "submit .memo"          : "onSubmitMemo"
-    "blur  .selectMode"     : "onBlurSelectMode"
-    "blur  .selectCog"      : "onBlurSelectCog"
-    "blur  input.memo"      : "onBlurInputMemo"
+    "click .origin,.new"   : "onClickInput"
+    "click div.mode"       : "onClickMode"
+    "click .selectMode div": "onChangeMode"
+    "click div.edit"       : "onClickEdit"
+    "click div.copySC,div.copyKD": "onClickCopySC"
+    "click div.pause"      : "onClickPause"
+    "click div.resume"     : "onClickResume"
+    "click div.delete"     : "onClickRemove"
+    "click input.memo"     : "onClickInputMemo"
+    "click button.cog"     : "onClickCog"
+    "submit .memo"         : "onSubmitMemo"
+    "blur  .selectMode"    : "onBlurSelectMode"
+    "blur  .selectCog"     : "onBlurSelectCog"
+    "blur  input.memo"     : "onBlurInputMemo"
   
   initialize: (options) ->
     @optionKeys = _.keys modeDisp
@@ -136,10 +140,10 @@ KeyConfigView = Backbone.View.extend
       @
   
   render: (kbdtype) ->
-    @setElement @template({options: modeDisp})
+    @setElement @template options: modeDisp
     mode = @model.get("mode")
-    #@$("select.mode").val mode
-    @setKbdValue @$(".proxy"), @model.id
+    unless @setKbdValue @$(".new"), @model.id
+      @state = "invalid"
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
     @onChangeMode null, mode
@@ -161,8 +165,8 @@ KeyConfigView = Backbone.View.extend
   onKbdEvent: (value) ->
     input$ = @$("div:focus")
     if input$.length > 0
-      if input$.hasClass "proxy"
-        if @model.id isnt value && @model.collection.findWhere(proxy: value)
+      if input$.hasClass "new"
+        if @model.id isnt value && @model.collection.findWhere(new: value)
           $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
           input$.tipTip()
           return
@@ -170,13 +174,13 @@ KeyConfigView = Backbone.View.extend
         if ~~value.substring(2) > 0x200
           return
       @setKbdValue input$, value
-      @model.set input$[0].className.match(/(proxy|origin)/)[0], value
+      @model.set input$[0].className.match(/(new|origin)/)[0], value
       @setDesc()
       @trigger "resizeInput"
   
   onChangeKbd: (kbdtype) ->
     @kbdtype = kbdtype
-    @setKbdValue @$(".proxy"), @model.id
+    @setKbdValue @$(".new"), @model.id
     @setKbdValue @$(".origin"), @model.get("origin")
     @setDesc()
   
@@ -184,13 +188,18 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
-  onClickCopySC: ->
+  onClickCopySC: (event) ->
     keycombo = (decodeKbdEvent @model.id).replace /\s/g, ""
     command = @$("td.options .mode").text().replace "None", ""
     command = " " + command + ":" if command
-    desc = @$(".desc").find(".content,.command,.bookmark,.memo").text()
+    if /copySC/.test event.currentTarget.className
+      method = "send"
+      desc = @$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()
+    else
+      method = "keydown"
+      desc = @$(".desc").find(".content").text()
     desc = " " + desc if desc
-    body = "tsc.send('" + transKbdEvent(@model.id) + "');"
+    body = "tsc.#{method}('#{transKbdEvent(@model.id)}');"
     text = body + " /* " + keycombo + command + desc + " */"
     chrome.runtime.sendMessage
       action: "setClipboard"
@@ -285,15 +294,12 @@ KeyConfigView = Backbone.View.extend
   
   # Object Method
   setDispMode: (mode) ->
-    #@$(".mode")
-    #  .removeClass(@optionKeys.join(" "))
-    #  .addClass(mode)
     @$(".mode")
       .attr("title", modeDisp[mode][0].replace("...", ""))
       .find(".icon")[0].className = "icon " + modeDisp[mode][1]
     if mode is "through"
       mode = @model.get("lastMode") + " through"
-    @$(".proxy,.origin,.icon-arrow-right")
+    @$(".new,.origin,.icon-arrow-right")
       .removeClass(@optionKeys.join(" "))
       .addClass mode
     if /remap/.test mode
@@ -308,6 +314,9 @@ KeyConfigView = Backbone.View.extend
   setKbdValue: (input$, value) ->
     if result = decodeKbdEvent value
       input$.html _.map(result.split(" + "), (s) -> "<span>#{s}</span>").join("+")
+      true
+    else
+      false
   
   setDesc: ->
     (tdDesc = @$(".desc")).empty()
@@ -350,7 +359,7 @@ KeyConfigView = Backbone.View.extend
         if mode is "remap"
           keycombo = @$(".origin").text()
         else
-          keycombo = @$(".proxy").text()
+          keycombo = @$(".new").text()
         keycombo = (keycombo.replace /\s/g, "").toUpperCase()
         unless help = scHelp[keycombo]
           if /^CTRL\+[2-7]$/.test keycombo
@@ -380,7 +389,8 @@ KeyConfigView = Backbone.View.extend
     <button class="cog small"><i class="icon-caret-down"></i></button>
     <div class="selectCog" tabIndex="0">
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
-      <div class="copySC"><i class="icon-paper-clip"></i> Copy shortcut command</div>
+      <div class="copySC"><i class="icon-paper-clip"></i> Copy send method</div>
+      <div class="copyKD"><i class="icon-paper-clip"></i> Copy keydown method</div>
       <span class="seprater"><hr style="margin:3px 1px" noshade></span>
       <div class="pause"><i class="icon-pause"></i> Pause</div>
       <div class="resume"><i class="icon-play"></i> Resume</div>
@@ -414,7 +424,7 @@ KeyConfigView = Backbone.View.extend
   template: _.template """
     <tr class="data">
       <th>
-        <div class="proxy" tabIndex="0"></div>
+        <div class="new" tabIndex="0"></div>
       </th>
       <th>
         <i class="icon-arrow-right"></i>
@@ -482,19 +492,21 @@ KeyConfigSetView = Backbone.View.extend
     @$("tbody")
       .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
       .append(@tmplBorder)
+    if keyConfigView.state is "invalid"
+      @onChildRemoveConfig model
   
   onKbdEvent: (value) ->
     if @$(".addnew").length is 0
-      if (target = @$(".proxy:focus,.origin:focus")).length is 0
+      if (target = @$(".new:focus,.origin:focus")).length is 0
         if model = @collection.get(value)
-          model.trigger "setFocus", null, ".proxy"
+          model.trigger "setFocus", null, ".new"
           return
         else
           unless @onClickAddKeyConfig()
             return
       else
         return
-    if @collection.findWhere(proxy: value)
+    if @collection.findWhere(new: value)
       $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
       return
@@ -504,7 +516,7 @@ KeyConfigSetView = Backbone.View.extend
     else
       originValue = value
     @collection.add newitem = new KeyConfig
-      proxy: value
+      new: value
       origin: originValue
     @$("tbody")
       .sortable("enable")
@@ -586,14 +598,14 @@ KeyConfigSetView = Backbone.View.extend
   
   # Object Method
   getSaveData: ->
-    @collection.remove @collection.findWhere proxy: @placeholder
+    @collection.remove @collection.findWhere new: @placeholder
     config: @model.toJSON()
     keyConfigSet: @collection.toJSON()
   
   tmplAddNew: _.template """
     <tr class="addnew">
       <th colspan="3">
-        <div class="proxy addnew" tabIndex="0"><%=placeholder%></div>
+        <div class="new addnew" tabIndex="0"><%=placeholder%></div>
       </th>
       <td></td><td></td><td class="blank"></td>
     </tr>
@@ -625,6 +637,12 @@ KeyConfigSetView = Backbone.View.extend
     </thead>
     <tbody></tbody>
     """
+
+#document.addEventListener "contextmenu",
+#  (event) ->
+#    event.preventDefault()
+#    event.stopPropagation()
+#  true
 
 marginBottom = 0
 resizeTimer = false
