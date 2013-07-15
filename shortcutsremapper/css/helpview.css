@@ -1,3 +1,7 @@
+body {
+  overflow: hidden;
+  margin: 0px;
+}
 #content {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   padding: 5px 15px;

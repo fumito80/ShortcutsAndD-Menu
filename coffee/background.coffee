@@ -363,6 +363,13 @@ preOpenBookmark = (keyEvent) ->
         openBookmark(dfd, openmode, url)
   dfd.promise()
 
+deleteHistory = (dfd, deleteUrls, index) ->
+  if url = deleteUrls[index]
+    chrome.history.deleteUrl url: url, ->
+      deleteHistory dfd, deleteUrls, index + 1
+  else
+    dfd.resolve()
+
 closeWindow = (dfd, windows, index) ->
   if win = windows[index]
     if win.focused
@@ -390,6 +397,9 @@ execCommand = (keyEvent) ->
     #console.log keyEvent + ": " + key
     if item.new is keyEvent
       switch command = item.command.name
+        when "createTab"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.create windowId: windowId, index: tab.index + 1, -> dfd.resolve()
         when "closeOtherTabs"
           closeTabs dfd, -> true
         when "closeTabsRight", "closeTabsLeft"
@@ -505,6 +515,26 @@ execCommand = (keyEvent) ->
               allFrames: item.command.allFrames
               runAt: "document_end"
               -> dfd.resolve()
+        when "clearHistory"
+          chrome.browsingData.removeHistory {}, -> dfd.resolve()
+        when "clearHistoryS"
+          findStr = item.command.content
+          chrome.history.search
+            text: ""
+            startTime: 0
+            maxResults: 10000
+            (histories) ->
+              deleteUrls = []
+              for i in [0...histories.length]
+                history = histories[i]
+                unless (history.title + history.url).indexOf(findStr) is -1
+                  deleteUrls.push history.url
+              if deleteUrls.length > 0
+                deleteHistory dfd, deleteUrls, 0
+        when "clearDownloads"
+          chrome.browsingData.removeDownloads {}, -> dfd.resolve()
+        when "clearCache"
+          chrome.browsingData.removeCache {}, -> dfd.resolve()
   dfd.promise()
 
 setConfigPlugin = (keyConfigSet) ->
@@ -596,18 +626,15 @@ analyzeScHelpPage = (resp, lang) ->
       when "TABLE"
         scrapeHelp lang, sectInit, el
 
-xhr = new XMLHttpRequest()
-forecast = (lang) ->
-  xhr.onreadystatechange = ->
-    if xhr.readyState is 4 && xhr.status is 200
-      analyzeScHelpPage xhr.responseText, lang
+$ ->
+  getHelp = (lang) ->
+    $.get(scHelpPageUrl + lang).done (responseText) ->
+      analyzeScHelpPage responseText, lang
       dfd.resolve()
-  xhr.open "GET", scHelpPageUrl + lang, true
-  xhr.send()
-  (dfd = $.Deferred()).promise()
-
-forecast("ja").done ->
-  #forecast "en"
+    (dfd = $.Deferred()).promise()
+  
+  getHelp("ja").done ->
+    #getHelp "en"
 
 #indexedDB = new db.IndexedDB
 #  schema_name: "scremapper"

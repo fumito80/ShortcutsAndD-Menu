@@ -27,9 +27,10 @@
 > > 次のコマンドをショートカットキーに割り当てて、ショートカットキーの機能を拡張することができます。  
 > > 
 > > 1. 主にタブ周りの機能で、タブの移動やコピー、削除、固定、切り離し、Window選択等  
-> > 2. 定型文クリップボード貼り付け機能  
-> > 3. CSS挿入機能  
-> > 4. JavaScript実行  
+> > 2. ブラウザキャッシュ、閲覧履歴、ダウンロード履歴の削除
+> > 3. 定型文クリップボード貼り付け  
+> > 4. CSS挿入  
+> > 5. JavaScript実行  
 > > 
 > > JavaScript実行機能では、ユーティリティオブジェクトを利用して、キー入力を操作することができます。
 
@@ -107,6 +108,8 @@
 ###### 拡張コマンド一覧
 > > 
 > - Tab commands  
+>    - **Create a new tab**  
+>        アクティブなタブの右隣に、新しいタブを作成します。  
 >    - **Close other tabs**  
 >        アクティブなタブ以外の、現在のウィンドウ内のタブを、すべて閉じます。  
 >    - **Close tabs to the left/right**  
@@ -116,7 +119,7 @@
 >    - **Move current tab to first/last position**  
 >        アクティブなタブを、左端(first)もしくは右端(last)へ移動します。
 >    - **Duplicate a current tab**  
->        アクティブなタブを複製して、タブの右側に新たに作成します。
+>        アクティブなタブを複製して、タブの右隣に新たに作成します。
 >    - **Duplicate a current tab to a new window**  
 >        アクティブなタブを複製して、新しいウィンドウに新たに作成します。
 >    - **Pin/Unpin a current tab**  
@@ -130,6 +133,13 @@
 >        アクティブなウィンドウを順次切り替えます。
 >    - **Close other windows**  
 >        アクティブなウィンドウ以外のすべてのウィンドウを閉じます。
+> - Clear browsing data commands  
+>    - **Clear the cache**  
+>        ブラウザキャッシュをクリアします。
+>    - **Clear browsing history**  
+>        閲覧履歴をすべてクリアします。
+>    - **Clear download history**  
+>        ダウンロード履歴をすべてクリアします。
 > - Other  
 >    - **Paste text**  
 >        登録した定型文を、クリップボードを経由して貼り付けます。  
@@ -144,7 +154,7 @@
 > 拡張コマンド（Command mode）に追加オプションが必要な場合は、オプション入力ダイアログが開きます。
 > 
 > - Paste text、InsertCSS、Execute scriptのオプション
->    - **Title(Optional)**  
+>    - **Caption(Optional)**  
 >    オプションページのDescriptionに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
 >    - **Content**  
 >    定型文字列(Paste text時)やCSS(Insert CSS時)、JavaScript(Execute script時)を入力します。  
@@ -234,15 +244,15 @@
 > > tsc.send('[c]w');       /* Ctrl+w 現在のタブまたはポップアップを閉じます。 */
 > > </pre>
 > > 
-> > 次のコードは、新しいタブを一番左側に開きます。
+> > 次のコードは、タブを新しいウィンドウに作成します。
 > > <pre>
-> > tsc.send('[c]t');  /* Ctrl+t 新しいタブを開きます。 */
-> > tsc.send('[cs]1'); /* カレントタブを左端に移動するコマンドを割り当てたショートカットキーを呼び出し */
+> > tsc.send('[c]t'); /* Ctrl+t 新しいタブを開きます。 */
+> > tsc.send('[a]d'); /* カレントタブを切り離すコマンド（Detaches a current tab）を割り当てたショートカットキーを呼び出し */
 > > </pre>
 
 > ###### `tsc.keydown(string keycode[, optional integer sleepMillisecond])`  
 > > 
-> > 指定したキーを押下します。単独キーも指定できます。  
+> > 指定したキーを押下します。 単独キーも指定できます。  
 > > ショートカットキーを指定した場合は、リマップ等定義済みのショートカットキーでもそれらは呼び出されず、単にキー押下が実行されます。
 > > 
 > >    引数の書式は_send_メソッドと同じです。

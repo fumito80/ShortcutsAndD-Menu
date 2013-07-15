@@ -269,7 +269,7 @@ KeyConfigView = Backbone.View.extend
       when "bookmark"
         @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
       when "command"
-        @trigger "showPopup", "commandOptions", @model, @model.get("command")  
+        @trigger "showPopup", "commandOptions", @model, @model.get("command")
       else #when "remap", "through", "disabled"
         (memo = @$("div.memo")).toggle()
         editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
@@ -334,8 +334,8 @@ KeyConfigView = Backbone.View.extend
           title: bookmark.title
         editOption = iconName: "icon-cog", command: "Edit bookmark..."
       when "command"
-        desc = (commandDisp = commandsDisp[commandName = @model.get("command").name])[1]
-        if (ctg = commandDisp[0]) is "custom" || commandName is "pasteText"
+        desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
+        if commandDisp[2]
           content3row = []
           command = @model.get("command")
           lines = command.content.split("\n")
@@ -350,10 +350,9 @@ KeyConfigView = Backbone.View.extend
             desc: desc
             content3row: content3row.join("\n")
             caption: command.caption
-        else
-          tdDesc.append @tmplCommand desc: desc, ctg: ctg.substring(0,1).toUpperCase() + ctg.substring(1)
-        if ctg is "custom" || commandName is "pasteText"
           editOption = iconName: "icon-cog", command: "Edit command..."
+        else
+          tdDesc.append @tmplCommand desc: desc, ctg: commandDisp[0].substring(0,1).toUpperCase() + commandDisp[0].substring(1)
       when "remap", "disabled"
         lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "remap"

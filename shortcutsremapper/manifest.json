@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Turbo Shortcuts β",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
   "icons": {
      "128": "images/shortcuts.png"
@@ -17,10 +17,11 @@
   "web_accessible_resources": ["kbdagent.js"],
   "content_security_policy": "script-src 'unsafe-eval' 'self'; object-src 'self';",
   "permissions": [
-    "bookmarks",
-    "tabs",
     "*://*/*",
     "chrome://favicon/*",
+    "bookmarks",
+    "tabs",
+    "browsingData",
     "notifications"
   ]
 }

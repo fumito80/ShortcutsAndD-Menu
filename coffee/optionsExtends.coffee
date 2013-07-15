@@ -46,6 +46,7 @@ PopupBaseView = Backbone.View.extend
     """
 
 commandsDisp =
+  createTab:      ["tab", "Create a new tab"]
   closeOtherTabs: ["tab", "Close other tabs"]
   closeTabsLeft:  ["tab", "Close tabs to the left"]
   closeTabsRight: ["tab", "Close tabs to the right"]
@@ -61,6 +62,11 @@ commandsDisp =
   switchPrevWin:  ["win", "Switches to the previous window"]
   switchNextWin:  ["win", "Switches to the next window"]
   closeOtherWins: ["win", "Close other windows"]
+  clearCache:     ["clr", "Clear the cache"]
+  clearHistory:   ["clr", "Clear browsing history"]
+  #clearHistoryS:  ["clr", "Delete specific browsing history", [], "Clr"]
+  clearDownloads: ["clr", "Clear download history"]
+  #clearCookies:   ["browsdata", "Delete cookies and other site and plug-in data"]
   pasteText:      ["custom", "Paste text"            , [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
@@ -73,6 +79,7 @@ commandsDisp =
 catnames =
   tab: "Tab commands"
   win: "Window commands"
+  clr: "Clear browsing data commands"
   clip: "Clipboard commands"
   custom: "Other"
 
@@ -83,11 +90,16 @@ class CommandOptionsView extends PopupBaseView
     super(options)
     commandsView.on "showPopup", @onShowPopup, @
   render: ->
-    @$(".command").text commandsDisp[@command.name][1]
+    content$ = @$(".content").css("height", "auto")
+    if (commandName = @command.name) is "clearHistoryS"
+      content$.attr("rows", "1")
+    else
+      content$.attr("rows", "10")
+    @$(".command").text commandsDisp[commandName][1]
     @$(".caption").val(@command.caption)
-    @$(".content").val(@command.content)
+    content$.val(@command.content)
     commandOption = @$(".inputs").empty()
-    commandsDisp[@command.name][2].forEach (option) =>
+    commandsDisp[commandName][2].forEach (option) =>
       option.checked = ""
       if @command[option.value]
         option.checked = "checked"
@@ -113,7 +125,7 @@ class CommandOptionsView extends PopupBaseView
       @trigger "setCommand", @model.id,
         _.extend
           name: @command.name
-          category: @command.category
+          #category: @command.category
           caption: caption
           content: content
           options
@@ -157,7 +169,7 @@ class CommandsView extends PopupBaseView
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
       @hidePopup()
-      if (category = commandsDisp[command][0]) is "custom" || command is "pasteText"
+      if commandsDisp[command][2]
         @trigger "showPopup", "commandOptions", @model, name: command
       else
         @trigger "setCommand", @model.id, name: command

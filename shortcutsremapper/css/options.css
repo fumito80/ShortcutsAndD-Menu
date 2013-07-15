@@ -327,6 +327,9 @@ thead th i.icon-arrow-right {
 .Clip {
   background: rgb(213, 114, 193); /* purple */
 }
+.clr {
+  background: #ADFF44;
+}
 button.cog.small {
   position: absolute;
   top: 11px;
@@ -585,7 +588,7 @@ button.cog.selecting {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bookmarkOptions .findStr {
+.findStr {
   width: 400px;
 }
 .bookmarkOptions .labelFindStr {
@@ -604,7 +607,7 @@ button.cog.selecting {
 .commands .cattab {
   float: left;
 }
-.commands .catwin, .commands .catcustom, .catclip {
+.commands .catwin, .commands .catcustom, .catclip, .catclr {
   overflow: auto;
 }
 .commands .catname {
@@ -612,12 +615,13 @@ button.cog.selecting {
   font-weight: bold;
   color: #333333;
 }
-.commandOptions .caption {
+.caption {
   width: 400px;
   margin-top: 5px;
 }
 .commandOptions .content {
   width: 600px;
+  height: auto;
   margin-top: 5px;
 }
 .commandOptions .otherinput input[type='text'] {
@@ -631,4 +635,7 @@ button.cog.selecting {
 }
 .commandOptions .inputs label {
   padding-left: 15px;
+}
+.commandParams input[type='text'] {
+  width: 450px;
 }
