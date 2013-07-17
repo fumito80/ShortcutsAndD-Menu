@@ -1,18 +1,5 @@
 
 flexkbd = document.getElementById("flexkbd")
-plugin = 
-  invoke: (name, value1, value2, value3) ->
-    try
-      flexkbd[name](value1 || null, value2 || null, value3 || null)
-      return "done"
-    catch e
-      console.log
-        name: name
-        value1: value1
-        value2: value2
-        value3: value3
-        error: e
-      return e.message
 
 execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) ->
   if transCode
@@ -54,28 +41,28 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
     switch execMode
       when "command"
         execCommand(scCode).done ->
-          doneCallback "done", dfd, sleepMSec, batchIndex
+          doneCallback dfd, sleepMSec, batchIndex
       when "bookmark"
         preOpenBookmark(scCode).done ->
-          doneCallback "done", dfd, sleepMSec, batchIndex
+          doneCallback dfd, sleepMSec, batchIndex
       when "sendToDom"
         preSendKeyEvent(scCode).done ->
-          doneCallback "done", dfd, sleepMSec, batchIndex
+          doneCallback dfd, sleepMSec, batchIndex
       when "keydown"
         setTimeout((->
-          result = plugin.invoke "CallShortcut", scCode, 8
-          doneCallback result, dfd, sleepMSec, batchIndex
+          flexkbd.CallShortcut scCode, 8
+          doneCallback dfd, sleepMSec, batchIndex
         ), 0)
       else
         setTimeout((->
-          result = plugin.invoke "CallShortcut", scCode, 4
-          doneCallback result, dfd, sleepMSec, batchIndex
+          flexkbd.CallShortcut scCode, 4
+          doneCallback dfd, sleepMSec, batchIndex
         ), 0)
   else
     throw new Error "Command argument is not found."  
 
 execBatch = (dfdCaller, request, sendResponse) ->
-  doneCallback = (result, dfd, sleepMSec, batchIndex) ->
+  doneCallback = (dfd, sleepMSec, batchIndex) ->
     dfd.resolve(batchIndex + 1)
   (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
   commands = request.value1
@@ -89,7 +76,7 @@ execBatch = (dfdCaller, request, sendResponse) ->
           sleepMSec = Math.round command
           if (-1 < sleepMSec < 60000)
             setTimeout((->
-              plugin.invoke "Sleep", sleepMSec
+              flexkbd.Sleep sleepMSec
               dfd.resolve(batchIndex + 1)
             ), 0)
           else
@@ -107,9 +94,9 @@ execBatch = (dfdCaller, request, sendResponse) ->
 dfdCommandQueue = $.Deferred().resolve()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
-  doneCallback = (result, dfd, sleepMSec) ->
-    plugin.invoke "Sleep", sleepMSec if sleepMSec > 0
-    sendResponse msg: result
+  doneCallback = (dfd, sleepMSec) ->
+    flexkbd.Sleep sleepMSec if sleepMSec > 0
+    sendResponse msg: "done"
     dfd.resolve()
   dfdCommandQueue = dfdCommandQueue.then ->
     dfd = $.Deferred()
@@ -123,13 +110,13 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
           execShortcut dfd, doneCallback, request.value1, request.value2, "keydown"
         when "sleep"
           setTimeout((->
-            result = plugin.invoke "Sleep", request.value1
-            doneCallback result, dfd, 0
+            flexkbd.Sleep request.value1
+            doneCallback dfd, 0
           ), 0)
         when "setClipboard"
           setTimeout((->
-            result = plugin.invoke "SetClipboard", request.value1
-            doneCallback result, dfd, 0
+            flexkbd.SetClipboard request.value1
+            doneCallback dfd, 0
           ), 0)
         when "getClipboard"
           setTimeout((->
@@ -218,7 +205,7 @@ notifications.state = "closed"
 chrome.notifications.onButtonClicked.addListener (notifId, index) ->
   if notifId is chrome.runtime.id
     copyHist = JSON.parse(localStorage.copyHistory || null) || []
-    plugin.invoke "PasteText", copyHist[index]
+    flexkbd.PasteText copyHist[index]
     chrome.notifications.clear chrome.runtime.id, ->
       notifications.state = "closed"
   
@@ -269,7 +256,7 @@ setClipboardWithHistory = (dfd, tabId) ->
   ), 200)
   chrome.tabs.sendMessage tabId, action: "copyText", (text) ->
     unless text is ""
-      plugin.invoke "SetClipboard", text
+      flexkbd.SetClipboard text
       copyHist = JSON.parse(localStorage.copyHistory || null) || []
       for i in [0...copyHist.length]
         if copyHist[i] is text
@@ -400,6 +387,9 @@ execCommand = (keyEvent) ->
         when "createTab"
           getActiveTab().done (tab, windowId) ->
             chrome.tabs.create windowId: windowId, index: tab.index + 1, -> dfd.resolve()
+        when "createTabBG"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.create windowId: windowId, index: tab.index + 1, active: false, -> dfd.resolve()
         when "closeOtherTabs"
           closeTabs dfd, -> true
         when "closeTabsRight", "closeTabsLeft"
@@ -474,7 +464,7 @@ execCommand = (keyEvent) ->
             closeWindow dfd, windows, 0
         when "pasteText"
           setTimeout((->
-            plugin.invoke "PasteText", item.command.content
+            flexkbd.PasteText item.command.content
             dfd.resolve()
           ), 0)
         when "copyText"
@@ -531,8 +521,8 @@ execCommand = (keyEvent) ->
                   deleteUrls.push history.url
               if deleteUrls.length > 0
                 deleteHistory dfd, deleteUrls, 0
-        when "clearDownloads"
-          chrome.browsingData.removeDownloads {}, -> dfd.resolve()
+        when "clearCookies"
+          chrome.browsingData.removeCookies {}, -> dfd.resolve()
         when "clearCache"
           chrome.browsingData.removeCache {}, -> dfd.resolve()
   dfd.promise()

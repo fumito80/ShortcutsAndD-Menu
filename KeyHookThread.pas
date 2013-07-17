@@ -28,7 +28,7 @@ var
   KeyInputs: array of TInput;
   KeyInputCount: Integer;
   newScans: TArrayCardinal;
-  scriptMode, keydownMode: Boolean;
+  scriptMode, keydownMode, createdKeyConfig: Boolean;
   procedure  KeybdInput(scanCode: Cardinal; Flags: DWord);
   begin
     Inc(KeyInputCount);
@@ -43,6 +43,7 @@ var
         dwFlags:= dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
         wVk:= MapVirtualKeyEx(wScan, 3, kbdLayout);
+        //Write2EventLog('FlexKbd', IntToHex(wScan, 4) + ': ' + scans + ': ' + IntToHex(wVk, 4));
       end;
       time:= 0;
       dwExtraInfo:= 0;
@@ -114,6 +115,7 @@ begin
   keyDownState:= 0;
   scriptMode:= False;
   keydownMode:= False;
+  createdKeyConfig:= False;
   modifierFlags2:= 0;
   // Paste Text Mode
   if wPrm = g_pasteText then begin
@@ -139,7 +141,7 @@ begin
     end;
     scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
   end;
-  //Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
+  //Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 3, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
 
   // Exit1 --> Modifierキー単独のとき
   for I:= 0 to 7 do begin
@@ -178,10 +180,10 @@ begin
       // エコーバックは捨てる(循環参照対応)
       if keyDownState = KEYEVENTF_KEYUP then
         virtualScanCode:= 0;
-        // 単独キーのとき --> 中止
-        if singleKeyFlag then begin
-          ClearAll;
-        end;
+      // 単独キーのとき --> 中止
+      if singleKeyFlag then begin
+        ClearAll;
+      end;
       Exit;
     end;
 
@@ -204,6 +206,7 @@ begin
             '',
             modifierFlags2,
             scanCode);
+          createdKeyConfig:= True;
         end;
       end;
       if keyConfig.mode = 'remap' then begin
@@ -299,17 +302,19 @@ begin
         if (wPrm = g_pasteText) or scriptMode or keydownMode then begin
           SetLength(KeyInputs, 0);
           AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
-          if scriptMode or keydownMode then
+          if scriptMode or keydownMode then begin
             keyConfig.scanCode:= 0;
             AlterModified(keyConfig.modifierFlags, keyConfig.scanCode, KEYEVENTF_KEYUP);
+          end;
+          if keydownMode or createdKeyConfig then
             keyConfig.Free;
         end;
       end else if (keyDownState = 0) and (keyConfig.mode = 'simEvent') then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end else if (keyDownState = 0) and ((keyConfig.mode = 'bookmark') or (keyConfig.mode = 'command')) then begin
         //Write2EventLog('FlexKbd', 'command');
-        SetLength(KeyInputs, 0);
-        AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
+        //SetLength(KeyInputs, 0);
+        //AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
         browser.Invoke('pluginEvent', [keyConfig.mode, scans]);
       end else if keyConfig.mode = 'through' then begin
         Result:= False;

@@ -46,40 +46,41 @@ PopupBaseView = Backbone.View.extend
     """
 
 commandsDisp =
-  createTab:      ["tab", "Create a new tab"]
-  closeOtherTabs: ["tab", "Close other tabs"]
-  closeTabsLeft:  ["tab", "Close tabs to the left"]
-  closeTabsRight: ["tab", "Close tabs to the right"]
+  createTab:      ["tab", "Create new tab"]
+  createTabBG:    ["tab", "Create new tab in background"]
   moveTabLeft:    ["tab", "Move current tab left"]
   moveTabRight:   ["tab", "Move current tab right"]
   moveTabFirst:   ["tab", "Move current tab to first position"]
   moveTabLast:    ["tab", "Move current tab to last position"]
-  duplicateTab:   ["tab", "Duplicate a current tab"]
-  duplicateTabWin:["tab", "Duplicate a current tab to a new window"]
-  pinTab:         ["tab", "Pin/Unpin a current tab"]
-  detachTab:      ["tab", "Detaches a current tab"]
-  attachTab:      ["tab", "Attaches a current tab to the next window"]
-  switchPrevWin:  ["win", "Switches to the previous window"]
-  switchNextWin:  ["win", "Switches to the next window"]
+  closeOtherTabs: ["tab", "Close other tabs"]
+  closeTabsLeft:  ["tab", "Close tabs to the left"]
+  closeTabsRight: ["tab", "Close tabs to the right"]
+  duplicateTab:   ["tab", "Duplicate current tab"]
+  #duplicateTabWin:["tab", "Duplicate current tab to new window"]
+  pinTab:         ["tab", "Pin/Unpin current tab"]
+  detachTab:      ["tab", "Detach current tab"]
+  attachTab:      ["tab", "Attach current tab to the next window"]
+  switchPrevWin:  ["win", "Switch to the previous window"]
+  switchNextWin:  ["win", "Switch to the next window"]
   closeOtherWins: ["win", "Close other windows"]
-  clearCache:     ["clr", "Clear the cache"]
-  clearHistory:   ["clr", "Clear browsing history"]
+  clearCache:     ["clr", "Clear the browser's cache"]
+  #clearHistory:   ["clr", "Clear browsing history"]
+  clearCookies:   ["clr", "Clear all cookies and site data"]
   #clearHistoryS:  ["clr", "Delete specific browsing history", [], "Clr"]
-  clearDownloads: ["clr", "Clear download history"]
   #clearCookies:   ["browsdata", "Delete cookies and other site and plug-in data"]
-  pasteText:      ["custom", "Paste text"            , [], "Clip"]
+  pasteText:      ["custom", "Paste fixed text", [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
-  insertCSS:      ["custom", "Insert CSS", [{value:"allFrames", caption:"All frames"}], "CSS"]
-  execJS:         ["custom", "Execute script", [
+  insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS"]
+  execJS:         ["custom", "Inject script", [
     {value:"allFrames",  caption:"All frames"}
-    {value:"useUtilObj", caption:"Use Utility Object"}
+    {value:"useUtilObj", caption:"Use utility object"}
   ], "JS"]
 
 catnames =
   tab: "Tab commands"
   win: "Window commands"
-  clr: "Clear browsing data commands"
+  clr: "Browsing data commands"
   clip: "Clipboard commands"
   custom: "Other"
 
@@ -95,7 +96,7 @@ class CommandOptionsView extends PopupBaseView
       content$.attr("rows", "1")
     else
       content$.attr("rows", "10")
-    @$(".command").text commandsDisp[commandName][1]
+    @$(".command").html commandsDisp[commandName][1]
     @$(".caption").val(@command.caption)
     content$.val(@command.content)
     commandOption = @$(".inputs").empty()

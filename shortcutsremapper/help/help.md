@@ -1,6 +1,6 @@
 #### TurboShortcuts for GoogleChrome
 
-###### [使い方](#usage)／[注意事項](#notes)／[Utility Object Reference](#utilobj)
+###### [使い方](#usage) ・ [注意事項](#notes) ・ [Utility Object Reference](#utilobj)
 > 
 
 ###### はじめに
@@ -52,6 +52,7 @@
 > >        Ctrl|Alt|Shift|Winキー + マウスクリック（左or右or中クリック）  
 > >        Ctrl|Alt|Shift|Winキー + マウスホイール  
 > >        マウスクリック（左or右or中クリック） + マウスホイール  
+> >        マウスクリック（左or右or中クリック） + マウスクリック（左or右or中クリック）  
 > >    - 既に登録済みのショートカットキーは登録できません。  
 >
 >  2. 自動的に、変更したいショートカットキー（Origin）にフォーカスされるので  
@@ -59,31 +60,31 @@
 >
 >       OriginのショートカットキーにChromeのショートカット機能が割り当てられている場合は、Descriptionに説明が表示されます。
 
-> - **機能（Mode）の変更**
->
->    初期登録時は、Mode列に<i class="icon-random"></i>(Remap)が表示されています。  
->    マウスカーソルをあわせるとアイコン<i class="icon-caret-down"></i>が表示されるので、クリックするとメニューが表示されます。
->    以下のメニューがあります。
-> >
-> >    <i class="icon-random"></i>**Remap** ..................... ショートカットキーを別のショートカットキーに割り当てます。  
-> > 
-> >    <i class="icon-cog"></i>**Command** .............. 拡張コマンドをショートカットキーに割り当てます。   
-> > 　　　　　　　　　　　　　　　[コマンド選択](#command)ダイアログが開き、続けて、追加オプションが必要な場合、<wbr>[オプション](#commandOptions)入力ダイアログが開きます。  
-> > 
-> >    <i class="icon-bookmark"></i>**Bookmark** .............. ブックマークをショートカットキーに割り当てます。  
-> > 　　　　　　　　　　　　　　　ブックマーク選択ダイアログが開き、続けて[オプション](#bookmarkOptions)入力ダイアログが開きます。  
-> > 
-> >    <i class="icon-font"></i>**DOM Key Event** ..... ページスクリプトを実行してDOMのキーイベント(keyIdentifier)を発生させます。
-> > 
-> >    <i class="icon-ban-circle"></i>**Disabled** .................. ショートカットキーを無効にして使用不可にします。  
-> 
->    なお、Modeを変更すると、拡張コマンドやブックマークに設定していたオプションは消去されるので、ご注意ください。
-
 > - **ショートカットキーの変更**
 >
 >    割り当てるショートカットキー(New)、変更したいショートカットキー(Origin)のどちらも、フォーカスをあわせてショートカットキーを押下すれば変更できます。
 >
 >    Originは重複可ですが、Newは登録済みのショートカットキーには変更できません。
+
+> - **機能（Mode）の変更**
+>
+>    初期登録時は、Mode列に<i class="icon-random"></i>(Remap)が表示されています。  
+>    マウスカーソルをあわせると<i class="icon-caret-down"></i>アイコンが表示されるので、クリックするとメニューが表示されます。
+>    以下のメニューがあります。
+> >
+> >    <i class="icon-random"></i>**Remap** ..................... ショートカットキーを別のショートカットキーに割り当てます。  
+> > 
+> >    <i class="icon-cog"></i>**Command** .............. 拡張コマンドをショートカットキーに割り当てます。   
+> > 　　　　　　　　　　　　　　　 [コマンド選択](#command)ダイアログが開き、続けて、追加オプションが必要な場合、<wbr>[オプション](#commandOptions)入力ダイアログが開きます。  
+> > 
+> >    <i class="icon-bookmark"></i>**Bookmark** .............. ブックマークをショートカットキーに割り当てます。  
+> > 　　　　　　　　　　　　　　　 ブックマーク選択ダイアログが開き、続けて[オプション](#bookmarkOptions)入力ダイアログが開きます。  
+> > 
+> >    <i class="icon-font"></i>**DOM Key Event** ..... アクティブなページにDOMのキーイベント(keyIdentifier)を発生させます。
+> > 
+> >    <i class="icon-ban-circle"></i>**Disabled** .................. ショートカットキーを無効にして使用不可にします。  
+> 
+>    なお、Modeを変更すると、拡張コマンドやブックマークに設定していたオプションは消去されるので、ご注意ください。
 
 > 以下は、各行の右端に表示されるアイコンボタン[<i class="icon-caret-down"></i>]クリック時のメニューから選択します。  
 > メニュー項目は、Modeにより一部内容が異なります。
@@ -108,8 +109,10 @@
 ###### 拡張コマンド一覧
 > > 
 > - Tab commands  
->    - **Create a new tab**  
->        アクティブなタブの右隣に、新しいタブを作成します。  
+>    - **Create new tab**  
+>        アクティブなタブの右隣に、新しいタブを作成します。 新しいタブがアクティブになります。  
+>    - **Create new tab in background**  
+>        アクティブなタブの右隣に、新しいタブを作成しますが、アクティブなタブは変更されません。  
 >    - **Close other tabs**  
 >        アクティブなタブ以外の、現在のウィンドウ内のタブを、すべて閉じます。  
 >    - **Close tabs to the left/right**  
@@ -118,34 +121,30 @@
 >        アクティブなタブを、左もしくは右へ一つ移動します。 最端位置から循環はしません。
 >    - **Move current tab to first/last position**  
 >        アクティブなタブを、左端(first)もしくは右端(last)へ移動します。
->    - **Duplicate a current tab**  
+>    - **Duplicate current tab**  
 >        アクティブなタブを複製して、タブの右隣に新たに作成します。
->    - **Duplicate a current tab to a new window**  
->        アクティブなタブを複製して、新しいウィンドウに新たに作成します。
->    - **Pin/Unpin a current tab**  
+>    - **Pin/Unpin current tab**  
 >        アクティブなタブを、固定するか、もしくは固定されいている場合は固定を解除します。
->    - **Detaches a current tab**  
+>    - **Detach current tab**  
 >        アクティブなタブを、ウィンドウから切り離して、新しいウィンドウに作成します。
->    - **Attaches a current tab to the next window**  
+>    - **Attach current tab to the next window**  
 >        アクティブなタブを、現在開いている別のウィンドウに順次移動します。
 > - Window commands  
->    - **Switches to the previous/next window**  
+>    - **Switch to the previous/next window**  
 >        アクティブなウィンドウを順次切り替えます。
 >    - **Close other windows**  
 >        アクティブなウィンドウ以外のすべてのウィンドウを閉じます。
-> - Clear browsing data commands  
->    - **Clear the cache**  
+> - Browsing data commands  
+>    - **Clear the browser's cache**  
 >        ブラウザキャッシュをクリアします。
->    - **Clear browsing history**  
->        閲覧履歴をすべてクリアします。
->    - **Clear download history**  
->        ダウンロード履歴をすべてクリアします。
+>    - **Clear all cookies and site data**  
+>        ブラウザのクッキーとサイトデータをクリアします。
 > - Other  
->    - **Paste text**  
+>    - **Paste fixed text**  
 >        登録した定型文を、クリップボードを経由して貼り付けます。  
->    - **Insert CSS**  
+>    - **Inject CSS**  
 >        登録したCSS(Cascading Style Sheet)を、アクティブなタブのページへ適用（追加）します。  
->    - **Execute script**  
+>    - **Inject script**  
 >        登録したJavaScriptコードを、アクティブなタブのページで実行します。   
 >        なお、本来のページのDOMのwindowオブジェクトにはアクセスできません。
 
@@ -153,17 +152,17 @@
 ###### 拡張コマンドのオプション
 > 拡張コマンド（Command mode）に追加オプションが必要な場合は、オプション入力ダイアログが開きます。
 > 
-> - Paste text、InsertCSS、Execute scriptのオプション
+> - Paste text、Inject CSS、Inject scriptのオプション
 >    - **Caption(Optional)**  
 >    オプションページのDescriptionに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
 >    - **Content**  
->    定型文字列(Paste text時)やCSS(Insert CSS時)、JavaScript(Execute script時)を入力します。  
-> - InsertCSS、Execute scriptのオプション
+>    定型文字列(Paste text時)やCSS(Inject CSS時)、JavaScript(Inject script時)を入力します。  
+> - Inject CSS、Inject scriptのオプション
 >    - **All frames**  
 >    チェック時は、ページのすべてのフレームに、CSSやJavaScriptが適用されます。  
 >    未チェック時はトップフレームにのみ適用されます。
-> - Execute scriptのオプション
->    - **Use Utility Object**  
+> - Inject scriptのオプション
+>    - **Use utility object**  
 >    チェック時に、JavaScriptからショートカットキーを操作できるObjectが利用できます。  
 >    詳細は[Utility Object Reference](#utilobj)を参照してください。
 >
@@ -182,7 +181,7 @@
 >    - **Activate the tab if already open**  
 >        チェック時、開いているタブからブックマークを検索して、見つかった場合はそのタブをアクティブにします。  
 >        複数見つかった場合は、順次アクティブになります。
->    - **Title or URL to find (Intermediate matching)**  
+>    - **The title or URL to find (Partial match)**  
 >        検索するブックマークの**URL**または**タブのタイトル**を入力します。 中間マッチで検索されます。
 
 <a name="notes"></a>
@@ -212,7 +211,7 @@
 > ###### `tsc.send(string keycode[, optional integer sleepMillisecond])`  
 > > 
 > > ショートカットキーを呼び出します。  
-> > リマップや拡張コマンド、ブックマーク、DOM KeyEventを定義済みのショートカットキーはそれらが呼び出されます。  
+> > リマップや拡張コマンド、ブックマーク、DOM KeyEventを割り当て済みのショートカットキーはそれらが呼び出されます。  
 > > 自己参照、循環参照がある場合は無限ループになってしまう為、注意してください。
 > > 
 > > - _keycode(string)_  
@@ -236,24 +235,16 @@
 > > 
 > > Code Exsample  
 > > 
-> > 次のコードは、ページのソースを開いてコピーして、開いたソースのページを閉じます。
+> > 次のコードは、タブを左隣りに作成します。
 > > <pre>
-> > tsc.send('[c]u', 1000); /* Ctrl+u 現在のページのソースを開きます。実際のページが表示されるまでの猶予を1秒見ています。 */
-> > tsc.send('[c]a');       /* Ctrl+a */
-> > tsc.send('[c]c');       /* Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
-> > tsc.send('[c]w');       /* Ctrl+w 現在のタブまたはポップアップを閉じます。 */
-> > </pre>
-> > 
-> > 次のコードは、タブを新しいウィンドウに作成します。
-> > <pre>
-> > tsc.send('[c]t'); /* Ctrl+t 新しいタブを開きます。 */
-> > tsc.send('[a]d'); /* カレントタブを切り離すコマンド（Detaches a current tab）を割り当てたショートカットキーを呼び出し */
+> > tsc.send('[ca]n'); /* Ctrl+Alt+n Create new tab を割り当てたショートカットキーを呼び出し */
+> > tsc.send('[ca]z'); /* Ctrl+Alt+z Move current tab left を割り当てたショートカットキーを呼び出し */
 > > </pre>
 
 > ###### `tsc.keydown(string keycode[, optional integer sleepMillisecond])`  
 > > 
 > > 指定したキーを押下します。 単独キーも指定できます。  
-> > ショートカットキーを指定した場合は、リマップ等定義済みのショートカットキーでもそれらは呼び出されず、単にキー押下が実行されます。
+> > ショートカットキーを指定した場合は、リマップ等割り当て済みのショートカットキーでもそれらは呼び出されず、単にキー押下が実行されます。
 > > 
 > >    引数の書式は_send_メソッドと同じです。
 > > 
@@ -267,30 +258,43 @@
 > > }
 > > </pre>
 > > 
-> > 次のコードは、テキストを選択した状態で検索バーを開いたときに、選択テキストを入力済で開きます。
+> > 次のコードは、ページのソースを開いてコピーするか保存するかして、開いたソースのページを閉じます。
+> > <pre>
+> > tsc.keydown('[c]u', 1000); /* Ctrl+u 現在のページのソースを開きます。実際のページが表示されるまでの猶予を1秒見ています。 */
+> > tsc.keydown('[c]a');       /* Ctrl+a */
+> > tsc.keydown('[c]c');       /* コピーする場合。Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
+> > tsc.keydown('[c]s', 1000); /* 保存する場合。Ctrl+s 現在のページを保存します。 */
+> > tsc.keydown('Enter');      /* Enterキー */
+> > tsc.keydown('[c]w');       /* Ctrl+w 現在のタブまたはポップアップを閉じます。 */
+> > </pre>
+> > 
+> > 次のコードは、選択したテキストをページ内検索します。  
+> > また、何も選択しないで実行した場合は、クリップボードにあるテキストが検索されます。
 > > <pre>
 > > tsc.keydown('[c]c'); /* Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
 > > tsc.keydown('[c]f'); /* Ctrl+f 検索バーを開きます。 */
 > > tsc.keydown('[c]v'); /* Ctrl+v クリップボードからコンテンツを貼り付けます。 */
-> > /* なお、このコードでは、クリップボードの文字が毎回必ずセットされてしまうので注意 */
 > > </pre>
 > > 
-> > 次のコードは、選択したテキストをGoogleで検索します。
+> > 次のコードは、リンクになっていないURLを選択した場合にそのURLを開きます。（通常のテキストはGoogleでの検索）  
+> > また、何も選択しないで実行した場合は、クリップボードにあるテキストが検索されます。
 > > <pre>
 > > tsc.keydown('[c]c');
-> > tsc.send('[cs]g', 1000); /* Googleを開く定義済みブックマークショートカット */
+> > tsc.send('[ca]n');    /* Ctrl+Alt+n Create a new tab を割り当てたショートカットキーを呼び出し */
 > > tsc.keydown('[c]v');
-> > tsc.keydown('Enter');
+> > tsc.keydown('Enter'); /* Enterキー */
 > > </pre>
+<!--
 > > 
 > > 次のコードは、ブックマークバーを開き、更にその他のブックマークフォルダを開きます。
 > > <pre>
-> > tsc.keydown('[cs]b'); /* Ctrl+Shift+b ブックマーク バーの表示/非表示を切り替えます。 */
-> > tsc.keydown('F6');    /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
-> > tsc.keydown('F6');    /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
-> > tsc.keydown('Left');
-> > tsc.keydown('Down');
+> > tsc.keydown('[cs]b');     /* Ctrl+Shift+b ブックマーク バーの表示/非表示を切り替えます。 */
+> > tsc.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
+> > tsc.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
+> > tsc.keydown('Left', 200); /* ←（左カーソルキー） */
+> > tsc.keydown('Down', 200); /* ↓（下カーソルキー） */
 > > </pre>
+-->
 
 > ###### `tsc.sleep(integer sleepMillisecond)`  
 > > 
@@ -300,6 +304,20 @@
 > ###### `tsc.clipbd(string text)`  
 > > 
 > > 文字列をクリップボードに貼付けます。
+> >
+> > Code Exsample  
+> > 
+> > 次のコードは、URLのリンクタグをクリップボードに貼り付けます。
+> > <pre>
+> > var url = document.location.href;
+> > var elTitle = document.querySelector('title'), title;
+> > if (elTitle) {
+> >   title = elTitle.textContent;
+> > } else {
+> >   title = url;
+> > }
+> > tsc.clipbd('&lt;a href="' + url + '"&gt;' + title + '&lt;/a&gt;');
+> > </pre>
 
 > ###### `tsc.send(...).done(function callback)`  
 > ###### `tsc.keydown(...).done(function callback)`
