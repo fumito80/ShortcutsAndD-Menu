@@ -36,7 +36,7 @@
   <div class="popup bookmarks">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <div class="panel1">Bookmark for <span class="shortcut"></span>:
+      <div class="panel1">Bookmark for <span class="shortcut"></span>
         <input type="text" class="query" size="20" placeholder="Get all"><button type="submit"><i class="icon-search"></i></button>
         <label><input type="checkbox" class="expand" checked> Expand</label>
       </div>
@@ -48,7 +48,7 @@
   <div class="popup commands">
     <i class="icon-remove" title="Cancel"></i>
     <form>
-      <div>Command for <span class="shortcut"></span>:<button type="submit" class="done blue"><i class="icon-ok"></i> Done</button></div>
+      <div>Command for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button></div>
       <div class="commandRadios"></div>
     </form>
   </div>
@@ -56,7 +56,7 @@
     <i class="icon-remove" title="Cancel"></i>
     <form>
       <div class="panel1">
-        <span class="command"></span> for <span class="shortcut"></span>:<button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
+        <span class="command"></span> for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
         <input type="text" class="caption" placeholder="Caption(Optional)">
       </div>
       <div class="inputs"></div>
@@ -64,11 +64,35 @@
       <div class="otherinput"></div>
     </form>
   </div>
+  <div class="popup ctxMenuOptions">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div class="panel1">
+        Context Menu for <span class="shortcut"></span>
+        <button type="submit" class="done blue"><i class="icon-ok"></i> Done</button>
+        <button class="delete"><i class="icon-trash"></i> Delete</button><br>
+      </div>
+      <div class="inputs">
+        <label>&nbsp;Menu Title<br>
+          <input type="text" class="caption">
+        </label>
+        <fieldset>
+          <legend>Target Context</legend>
+          <label><input type="radio" name="menutype" value="page" checked="checked"> Page</label><br>
+          <label><input type="radio" name="menutype" value="selection"> Selection - Return the selection text</label><br>
+          <label><input type="radio" name="menutype" value="editable"> Editable</label><br>          
+          <label><input type="radio" name="menutype" value="link"> Link - Return the link URL</label><br>
+          <label><input type="radio" name="menutype" value="image"> Image - Return the image source URL</label><br>
+          <label><input type="radio" name="menutype" value="all"> All - Return any of the above</label><br>
+        </fieldset>
+      </div>
+    </form>
+  </div>
   <div class="popup bookmarkOptions">
     <i class="icon-remove" title="Cancel"></i>
     <form>
       <div class="panel1">
-        Bookmark for <span class="shortcut"></span>:<button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
+        Bookmark for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
       </div>
       <div class="inputs">
         <div class="bookmarkPanel">
@@ -76,6 +100,7 @@
           <div class="url"></div>
         </div>
         <fieldset>
+          <legend>Tab Open Mode</legend>
           <label><input type="radio" name="openmode" value="current" checked="checked"> Open in current tab</label><br>
           <label><input type="radio" name="openmode" value="newtab"> Open in new tab</label><br>
           <label><input type="radio" name="openmode" value="newwin"> Open in new window</label><br>

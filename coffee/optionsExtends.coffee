@@ -28,6 +28,7 @@ PopupBaseView = Backbone.View.extend
       stop: => @onStopSort()
     @el.style.pixelLeft = Math.round((window.innerWidth  - @el.offsetWidth)  / 2)
     @el.style.pixelTop  = Math.round((window.innerHeight - @el.offsetHeight) / 2)
+    @$(".caption").focus()
     $(".backscreen").show()
   
   onStopSort: -> # Virtual
@@ -124,13 +125,16 @@ class CommandOptionsView extends PopupBaseView
         return
       unless caption = @$(".caption").val()
         caption = content.split("\n")[0]
-      @trigger "setCommand", @model.id,
-        _.extend
-          name: @command.name
-          #category: @command.category
-          caption: caption
-          content: content
-          options
+      @model
+        .set
+          "command":
+            _.extend
+              name: @command.name
+              caption: caption
+              content: content
+              options
+          {silent: true}
+        .trigger "change:command"
       @hidePopup()
     false
   hidePopup: ->
@@ -174,7 +178,9 @@ class CommandsView extends PopupBaseView
       if commandsDisp[command][2]
         @trigger "showPopup", "commandOptions", @model, name: command
       else
-        @trigger "setCommand", @model.id, name: command
+        @model
+          .set({"command": name: command}, {silent: true})
+          .trigger "change:command"
     false
 
   tmplItem: _.template """
@@ -220,7 +226,9 @@ class BookmarkOptionsView extends PopupBaseView
     options.findtab = @$("input[value='findtab']").is(":checked")
     options.openmode = @$("input[name='openmode']:checked").attr("value")
     options.findStr = @$(".findStr").val()
-    @trigger "setBookmark", @model.id, _.extend @bookmark, options
+    @model
+      .set({"bookmark": _.extend @bookmark, options}, {silent: true})
+      .trigger "change:bookmark"
     @hidePopup()
     false
   onChangeOpenmode: (event) ->
@@ -373,3 +381,55 @@ class BookmarksView extends PopupBaseView
       <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);"><%=title%></a>
     </div>
     """
+
+class CtxMenuOptionsView extends PopupBaseView
+  name: "ctxMenuOptions"
+  el: ".ctxMenuOptions"
+  events: _.extend
+    "click .done,.delete": "onClickSubmit"
+    PopupBaseView.prototype.events
+  render: ->
+    @ctxMenu = @model.get "ctxMenu"
+    @$(".caption").val @ctxMenu?.caption || @options.desc
+    @$el.append @tmplHelp @
+    @$("input[value='#{(@ctxMenu?.contexts || 'page')}']")[0].checked = true
+    if @ctxMenu
+      @$(".delete").removeClass("disabled").removeAttr("disabled")
+    else
+      @$(".delete").addClass("disabled").attr("disabled", "disabled")
+  onShowPopup: (name, model, @options) ->
+    unless super(name, model)
+      return
+    startEdit()
+  onSubmitForm: ->
+    false
+  onClickSubmit: (event) ->
+    unless (caption = @$(".caption").val()) is ""
+      menutype = @$("input[name='menutype']:checked").attr("value")
+      that = this
+      if /delete/.test event.currentTarget.className
+        unless confirm "Are you sure you want to delete this Context Menu?"
+          return false
+        type = "delete"
+        callback = ->
+          that.model.unset("ctxMenu")
+          that.hidePopup()
+      else
+        callback = ->
+          that.model.set("ctxMenu", caption: caption, contexts: menutype)
+          that.hidePopup()
+        if @ctxMenu
+          type = "update"
+        else
+          type = "create"
+      chrome.runtime.sendMessage
+        action: "aboutCtxMenu"
+        type: type
+        id: @model.id
+        caption: caption
+        contexts: menutype
+        callback
+    false
+  hidePopup: ->
+    endEdit()
+    super()

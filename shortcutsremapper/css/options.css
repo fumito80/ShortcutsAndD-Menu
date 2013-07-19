@@ -206,7 +206,6 @@ div.addnew:focus {
 div.mode {
   font-family: 'Arial';
   cursor: pointer;
-  margin-bottom: 3px;
   padding-left: 6px;
 }
 div.mode .icon {
@@ -238,6 +237,9 @@ thead th i.icon-arrow-right {
 .keyConfigSetView tbody td, .keyConfigSetView tbody th {
   border: 0;
   padding: 4px 5px;
+}
+.keyConfigSetView th.ctxmenu, .keyConfigSetView td.ctxmenu {
+  padding: 4px 0;  
 }
 .keyConfigSetView .border td {
   padding: 0;
@@ -440,9 +442,28 @@ button.cog.selecting {
   top: 11px;
   font-size: 1.3em;
 }
-.popup .done {
+.popup .done, .popup .delete {
   margin-left: 15px;
   padding: 7px 10px;
+}
+.popup .delete {
+  margin-right: 60px;
+}
+.popup .inputs {
+  padding: 10px;
+  line-height: 1.8em;
+}
+.popup fieldset {
+  margin-top: 20px;
+}
+.popup legend {
+  padding: 0 10px;
+}
+.popup .inputs label {
+  padding-left: 2px;
+}
+.popup .inputs input[type='text'] {
+  margin-top: 0;
 }
 .popup input[type='radio'] {
   box-shadow: none;
@@ -538,13 +559,6 @@ button.cog.selecting {
   margin-bottom: 6px;
   font-size: 1.0em;
 }
-.bookmarkOptions .inputs {
-  padding: 10px;
-  line-height: 1.8em;
-}
-.bookmarkOptions .inputs label {
-  padding-left: 2px;
-}
 .bookmarkOptions .url {
   padding-left: 20px;
   color: #999999;
@@ -572,6 +586,9 @@ button.cog.selecting {
 }
 .commands .catwin, .commands .catcustom, .catclip, .catclr {
   overflow: auto;
+}
+.catwin {
+  margin-right: 70px;
 }
 .commands .catname {
   text-decoration: underline;

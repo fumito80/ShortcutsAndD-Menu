@@ -108,6 +108,54 @@ execBatch = (dfdCaller, request, sendResponse) ->
     dfdCaller.resolve()
   dfdKicker.resolve(0)
 
+registerCtxMenu = (args, sendResponse) ->
+  {id, type, caption, contexts} = args
+  if type is "create"
+    chrome.contextMenus.create 
+      id: id
+      type: "normal"
+      title: caption
+      contexts: [contexts]
+      -> sendResponse msg: "done"
+  else if type is "update"
+    chrome.contextMenus.update id,
+      type: "normal"
+      title: caption
+      contexts: [contexts]
+      -> sendResponse msg: "done"
+  else if type is "delete"
+    chrome.contextMenus.remove id, -> sendResponse msg: "done"
+
+modifierInits = ["c", "a", "s", "w"]
+transKbdEvent = (value, kbdtype) ->
+  keys = fk.getKeyCodes()[kbdtype].keys
+  modifiers = parseInt(value.substring(0, 2), 16)
+  keyCombo = []
+  for i in [0...modifierInits.length]
+    keyCombo.push modifierInits[i] if modifiers & Math.pow(2, i)
+  scanCode = value.substring(2)
+  keyIdenfiers = keys[scanCode]
+  "[" + keyCombo.join("") + "]" + keyIdenfiers[0]
+
+jsCtxData = ""
+execCtxMenu = (info) ->
+  jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || "").replace(/'/g, "\\'") + "';"
+  local = fk.getConfig()
+  for i in [0...local.keyConfigSet.length]
+    if (keyConfig = local.keyConfigSet[i]).new is info.menuItemId
+      if keyConfig.mode is "remap"
+        keydownMode = "keydown"
+        transCode = transKbdEvent keyConfig.origin, local.config.kbdtype
+      else
+        keydownMode = ""
+        transCode = transKbdEvent keyConfig.new, local.config.kbdtype
+      break
+  if transCode
+    execShortcut $.Deferred(), ((dfd)->dfd.resolve()), transCode, 0, keydownMode
+
+chrome.contextMenus.onClicked.addListener (info, tab) ->
+  execCtxMenu info
+
 dfdCommandQueue = $.Deferred().resolve()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
@@ -115,6 +163,9 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     flexkbd.Sleep sleepMSec if sleepMSec > 0
     sendResponse msg: "done"
     dfd.resolve()
+  if request.action is "aboutCtxMenu"
+    registerCtxMenu request, sendResponse
+    return true
   dfdCommandQueue = dfdCommandQueue.then ->
     dfd = $.Deferred()
     setTimeout((->
@@ -157,7 +208,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.promise()
   true
 
-jsUitlObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
+jsUtilObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -505,7 +556,7 @@ execCommand = (keyEvent) ->
         when "execJS"
           code = item.command.content
           if item.command.useUtilObj
-            code = jsUitlObj + code
+            code = jsUtilObj + jsCtxData + code
           getActiveTab().done (tab) ->
             chrome.tabs.executeScript tab.id,
               code: code
@@ -633,6 +684,16 @@ analyzeScHelpPage = (resp, lang) ->
         scrapeHelp lang, sectInit, el
 
 $ ->
+  if keyConfigSet = fk.getConfig().keyConfigSet
+    keyConfigSet.forEach (keyConfig) ->
+      if ctxMenu = keyConfig.ctxMenu
+        registerCtxMenu
+          id: keyConfig.new
+          type: "create"
+          caption: ctxMenu.caption
+          contexts: ctxMenu.contexts
+          ->
+  
   getHelp = (lang) ->
     $.get(scHelpPageUrl + lang).done (responseText) ->
       analyzeScHelpPage responseText, lang

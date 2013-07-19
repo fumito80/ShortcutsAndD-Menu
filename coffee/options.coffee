@@ -121,6 +121,7 @@ KeyConfigView = Backbone.View.extend
     "click .selectMode div": "onChangeMode"
     "click div.edit"       : "onClickEdit"
     "click div.copySC"     : "onClickCopySC"
+    "click div.ctxmenu"    : "onClickCtxMenu"
     "click div.pause"      : "onClickPause"
     "click div.resume"     : "onClickResume"
     "click div.delete"     : "onClickRemove"
@@ -138,6 +139,7 @@ KeyConfigView = Backbone.View.extend
     @model.on
       "change:bookmark": @onChangeBookmark
       "change:command":  @onChangeCommand
+      "change:ctxMenu":  @onChangeCtxmenu
       "setFocus":        @onClickInput
       "remove":          @onRemove
       @
@@ -155,6 +157,7 @@ KeyConfigView = Backbone.View.extend
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
     @onChangeMode null, mode
+    @onChangeCtxmenu()
     @
   
   # Model Events
@@ -163,6 +166,15 @@ KeyConfigView = Backbone.View.extend
   
   onChangeCommand: ->
     @onChangeMode null, "command"
+  
+  onChangeCtxmenu:->
+    if ctxMenu = @model.get("ctxMenu")
+      @$("td.ctxmenu").html """<i class="icon-reorder" title="Context menu for #{ctxMenu.contexts}"></i>"""
+      @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu..."
+    else
+      @$("td.ctxmenu").empty()
+      @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Create context menu..."
+    @trigger "resizeInput"
   
   onRemove: ->
     @model.off null, null, @
@@ -238,6 +250,13 @@ KeyConfigView = Backbone.View.extend
       action: "setClipboard"
       value1: text
       (msg) ->
+  
+  onClickCtxMenu: ->
+    if @model.get("mode") is "remap"
+      desc = @$(".desc").find(".content,.memo").text()
+    else
+      desc = @$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()
+    @trigger "showPopup", "ctxMenuOptions", @model, desc: $.trim(desc)
   
   onClickInputMemo: ->
     event.stopPropagation()
@@ -411,10 +430,10 @@ KeyConfigView = Backbone.View.extend
               ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
     if tdDesc.html() is ""
       tdDesc.append @tmplMemo memo: @model.get("memo")
-      editOption = iconName: "icon-pencil", command: "Edit description..."
+      editOption = iconName: "icon-pencil", command: "Edit description"
     tdDesc.append @tmplDesc editOption
     if mode is "disabled"
-      @$(".addKey,.copySC,.seprater.1st").remove()
+      @$(".addKey,.copySC,.seprater.1st,ctxmenu").remove()
     if editOption.iconName is ""
       tdDesc.find(".edit").remove()
     if pause
@@ -427,12 +446,13 @@ KeyConfigView = Backbone.View.extend
     <div class="selectCog" tabIndex="0">
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
       <div class="addKey"><i class="icon-plus"></i> Add KeyEvent</div>
+      <div class="ctxmenu"><i class="icon-reorder"></i> Create context menu...</div>
       <div class="copySC"><i class="icon-paper-clip"></i> Copy script</div>
       <span class="seprater 1st"><hr style="margin:3px 1px" noshade></span>
       <div class="pause"><i class="icon-pause"></i> Pause</div>
       <div class="resume"><i class="icon-play"></i> Resume</div>
       <span class="seprater"><hr style="margin:3px 1px" noshade></span>
-      <div class="delete"><i class="icon-remove"></i> Delete</div>
+      <div class="delete"><i class="icon-trash"></i> Delete</div>
     </div>
     """
   
@@ -469,6 +489,7 @@ KeyConfigView = Backbone.View.extend
       <th class="tdOrigin">
         <div class="origin" tabIndex="-1"></div>
       </th>
+      <td class="ctxmenu"></td>
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
@@ -580,16 +601,6 @@ KeyConfigSetView = Backbone.View.extend
   onShowPopup: (name, model, options) ->
     @trigger "showPopup", name, model, options
   
-  onSetBookmark: (modelId, options) ->
-    @collection.get(modelId)
-      .set({"bookmark": options}, {silent: true})
-      .trigger "change:bookmark"
-  
-  onSetCommand: (modelId, options) ->
-    @collection.get(modelId)
-      .set({"command": options}, {silent: true})
-      .trigger "change:command"
-  
   # DOM Events
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
@@ -651,13 +662,13 @@ KeyConfigSetView = Backbone.View.extend
       <th colspan="3">
         <div class="new addnew" tabIndex="0"><%=placeholder%></div>
       </th>
-      <td></td><td></td><td class="blank"></td>
+      <td></td><td></td><td></td><td class="blank"></td>
     </tr>
     """
   
   tmplBorder: """
     <tr class="border">
-      <td colspan="5"><div class="border"></div></td>
+      <td colspan="6"><div class="border"></div></td>
       <td></td>
     </tr>
     """
@@ -670,6 +681,7 @@ KeyConfigSetView = Backbone.View.extend
         </th>
         <th></th>
         <th></th>
+        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner options">Mode</div>
         </th>
@@ -727,12 +739,10 @@ $ ->
   bookmarkOptionsView = new BookmarkOptionsView {}
   commandsView = new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
+  ctxMenuOptionsView = new CtxMenuOptionsView {}
   
-  headerView.on          "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
-  headerView.on          "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  commandsView.on        "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
-  commandOptionsView.on  "setCommand"       , keyConfigSetView.onSetCommand       , keyConfigSetView
-  bookmarkOptionsView.on "setBookmark"      , keyConfigSetView.onSetBookmark      , keyConfigSetView
+  headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
+  headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action
