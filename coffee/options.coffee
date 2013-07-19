@@ -1,3 +1,5 @@
+gMaxItems = 100
+lastFocused = null
 keyCodes = {}
 keys = null
 
@@ -5,12 +7,12 @@ WebFontConfig =
   google: families: ['Noto+Sans::latin']
 
 modeDisp =
-  remap:    ["Remap", "icon-random"]
-  command:  ["Command...", "icon-cog"]
+  remap:    ["Remap"      , "icon-random"]
+  command:  ["Command..." , "icon-cog"]
   bookmark: ["Bookmark...", "icon-bookmark"]
-  simEvent: ["DOM Key Event", "icon-font"]
-  disabled: ["Disabled", "icon-ban-circle"]
-  through:  ["Pause", "icon-pause", "nodisp"]
+  #keydown:  ["KeyDown"    , "icon-font"]
+  disabled: ["Disabled"   , "icon-ban-circle"]
+  through:  ["Pause"      , "icon-pause", "nodisp"]
 
 bmOpenMode =
   current:   "Open in current tab"
@@ -34,8 +36,12 @@ decodeKbdEvent = (value) ->
   scanCode = value.substring(2)
   if keyIdentifier = keys[scanCode]
     keyCombo = []
-    for i in [0...modifierKeys.length]
-      keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+    #for i in [0...modifierKeys.length]
+    #  keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+    keyCombo.push modifierKeys[0] if modifiers & 1
+    keyCombo.push modifierKeys[2] if modifiers & 4
+    keyCombo.push modifierKeys[1] if modifiers & 2
+    keyCombo.push modifierKeys[3] if modifiers & 8
     if modifiers & 4
       keyCombo.push keyIdentifier[1] || keyIdentifier[0]
     else
@@ -60,7 +66,7 @@ HeaderView = Backbone.View.extend
   
   events:
     "click button.addKeyConfig": "onClickAddKeyConfig"
-    #"change select.kbdtype"    : "onChangeSelKbd"
+    "change select.kbdtype"    : "onChangeSelKbd"
   
   initialize: (options) ->
     # キーボード設定
@@ -114,13 +120,15 @@ KeyConfigView = Backbone.View.extend
     "click div.mode"       : "onClickMode"
     "click .selectMode div": "onChangeMode"
     "click div.edit"       : "onClickEdit"
-    "click div.copySC,div.copyKD": "onClickCopySC"
+    "click div.copySC"     : "onClickCopySC"
     "click div.pause"      : "onClickPause"
     "click div.resume"     : "onClickResume"
     "click div.delete"     : "onClickRemove"
     "click input.memo"     : "onClickInputMemo"
     "click button.cog"     : "onClickCog"
-    "submit .memo"         : "onSubmitMemo"
+    "focus .new,.origin"   : "onFocusKeyInput"
+    "keydown .origin"      : "onKeydownOrigin"
+    "submit  .memo"        : "onSubmitMemo"
     "blur  .selectMode"    : "onBlurSelectMode"
     "blur  .selectCog"     : "onBlurSelectCog"
     "blur  input.memo"     : "onBlurInputMemo"
@@ -188,19 +196,44 @@ KeyConfigView = Backbone.View.extend
     @model.set "ordernum", @$el.parent().children().index(@$el)
   
   # DOM Events
+  onKeydownOrigin: (event) ->
+    if keynames = keyIdentifiers[@kbdtype][event.originalEvent.keyIdentifier]
+      if event.originalEvent.shiftKey
+        unless keyname = keynames[1]
+          return
+        scCode = "04"
+      else
+        keyname = keynames[0]
+        scCode = "00"
+      for i in [0...keys.length]
+        if keys[i] && (keyname is keys[i][0] || keyname is keys[i][1])
+          scanCode = i
+          break
+      if scanCode
+        scCode += i
+        if event.originalEvent.shiftKey
+          @$(".origin").html "<span>Shift</span>+<span>#{keyname}</span>"
+        else
+          @$(".origin").html "<span>#{keyname}</span>"
+        @model.set "origin", scCode
+        @setDesc()
+        @trigger "resizeInput"
+  
   onClickCopySC: (event) ->
-    keycombo = (decodeKbdEvent @model.id).replace /\s/g, ""
-    command = @$("td.options .mode").text().replace "None", ""
-    command = " " + command + ":" if command
-    if /copySC/.test event.currentTarget.className
-      method = "send"
-      desc = @$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()
-    else
+    if @model.get("mode") is "remap"
       method = "keydown"
-      desc = @$(".desc").find(".content").text()
+      scCode = @model.get("origin")
+      desc = @$(".desc").find(".content,.memo").text()
+    else
+      method = "send"
+      scCode = @model.id
+      desc = @$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()
+    command = @$("td.options .mode").text().replace "Remap", ""
+    command = " " + command + ":" if command
+    keyCombo = (decodeKbdEvent scCode).replace /\s/g, ""
     desc = " " + desc if desc
-    body = "tsc.#{method}('#{transKbdEvent(@model.id)}');"
-    text = body + " /* " + keycombo + command + desc + " */"
+    body = "tsc.#{method}('#{transKbdEvent(scCode)}');"
+    text = body + " /* " + keyCombo + command + desc + " */"
     chrome.runtime.sendMessage
       action: "setClipboard"
       value1: text
@@ -240,6 +273,9 @@ KeyConfigView = Backbone.View.extend
     @$(".selectMode").hide()
     @$(".mode").removeClass("selecting")
   
+  onFocusKeyInput: ->
+    lastFocused = @el
+  
   onClickInput: (event, selector) ->
     if (event)
       $(event.currentTarget).focus()
@@ -265,7 +301,10 @@ KeyConfigView = Backbone.View.extend
     @$("button.cog").removeClass("selecting")
   
   onClickEdit: (event) ->
-    switch mode = @model.get "mode"
+    if (mode = @model.get("mode")) is "through"
+      pause = true
+      mode = @model.get("lastMode")
+    switch mode
       when "bookmark"
         @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
       when "command"
@@ -303,11 +342,9 @@ KeyConfigView = Backbone.View.extend
       .removeClass(@optionKeys.join(" "))
       .addClass mode
     if /remap/.test mode
-      @$(".origin").attr("tabIndex", "0")
       @$("th:first").removeAttr("colspan")
       @$("th:eq(1),th:eq(2)").show()
     else
-      @$(".origin").removeAttr("tabIndex")
       @$("th:first").attr("colspan", "3")
       @$("th:eq(1),th:eq(2)").hide()
   
@@ -325,7 +362,6 @@ KeyConfigView = Backbone.View.extend
       pause = true
       mode = @model.get("lastMode")
     switch mode
-      #when "simEvent"
       when "bookmark"
         bookmark = @model.get("bookmark")
         tdDesc.append @tmplBookmark
@@ -377,6 +413,8 @@ KeyConfigView = Backbone.View.extend
       tdDesc.append @tmplMemo memo: @model.get("memo")
       editOption = iconName: "icon-pencil", command: "Edit description..."
     tdDesc.append @tmplDesc editOption
+    if mode is "disabled"
+      @$(".addKey,.copySC,.seprater.1st").remove()
     if editOption.iconName is ""
       tdDesc.find(".edit").remove()
     if pause
@@ -388,9 +426,9 @@ KeyConfigView = Backbone.View.extend
     <button class="cog small"><i class="icon-caret-down"></i></button>
     <div class="selectCog" tabIndex="0">
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
-      <div class="copySC"><i class="icon-paper-clip"></i> Copy send method</div>
-      <div class="copyKD"><i class="icon-paper-clip"></i> Copy keydown method</div>
-      <span class="seprater"><hr style="margin:3px 1px" noshade></span>
+      <div class="addKey"><i class="icon-plus"></i> Add KeyEvent</div>
+      <div class="copySC"><i class="icon-paper-clip"></i> Copy script</div>
+      <span class="seprater 1st"><hr style="margin:3px 1px" noshade></span>
       <div class="pause"><i class="icon-pause"></i> Pause</div>
       <div class="resume"><i class="icon-play"></i> Resume</div>
       <span class="seprater"><hr style="margin:3px 1px" noshade></span>
@@ -429,7 +467,7 @@ KeyConfigView = Backbone.View.extend
         <i class="icon-arrow-right"></i>
       </th>
       <th class="tdOrigin">
-        <div class="origin" tabIndex="0"></div>
+        <div class="origin" tabIndex="-1"></div>
       </th>
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
@@ -473,6 +511,7 @@ KeyConfigSetView = Backbone.View.extend
       start: => @onStartSort()
       stop: => @onStopSort()
     $(".fixed-table-container-inner").niceScroll
+      #cursorcolor: "#1E90FF"
       cursorwidth: 12
       cursorborderradius: 2
       smoothscroll: true
@@ -488,9 +527,13 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "removeConfig", @onChildRemoveConfig, @
     keyConfigView.on "resizeInput" , @onChildResizeInput , @
     keyConfigView.on "showPopup"   , @onShowPopup        , @
-    @$("tbody")
-      .append(newChild = keyConfigView.render(@model.get("kbdtype")).$el)
-      .append(@tmplBorder)
+    divAddNew = @$("tr.addnew")[0] || null
+    tbody = @$("tbody")[0]
+    tbody.insertBefore keyConfigView.render(@model.get("kbdtype")).el, divAddNew
+    tbody.insertBefore $(@tmplBorder)[0], divAddNew
+    if divAddNew
+      @$("div.addnew").blur()
+      @onUpdateSort()
     if keyConfigView.state is "invalid"
       @onChildRemoveConfig model
   
@@ -509,7 +552,6 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
       @$("div.addnew").tipTip()
       return
-    @$("div.addnew").blur()
     if ~~value.substring(2) > 0x200
       originValue = "0130"
     else
@@ -552,17 +594,20 @@ KeyConfigSetView = Backbone.View.extend
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
       return
-    if @collection.length > 50
-      $("#tiptip_content").text("You have reached the maximum number of items. (Max 50 items)")
+    if @collection.length > gMaxItems
+      $("#tiptip_content").text("You have reached the maximum number of items. (Max #{gMaxItems} items)")
       $(event.currentTarget).tipTip defaultPosition: "left"
       return false
-    $(@tmplAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
+    newItem$ = $(@tmplAddNew placeholder: @placeholder)
+    @$("tbody")[0].insertBefore newItem$[0], lastFocused
+    newItem$.find(".addnew").focus()[0].scrollIntoViewIfNeeded()
+    #$(@tmplAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
-    true
   
   onClickBlank: ->
     @$(":focus").blur()
+    lastFocused = null
   
   onClickAddnew: (event) ->
     event.stopPropagation()
@@ -701,6 +746,8 @@ $ ->
       fk.saveConfig keyConfigSetView.getSaveData()
     .on "resize", ->
       windowOnResize()
+    .on "click", ->
+      lastFocused = null
   
   $(".beta").text("\u03B2")
 

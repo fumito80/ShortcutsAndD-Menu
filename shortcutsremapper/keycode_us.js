@@ -96,7 +96,7 @@ keys[0x11D] = ["Right Ctrl"];
 keys[0x135] = ["10-/"];
 keys[0x137] = ["Print Screen"];
 keys[0x138] = ["Right Alt"];
-keys[0x146] = ["Break", "Pause"];
+keys[0x146] = ["Break"]; // +Alt = "Pause"
 keys[0x147] = ["Home"];
 keys[0x148] = ["Up"];
 keys[0x149] = ["PageUp"];

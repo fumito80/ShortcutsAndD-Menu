@@ -1,6 +1,22 @@
 
 flexkbd = document.getElementById("flexkbd")
 
+tabStateNotifier =
+  callbacks: {}
+  completes: {}
+  reset: (tabId) ->
+    @completes[tabId] = false
+  register: (tabId, callback) ->
+    if @completes[tabId]
+      callback()
+    else
+      @callbacks[tabId] = callback
+  callComplete: (tabId) ->
+    if callback = @callbacks[tabId]
+      callback()
+    else
+      @completes[tabId] = true
+
 execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) ->
   if transCode
     scCode = ""
@@ -43,11 +59,12 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
         execCommand(scCode).done ->
           doneCallback dfd, sleepMSec, batchIndex
       when "bookmark"
-        preOpenBookmark(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
-      when "sendToDom"
-        preSendKeyEvent(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
+        preOpenBookmark(scCode).done (tabId) ->
+          if tabId
+            tabStateNotifier.register tabId, ->
+              doneCallback dfd, sleepMSec, batchIndex
+          else
+            doneCallback dfd, sleepMSec, batchIndex
       when "keydown"
         setTimeout((->
           flexkbd.CallShortcut scCode, 8
@@ -100,6 +117,11 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.resolve()
   dfdCommandQueue = dfdCommandQueue.then ->
     dfd = $.Deferred()
+    setTimeout((->
+      if dfd.state() is "pending"
+        sendResponse msg: "Command has been killed in a time-out."
+        dfd.resolve()
+    ), 60000)
     try
       switch request.action
         when "batch"
@@ -196,8 +218,12 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
         optionsTabId = tab.id
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
-  if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && changeInfo.status = "complete"
-    flexkbd.StartConfigMode()
+  if changeInfo.status is "complete"
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+      flexkbd.StartConfigMode()
+    else
+      tabStateNotifier.callComplete tabId
+  
 
 notifications = {}
 notifications.state = "closed"
@@ -270,53 +296,19 @@ setClipboardWithHistory = (dfd, tabId) ->
         showNotification()
     dfd.resolve()
 
-sendKeyEventToDom = (keyEvent, tabId) ->
-  local = fk.getConfig()
-  keys = fk.getKeyCodes()[local.config.kbdtype].keys
-  modifiers = parseInt(keyEvent.substring(0, 2), 16)
-  scanCode = keyEvent.substring(2)
-  keyIdentifiers = keys[scanCode]
-  if shift = (modifiers & 4) isnt 0
-    keyIdentifier = keyIdentifiers[1] || keyIdentifiers[0]
-  else
-    keyIdentifier = keyIdentifiers[0]
-  chrome.tabs.sendMessage tabId,
-    action: "keyEvent"
-    keyIdentifier: keyIdentifier
-    ctrl:  (modifiers & 1) isnt 0
-    alt:   (modifiers & 2) isnt 0
-    shift: shift
-    meta:  (modifiers & 8) isnt 0
-
-preSendKeyEvent = (keyEvent) ->
-  dfd = $.Deferred()
-  getActiveTab().done (tab) ->
-    chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
-      if resp is "hello"
-        sendKeyEventToDom(keyEvent, tab.id)
-        dfd.resolve()
-      else
-        chrome.tabs.executeScript tab.id,
-          file: "kbdagent.js"
-          allFrames: true
-          runAt: "document_end"
-          (resp) ->
-            sendKeyEventToDom(keyEvent, tab.id)
-            dfd.resolve()
-  dfd.promise()
-
 openBookmark = (dfd, openmode, url) ->
   switch openmode
     when "newtab"
-      chrome.tabs.create {url: url}, -> dfd.resolve()
+      chrome.tabs.create {url: url}, (tab) -> dfd.resolve(tab.id)
     when "current"
       chrome.tabs.query {active: true}, (tabs) ->
-        chrome.tabs.update tabs[0].id, url: url, -> dfd.resolve()
+        tabStateNotifier.reset(tabs[0].id)
+        chrome.tabs.update tabs[0].id, url: url, (tab) -> dfd.resolve(tab.id)
     when "newwin"
-      chrome.windows.create url: url, -> dfd.resolve()
+      chrome.windows.create url: url, (tab) -> dfd.resolve(tab.id)
     when "incognito"
-      chrome.windows.create url: url, incognito: true, -> dfd.resolve()
-    else
+      chrome.windows.create url: url, incognito: true, (tab) -> dfd.resolve(tab.id)
+    else #findonly
       dfd.resolve()
 
 preOpenBookmark = (keyEvent) ->
@@ -325,7 +317,7 @@ preOpenBookmark = (keyEvent) ->
   local.keyConfigSet.forEach (item) ->
     if item.new is keyEvent
       {openmode, url, findtab, findStr} = item.bookmark
-      if findtab
+      if findtab || openmode is "findonly"
         getActiveTab().done (activeTab) ->
           getAllTabs().done (tabs) ->
             currentPos = 0
@@ -350,9 +342,16 @@ preOpenBookmark = (keyEvent) ->
         openBookmark(dfd, openmode, url)
   dfd.promise()
 
+removeCookie = (dfd, removeSpecs, index) ->
+  if removeSpec = removeSpecs[index]
+    chrome.cookies.remove {"url": removeSpec.url, "name": removeSpec.name}, ->
+      removeCookie dfd, removeSpecs, index + 1
+  else
+    dfd.resolve()
+
 deleteHistory = (dfd, deleteUrls, index) ->
   if url = deleteUrls[index]
-    chrome.history.deleteUrl url: url, ->
+    chrome.history.deleteUrl {url: url}, ->
       deleteHistory dfd, deleteUrls, index + 1
   else
     dfd.resolve()
@@ -375,6 +374,8 @@ closeTabs = (dfd, fnWhere) ->
         tabIds.push tab.id if fnWhere(tab)
       if tabIds.length > 0
         chrome.tabs.remove tabIds, -> dfd.resolve()
+      else
+        dfd.resolve()
 
 execCommand = (keyEvent) ->
   dfd = $.Deferred()
@@ -386,10 +387,14 @@ execCommand = (keyEvent) ->
       switch command = item.command.name
         when "createTab"
           getActiveTab().done (tab, windowId) ->
-            chrome.tabs.create windowId: windowId, index: tab.index + 1, -> dfd.resolve()
+            chrome.tabs.create windowId: windowId, index: tab.index + 1, (tab) ->
+              tabStateNotifier.register tab.id, ->
+                dfd.resolve()
         when "createTabBG"
           getActiveTab().done (tab, windowId) ->
-            chrome.tabs.create windowId: windowId, index: tab.index + 1, active: false, -> dfd.resolve()
+            chrome.tabs.create windowId: windowId, index: tab.index + 1, active: false, (tab) ->
+              tabStateNotifier.register tab.id, ->
+                dfd.resolve()
         when "closeOtherTabs"
           closeTabs dfd, -> true
         when "closeTabsRight", "closeTabsLeft"
@@ -408,6 +413,8 @@ execCommand = (keyEvent) ->
               newpos = newpos - 1
             if newpos > -1
               chrome.tabs.move tab.id, {windowId: windowId, index: newpos}, -> dfd.resolve()
+            else
+              dfd.resolve()
         when "moveTabFirst"
           getActiveTab().done (tab, windowId) ->
             chrome.tabs.move tab.id, {windowId: windowId, index: 0}, -> dfd.resolve()
@@ -521,8 +528,19 @@ execCommand = (keyEvent) ->
                   deleteUrls.push history.url
               if deleteUrls.length > 0
                 deleteHistory dfd, deleteUrls, 0
-        when "clearCookies"
+        when "clearCookiesAll"
           chrome.browsingData.removeCookies {}, -> dfd.resolve()
+        when "clearCookies"
+          getActiveTab().done (tab) ->
+            domain = tab.url.match(/:\/\/(.[^/:]+)/)[1]
+            removeSpecs = []
+            chrome.cookies.getAll {}, (cookies) ->
+              cookies.forEach (cookie) ->
+                unless ("." + domain).indexOf(cookie.domain) is -1
+                  secure = if cookie.secure then "s" else ""
+                  url = "http#{secure}://" + cookie.domain + cookie.path
+                  removeSpecs.push {"url": url, "name": cookie.name}
+              removeCookie dfd, removeSpecs, 0
         when "clearCache"
           chrome.browsingData.removeCache {}, -> dfd.resolve()
   dfd.promise()
@@ -566,8 +584,6 @@ window.pluginEvent = (action, value) ->
       sendMessage
         action: "kbdEvent"
         value: value
-    when "sendToDom"
-      preSendKeyEvent value
     when "bookmark"
       preOpenBookmark value
     when "command"
@@ -586,7 +602,7 @@ scrapeHelp = (lang, sectInit, elTab) ->
     content = elem.cells[1].textContent.replace /^\s+|\s$/g, ""
     Array.prototype.forEach.call elem.childNodes[1].getElementsByTagName("strong"), (strong) ->
       scKey = strong.textContent.toUpperCase().replace /\s/g, ""
-      scKey = scKey.replace("PGUP", "PAGEUP").replace("PGDOWN", "PAGEDOWN").replace(/DEL$/, "DELETE").replace(/INS$/, "INSERT")
+      scKey = scKey.replace("PGUP", "PAGEUP").replace("PGDOWN", "PAGEDOWN").replace(/DEL$/, "DELETE").replace(/INS$/, "INSERT").replace("ホーム", "HOME").replace("バー", "")
       unless scHelp[scKey]?[lang]
         unless scHelp[scKey]
           scHelp[scKey] = {}
@@ -624,7 +640,14 @@ $ ->
     (dfd = $.Deferred()).promise()
   
   getHelp("ja").done ->
-    #getHelp "en"
+    getHelp("en").done ->
+      delete scHelp["-"]
+      delete scHelp["+"]
+      scHelp["CTRL+;"] = ja: ["W^ページ全体を拡大表示します。"]
+      scHelp["CTRL+="] = en: ["W^Enlarges everything on the page."]
+      scHelp["CTRL+-"] =
+        en: ["W^Makes everything on the page smaller."]
+        ja: ["W^ページ全体を縮小表示します。"]
 
 #indexedDB = new db.IndexedDB
 #  schema_name: "scremapper"

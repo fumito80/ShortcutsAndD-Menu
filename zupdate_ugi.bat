@@ -7,12 +7,20 @@ type coffee\optionsExtends.coffee > coffee\optionsTemp.coffee
 type coffee\options.coffee >> coffee\optionsTemp.coffee
 cmd /c %coffee% -c coffee
 
+cmd /c %coffee% -bo shortcutsremapper coffee\keyidentifiers.coffee
+
 del coffee\options.js
 del coffee\optionsExtends.js
 ren coffee\optionsTemp.js options.js
 
-cd coffee
+pushd coffee
 
-FOR %%j IN (*.js) DO %uglifyjs% -nc %%j > ..\shortcutsremapper\%%j
+rem call ../ugi.bat
+
+FOR %%j IN (*.js) DO cmd /c %uglifyjs% -nc %%j > ..\shortcutsremapper\%%j
+
+popd
+
+cmd /c %coffee% -bo shortcutsremapper coffee\keyidentifiers.coffee
 
 pause

@@ -43,7 +43,6 @@ var
         dwFlags:= dwFlags or KEYEVENTF_EXTENDEDKEY;
         wScan:= wScan - $100;
         wVk:= MapVirtualKeyEx(wScan, 3, kbdLayout);
-        //Write2EventLog('FlexKbd', IntToHex(wScan, 4) + ': ' + scans + ': ' + IntToHex(wVk, 4));
       end;
       time:= 0;
       dwExtraInfo:= 0;
@@ -122,11 +121,14 @@ begin
     scanCode:= 86;
     scans:= '0086';
   end else if ((wPrm and g_callShortcut) <> 0) or ((wPrm and g_keydown) <> 0) then begin
+    scanCode:= HiWord(wPrm);
     if (wPrm and g_callShortcut) <> 0 then
       scriptMode:= True
-    else
+    else begin
       keydownMode:= True;
-    scanCode:= HiWord(wPrm);
+      if scanCode >= $200 then
+        Exit;
+    end;
     modifierFlags2:= HiByte(LoWord(wPrm));
     scans:= IntToHex(modifierFlags2, 2) + IntToStr(scanCode);
     //Write2EventLog('FlexKbd', IntToStr(seq) + '> ' + IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 1, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
@@ -141,7 +143,7 @@ begin
     end;
     scans:= IntToHex(modifierFlags, 2) + IntToStr(scanCode);
   end;
-  //Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + IntToHex(MapVirtualKeyEx(scanCode, 3, kbdLayout), 4) + ': ' + IntToStr(keyDownState));
+  //Write2EventLog('FlexKbd', IntToHex(scanCode, 4) + ': ' + scans + ': ' + lastOrgModified + ': ' + IntToStr(keyDownState));
 
   // Exit1 --> Modifierキー単独のとき
   for I:= 0 to 7 do begin
@@ -159,7 +161,7 @@ begin
   // Exit2 --> Modifierキーが押されていない or Shiftのみ ＆ ファンクションキーじゃないとき
   if (modifierFlags in [0, 4])
     and not(scancode in [$3B..$44, $56, $57, $58])
-    and not((keyDownState = 0) and (virtualScanCode in [$3B..$44, $56, $57, $58]))
+    and not((keyDownState = 0) and (virtualScanCode <> 0))
     and not(scriptMode) and not(keydownMode) then
       Exit;
 
@@ -176,11 +178,11 @@ begin
       // Modifier及びキー変更対応
       scans:= IntToHex(modifierFlags and (not virtualModifires) or virtualOffModifires, 2) + IntToStr(scanCode);
     end
-    else if (scans = lastModified) {and (scanCode = virtualScanCode)} then begin
+    else if (scans = lastModified) and (scanCode = virtualScanCode) then begin
       // エコーバックは捨てる(循環参照対応)
       if keyDownState = KEYEVENTF_KEYUP then
         virtualScanCode:= 0;
-      // 単独キーのとき --> 中止
+      // 単独キーのとき
       if singleKeyFlag then begin
         ClearAll;
       end;
@@ -292,13 +294,10 @@ begin
         lastTarget:= scans;
         lastModified:= keyConfig.origin;
         virtualScanCode:= keyConfig.scanCode;
-        if (modifierFlags = 0) or singleKeyFlag then
+        if ((modifierFlags = 0) or singleKeyFlag) and (virtualOffModifires = 0) then
           singleKeyFlag:= True
         else
           singleKeyFlag:= False;
-        //if (wPrm and g_callShortcut) <> 0 then begin
-        //  ClearAll;
-        //end;
         if (wPrm = g_pasteText) or scriptMode or keydownMode then begin
           SetLength(KeyInputs, 0);
           AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
@@ -312,9 +311,6 @@ begin
       end else if (keyDownState = 0) and (keyConfig.mode = 'simEvent') then begin
         browser.Invoke('pluginEvent', ['sendToDom', scans]);
       end else if (keyDownState = 0) and ((keyConfig.mode = 'bookmark') or (keyConfig.mode = 'command')) then begin
-        //Write2EventLog('FlexKbd', 'command');
-        //SetLength(KeyInputs, 0);
-        //AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
         browser.Invoke('pluginEvent', [keyConfig.mode, scans]);
       end else if keyConfig.mode = 'through' then begin
         Result:= False;

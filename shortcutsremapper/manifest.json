@@ -20,6 +20,7 @@
     "*://*/*",
     "chrome://favicon/*",
     "bookmarks",
+    "cookies",
     "tabs",
     "browsingData",
     "history",

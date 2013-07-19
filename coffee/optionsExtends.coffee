@@ -65,7 +65,8 @@ commandsDisp =
   closeOtherWins: ["win", "Close other windows"]
   clearCache:     ["clr", "Clear the browser's cache"]
   #clearHistory:   ["clr", "Clear browsing history"]
-  clearCookies:   ["clr", "Clear all cookies and site data"]
+  clearCookiesAll:["clr", "Clear the browser's cookies and site data"]
+  clearCookies:   ["clr", "Clear all cookies for the current domain"]
   #clearHistoryS:  ["clr", "Delete specific browsing history", [], "Clr"]
   #clearCookies:   ["browsdata", "Delete cookies and other site and plug-in data"]
   pasteText:      ["custom", "Paste fixed text", [], "Clip"]
@@ -190,6 +191,7 @@ class BookmarkOptionsView extends PopupBaseView
   el:   ".bookmarkOptions"
   events: _.extend
     "click input[value='findtab']": "onClickFindTab"
+    "change input[name='openmode']:radio": "onChangeOpenmode"
     PopupBaseView.prototype.events
   constructor: (options) ->
     super(options)
@@ -221,6 +223,14 @@ class BookmarkOptionsView extends PopupBaseView
     @trigger "setBookmark", @model.id, _.extend @bookmark, options
     @hidePopup()
     false
+  onChangeOpenmode: (event) ->
+    openmode = @$("input[name='openmode']:checked").val()
+    chkFindtab$ = @$("input[value='findtab']")
+    if openmode is "findonly"
+      chkFindtab$.attr("disabled", "disabled")[0].checked = true
+    else
+      chkFindtab$.removeAttr("disabled")
+    @onClickFindTab currentTarget: checked: chkFindtab$[0].checked
   onClickFindTab: (event) ->
     if event.currentTarget.checked
       @$(".findStr").removeAttr("disabled")

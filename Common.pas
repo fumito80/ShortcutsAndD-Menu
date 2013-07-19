@@ -64,6 +64,9 @@ var
   g_callShortcut: UInt64 = 4;
   g_keydown     : UInt64 = 8;
 
+procedure gpcStrToClipboard(const sWText: WideString);
+function gfnsStrFromClipboard: WideString;
+
 implementation
 
 constructor TKeyConfig.Create(mode, origin, orgModified: string; modifierFlags: Byte; scanCode: Cardinal);

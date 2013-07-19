@@ -125,11 +125,6 @@ begin
   // Exit 1
   if (modifierFlags = 0) or (stateButton in [MSG_MOUSE_LUP, MSG_MOUSE_RUP, MSG_MOUSE_MUP]) then
     Exit;
-  // Exit 2
-  //if (modifierFlags = FLAG_LDOWN) and (wPrm = WM_LBUTTONDOWN) then begin
-  //  stateDownL:= False;
-  //  Exit;
-  //end;
   
   scans:= IntToHex(modifierFlags, 2) + IntToStr(wPrm);
   
