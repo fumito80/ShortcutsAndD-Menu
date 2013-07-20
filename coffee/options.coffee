@@ -19,6 +19,14 @@ bmOpenMode =
   newtab:    "Open in new tab"
   newwin:    "Open in new window"
   incognito: "Open in incognito window"
+
+ctxMenuIcon =
+  page: "icon-file"
+  selection: "icon-font"
+  editable: "icon-edit"
+  link: "icon-link"
+  image: "icon-picture"
+  all: "icon-asterisk"
   
 escape = (html) ->
   entity =
@@ -157,7 +165,6 @@ KeyConfigView = Backbone.View.extend
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
     @onChangeMode null, mode
-    @onChangeCtxmenu()
     @
   
   # Model Events
@@ -169,7 +176,7 @@ KeyConfigView = Backbone.View.extend
   
   onChangeCtxmenu:->
     if ctxMenu = @model.get("ctxMenu")
-      @$("td.ctxmenu").html """<i class="icon-reorder" title="Context menu for #{ctxMenu.contexts}"></i>"""
+      @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\nTitle: #{ctxMenu.caption}"><i class="#{ctxMenuIcon[ctxMenu.contexts]}"></i></div>"""
       @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu..."
     else
       @$("td.ctxmenu").empty()
@@ -341,9 +348,11 @@ KeyConfigView = Backbone.View.extend
   onClickPause: ->
     @model.set("lastMode", @model.get("mode"))
     @onChangeMode(null, "through")
+    ctxMenuOptionsView.pause @model.id
   
   onClickResume: ->
     @onChangeMode(null, @model.get("lastMode"))
+    ctxMenuOptionsView.resume @model.id
   
   onClickRemove: ->
     shortcut = decodeKbdEvent @model.id
@@ -440,6 +449,7 @@ KeyConfigView = Backbone.View.extend
       tdDesc.find(".pause").remove()
     else
       tdDesc.find(".resume").remove()
+    @onChangeCtxmenu()
   
   tmplDesc: _.template """
     <button class="cog small"><i class="icon-caret-down"></i></button>
@@ -489,7 +499,6 @@ KeyConfigView = Backbone.View.extend
       <th class="tdOrigin">
         <div class="origin" tabIndex="-1"></div>
       </th>
-      <td class="ctxmenu"></td>
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
@@ -497,6 +506,7 @@ KeyConfigView = Backbone.View.extend
           <div class="<%=key%>"><i class="icon <%=option[1]%>"></i> <%=option[0]%></div>
           <% }}); %>
         </div>
+      <td class="ctxmenu"></td>
       <td class="desc"></td>
       <td class="blank">&nbsp;</td>
     </tr>
@@ -681,10 +691,10 @@ KeyConfigSetView = Backbone.View.extend
         </th>
         <th></th>
         <th></th>
-        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner options">Mode</div>
         </th>
+        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner desc">Description</div>
         </th>
@@ -759,6 +769,6 @@ $ ->
     .on "click", ->
       lastFocused = null
   
-  $(".beta").text("\u03B2")
+  #$(".beta").text("\u03B2")
 
   windowOnResize()

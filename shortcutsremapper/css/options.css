@@ -32,11 +32,17 @@ body {
   color: #222222;
   /* background: rgb(31, 98, 129); */
 }
+.header .amp {
+  font: 20px 'Michroma', Arial;
+  padding: 0 0 0 7px;
+  color: #222222;
+  /* background: rgb(31, 98, 129); */
+}
 .header .title2 {
-  font: 24px 'Noto Sans', Arial;
+  font: 20px 'Michroma', Arial;
   font-weight: bold;
   color: #1E90FF;
-  margin: 0 2px;
+  margin: 0;
   border-radius: 1px;  
   /* background: rgb(31, 98, 129); */
 }
@@ -124,8 +130,9 @@ tbody .data:hover {
 .new.disabled span {
   color: #CC0000;
 }
-.through span {
+.keyConfigSetView .through span {
   color: #333333;
+  border: 1px solid #CCCCCC;
   background: #DDDDDD;
 }
 .origin.disabled, .icon-arrow-right.disabled {
@@ -388,6 +395,9 @@ button.cog.selecting {
   width: 0;
   height: 0;
 }
+.forceBlue {
+  background-color: #1E90FF!important;
+}
 .backscreen {
   display: none;
   position: absolute;
@@ -455,6 +465,7 @@ button.cog.selecting {
 }
 .popup fieldset {
   margin-top: 20px;
+  margin-bottom: 10px;
 }
 .popup legend {
   padding: 0 10px;
@@ -467,6 +478,10 @@ button.cog.selecting {
 }
 .popup input[type='radio'] {
   box-shadow: none;
+}
+.popup .inputs .note {
+  margin-top: 4px;
+  line-height: 1.2em;
 }
 .bookmarks {
   width: 600px;
@@ -618,4 +633,19 @@ button.cog.selecting {
 }
 .commandParams input[type='text'] {
   width: 450px;
+}
+.ctxmenu-icon {
+  width: 18px;
+  height: 17px;
+  color: #FFF;
+  background: #1E90FF; /*#158D8D*/
+  border-radius: 3px;
+  margin-top: 2px;
+  text-align: center;
+  padding-top: 2px;
+  font-size: 0.9em;
+}
+.ctxMenuOptions .inputs input.parentName {
+  margin-top: 5px;
+  width: 400px;
 }

@@ -299,9 +299,12 @@ begin
         else
           singleKeyFlag:= False;
         if (wPrm = g_pasteText) or scriptMode or keydownMode then begin
+          KeyInputCount:= 0;
           SetLength(KeyInputs, 0);
           AlterModified(modifierFlags, scanCode, KEYEVENTF_KEYUP);
           if scriptMode or keydownMode then begin
+            KeyInputCount:= 0;
+            SetLength(KeyInputs, 0);
             keyConfig.scanCode:= 0;
             AlterModified(keyConfig.modifierFlags, keyConfig.scanCode, KEYEVENTF_KEYUP);
           end;

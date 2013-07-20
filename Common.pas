@@ -64,8 +64,12 @@ var
   g_callShortcut: UInt64 = 4;
   g_keydown     : UInt64 = 8;
 
+  KeyInputs: array of TInput;
+  KeyInputCount: Integer;
+
 procedure gpcStrToClipboard(const sWText: WideString);
 function gfnsStrFromClipboard: WideString;
+procedure  KeybdInput(scanCode: Cardinal; vkCode: Word; Flags: DWord);
 
 implementation
 
@@ -209,6 +213,21 @@ begin
         CloseClipboard;
       end;
     end;
+  end;
+end;
+
+procedure  KeybdInput(scanCode: Cardinal; vkCode: Word; Flags: DWord);
+begin
+  Inc(KeyInputCount);
+  SetLength(KeyInputs, KeyInputCount);
+  KeyInputs[KeyInputCount - 1].Itype := INPUT_KEYBOARD;
+  with KeyInputs[KeyInputCount - 1].ki do
+  begin
+    wVk:= vkCode;
+    wScan:= scanCode;
+    dwFlags:= Flags;
+    time:= 0;
+    dwExtraInfo:= 0;
   end;
 end;
 

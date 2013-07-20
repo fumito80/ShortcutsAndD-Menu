@@ -8,12 +8,12 @@
   <link href='http://fonts.googleapis.com/css?family=Noto+Sans:400,700' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Michroma' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Oleo+Script:400,700' rel='stylesheet' type='text/css'>
-  <title>Turbo Shortcuts</title>
+  <title>Shortcuts &D-Menu</title>
 </head>
 <body>
   <div class="header">
     <div class="h1">
-      <span class="title1">Turbo</span><span class="title2">Shortcuts</span><span class="beta"></span>
+      <span class="title1">Shortcuts</span><span class="amp">&</span><span class="title2">D</span><span class="title1">-Menu</span><span class="beta"></span>
     </div>
     <select class="kbdtype"></select>
     <a href="#" target="_blank" class="scHelp"></a>
@@ -73,18 +73,27 @@
         <button class="delete"><i class="icon-trash"></i> Delete</button><br>
       </div>
       <div class="inputs">
-        <label>&nbsp;Menu Title<br>
+        <label>&nbsp;Menu Title:<br>
           <input type="text" class="caption">
         </label>
         <fieldset>
           <legend>Target Context</legend>
-          <label><input type="radio" name="menutype" value="page" checked="checked"> Page</label><br>
+          <label><input type="radio" name="menutype" value="page" checked="checked"> Page - Return the page URL</label><br>
           <label><input type="radio" name="menutype" value="selection"> Selection - Return the selection text</label><br>
-          <label><input type="radio" name="menutype" value="editable"> Editable</label><br>          
+          <label><input type="radio" name="menutype" value="editable"> Editable - Return the page URL or selection text</label><br>          
           <label><input type="radio" name="menutype" value="link"> Link - Return the link URL</label><br>
-          <label><input type="radio" name="menutype" value="image"> Image - Return the image source URL</label><br>
+          <label><input type="radio" name="menutype" value="image"> Image - Return the image URL</label><br>
           <label><input type="radio" name="menutype" value="all"> All - Return any of the above</label><br>
+          <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>cxtData</em>.</div>
         </fieldset>
+        <div>Optional create under parent menu.</div>
+        <label>Parent menu:<br>
+          <select class="selectParent">
+            <option value="root">Root</option>
+            <option value="new">New parent menu</option>
+          </select>
+        </label><br>
+        <input type="text" class="parentName" placeholder="New parent menu title" disabled="disabled">
       </div>
     </form>
   </div>

@@ -375,13 +375,16 @@ begin
 end;
 
 procedure TMyClass.PasteText(const params: array of Variant);
-var
-  dummyFlag: Boolean;
-  bytesRead: Cardinal;
 begin
   if params[0] = '' then Exit;
   gpcStrToClipboard(params[0]);
-  CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+  KeyInputCount:= 0;
+  SetLength(KeyInputs, 0);
+  KeybdInput($1D, VK_CONTROL, 0);
+  KeybdInput($2F, $56, 0);
+  KeybdInput($2F, $56, KEYEVENTF_KEYUP);
+  KeybdInput($1D, VK_CONTROL, KEYEVENTF_KEYUP);
+  SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
 end;
 
 procedure TMyClass.SetClipboard(const params: array of Variant);

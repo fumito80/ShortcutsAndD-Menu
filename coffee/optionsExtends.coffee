@@ -2,6 +2,7 @@ keyConfigSetView = null
 commandsView = null
 bookmarksView = null
 commandOptionsView = null
+ctxMenuOptionsView = null
 
 PopupBaseView = Backbone.View.extend
 
@@ -14,10 +15,11 @@ PopupBaseView = Backbone.View.extend
   
   render: -> # Virtual
   
-  onShowPopup: (name, model) ->
+  onShowPopup: (name, model, options) ->
     unless name is @name
       return false
     @model = model
+    @options = options
     shortcut = decodeKbdEvent model.get("new")
     @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+")
     @render()
@@ -94,25 +96,24 @@ class CommandOptionsView extends PopupBaseView
     commandsView.on "showPopup", @onShowPopup, @
   render: ->
     content$ = @$(".content").css("height", "auto")
-    if (commandName = @command.name) is "clearHistoryS"
+    if (commandName = @options.name) is "clearHistoryS"
       content$.attr("rows", "1")
     else
       content$.attr("rows", "10")
     @$(".command").html commandsDisp[commandName][1]
-    @$(".caption").val(@command.caption)
-    content$.val(@command.content)
+    @$(".caption").val(@options.caption)
+    content$.val(@options.content)
     commandOption = @$(".inputs").empty()
     commandsDisp[commandName][2].forEach (option) =>
       option.checked = ""
-      if @command[option.value]
+      if @options[option.value]
         option.checked = "checked"
       commandOption.append @tmplOptions option
     @$el.append @tmplHelp @
   onShowPopup: (name, model, options) ->
-    @command = options
-    unless super(name, model)
+    unless super(name, model, options)
       return
-    if @command.content
+    if @options.content
       @$(".content").focus()[0].setSelectionRange(0, 0)
     else
       @$(".caption").focus()
@@ -129,7 +130,7 @@ class CommandOptionsView extends PopupBaseView
         .set
           "command":
             _.extend
-              name: @command.name
+              name: @options.name
               caption: caption
               content: content
               options
@@ -205,17 +206,16 @@ class BookmarkOptionsView extends PopupBaseView
   render: ->
     super()
     @$(".bookmark")
-      .css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/#{@bookmark.url}) 1x)")
-      .text @bookmark.title
-    @$(".url").text @bookmark.url
-    @$(".findStr").val @bookmark.findStr || @bookmark.url
-    @$("input[value='#{(@bookmark.openmode || 'current')}']")[0].checked = true
-    (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @bookmark.findtab) is undefined then true else findtab
+      .css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/#{@options.url}) 1x)")
+      .text @options.title
+    @$(".url").text @options.url
+    @$(".findStr").val @options.findStr || @options.url
+    @$("input[value='#{(@options.openmode || 'current')}']")[0].checked = true
+    (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @options.findtab) is undefined then true else findtab
     @onClickFindTab currentTarget: elFindtab
     @$el.append @tmplHelp @
   onShowPopup: (name, model, options) ->
-    @bookmark = options
-    unless super(name, model)
+    unless super(name, model, options)
       return
     startEdit()
   onSubmitForm: ->
@@ -227,7 +227,7 @@ class BookmarkOptionsView extends PopupBaseView
     options.openmode = @$("input[name='openmode']:checked").attr("value")
     options.findStr = @$(".findStr").val()
     @model
-      .set({"bookmark": _.extend @bookmark, options}, {silent: true})
+      .set({"bookmark": _.extend @options, options}, {silent: true})
       .trigger "change:bookmark"
     @hidePopup()
     false
@@ -386,7 +386,8 @@ class CtxMenuOptionsView extends PopupBaseView
   name: "ctxMenuOptions"
   el: ".ctxMenuOptions"
   events: _.extend
-    "click .done,.delete": "onClickSubmit"
+    "click  .done,.delete": "onClickSubmit"
+    "change .selectParent": "onClickSelectParent"
     PopupBaseView.prototype.events
   render: ->
     @ctxMenu = @model.get "ctxMenu"
@@ -397,38 +398,59 @@ class CtxMenuOptionsView extends PopupBaseView
       @$(".delete").removeClass("disabled").removeAttr("disabled")
     else
       @$(".delete").addClass("disabled").attr("disabled", "disabled")
-  onShowPopup: (name, model, @options) ->
-    unless super(name, model)
+    if (selectParent$ = @$(".selectParent")).val() is "new"
+      selectParent$.val "root"
+      @$(".parentName").attr("disabled", "disabled")
+  onShowPopup: (name, model, options) ->
+    unless super(name, model, options)
       return
     startEdit()
+  onClickSelectParent: (event) ->
+    if event.currentTarget.value isnt "new"
+      @$(".parentName").attr("disabled", "disabled").blur()
+    else
+      @$(".parentName").removeAttr("disabled").focus()
   onSubmitForm: ->
     false
+  setContextMenu: (actionType, id, caption, contexts, callback = ->) ->
+    sendData =
+      type: actionType
+      id: id
+      action: "aboutCtxMenu"
+    if caption && contexts
+      sendData.caption = caption
+      sendData.contexts = contexts
+    chrome.runtime.sendMessage sendData, callback
+  pause: (id) ->
+    @setContextMenu "update pause", id
+  resume: (id) ->
+    @setContextMenu "update", id
   onClickSubmit: (event) ->
     unless (caption = @$(".caption").val()) is ""
       menutype = @$("input[name='menutype']:checked").attr("value")
-      that = this
-      if /delete/.test event.currentTarget.className
+      #that = this
+      if /delete/.test event?.currentTarget.className
         unless confirm "Are you sure you want to delete this Context Menu?"
           return false
-        type = "delete"
-        callback = ->
-          that.model.unset("ctxMenu")
-          that.hidePopup()
+        actionType = "delete"
+        callback = (resp) ->
+          if resp.msg is "done"
+            @model.unset("ctxMenu")
+            @hidePopup()
+          else
+            alert resp.msg
       else
-        callback = ->
-          that.model.set("ctxMenu", caption: caption, contexts: menutype)
-          that.hidePopup()
+        callback = (resp) ->
+          if resp.msg is "done"
+            @model.set("ctxMenu", caption: caption, contexts: menutype)
+            @hidePopup()
+          else
+            alert resp.msg
         if @ctxMenu
-          type = "update"
+          actionType = "update"
         else
-          type = "create"
-      chrome.runtime.sendMessage
-        action: "aboutCtxMenu"
-        type: type
-        id: @model.id
-        caption: caption
-        contexts: menutype
-        callback
+          actionType = "create"
+      @setContextMenu actionType, @model.id, caption, menutype, callback.bind(@)
     false
   hidePopup: ->
     endEdit()

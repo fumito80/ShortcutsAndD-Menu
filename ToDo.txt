@@ -1,0 +1,20 @@
+﻿☑コピースクリプトの使い分け
+☑メニュ ポーズ時の編集
+☑メニュ Disabled時の内容
+☑タブロード完了検知
+
+
+コンテキストメニュー機能
+　☑検索 -> サンプルから作ってもらう。結局１つしか作れない為
+　横断検索
+　☑作成機能
+    Type:           page   , selection    , link   , image
+    Return content: pageUrl, selectionText, linkUrl, srcUrl
+    Caption
+    削除ボタン
+  アイコン
+  ショートカットキー
+    H、Q、D
+
+
+notifications

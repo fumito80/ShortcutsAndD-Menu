@@ -162,25 +162,32 @@
   };
 
   registerCtxMenu = function(args, sendResponse) {
-    var caption, contexts, id, type;
+    var caption, contexts, ctxData, id, type;
     id = args.id, type = args.type, caption = args.caption, contexts = args.contexts;
-    if (type === "create") {
-      return chrome.contextMenus.create({
-        id: id,
+    if (/pause/.test(type)) {
+      ctxData = {
         type: "normal",
-        title: caption,
-        contexts: [contexts]
-      }, function() {
+        enabled: false
+      };
+    } else {
+      ctxData = {
+        type: "normal",
+        enabled: true
+      };
+    }
+    if (caption) {
+      ctxData.title = caption;
+      ctxData.contexts = [contexts];
+    }
+    if (/create/.test(type)) {
+      ctxData.id = id;
+      return chrome.contextMenus.create(ctxData, function() {
         return sendResponse({
           msg: "done"
         });
       });
-    } else if (type === "update") {
-      return chrome.contextMenus.update(id, {
-        type: "normal",
-        title: caption,
-        contexts: [contexts]
-      }, function() {
+    } else if (/update/.test(type)) {
+      return chrome.contextMenus.update(id, ctxData, function() {
         return sendResponse({
           msg: "done"
         });
@@ -215,7 +222,7 @@
 
   execCtxMenu = function(info) {
     var i, keyConfig, keydownMode, local, transCode, _i, _ref;
-    jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || "").replace(/'/g, "\\'") + "';";
+    jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';";
     local = fk.getConfig();
     for (i = _i = 0, _ref = local.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       if ((keyConfig = local.keyConfigSet[i])["new"] === info.menuItemId) {
@@ -1144,11 +1151,16 @@
     var getHelp, keyConfigSet;
     if (keyConfigSet = fk.getConfig().keyConfigSet) {
       keyConfigSet.forEach(function(keyConfig) {
-        var ctxMenu;
-        if (ctxMenu = keyConfig.ctxMenu) {
+        var actionType, ctxMenu;
+        if ((ctxMenu = keyConfig.ctxMenu)) {
+          if (keyConfig.mode === "through") {
+            actionType = "create pause";
+          } else {
+            actionType = "create";
+          }
           return registerCtxMenu({
             id: keyConfig["new"],
-            type: "create",
+            type: actionType,
             caption: ctxMenu.caption,
             contexts: ctxMenu.contexts
           }, function() {});

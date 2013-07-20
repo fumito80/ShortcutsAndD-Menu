@@ -110,19 +110,18 @@ execBatch = (dfdCaller, request, sendResponse) ->
 
 registerCtxMenu = (args, sendResponse) ->
   {id, type, caption, contexts} = args
-  if type is "create"
-    chrome.contextMenus.create 
-      id: id
-      type: "normal"
-      title: caption
-      contexts: [contexts]
-      -> sendResponse msg: "done"
-  else if type is "update"
-    chrome.contextMenus.update id,
-      type: "normal"
-      title: caption
-      contexts: [contexts]
-      -> sendResponse msg: "done"
+  if /pause/.test type
+    ctxData = type: "normal", enabled: false
+  else
+    ctxData = type: "normal", enabled: true
+  if caption
+    ctxData.title = caption
+    ctxData.contexts = [contexts]
+  if /create/.test type
+    ctxData.id = id
+    chrome.contextMenus.create ctxData, -> sendResponse msg: "done"
+  else if /update/.test type
+    chrome.contextMenus.update id, ctxData, -> sendResponse msg: "done"
   else if type is "delete"
     chrome.contextMenus.remove id, -> sendResponse msg: "done"
 
@@ -139,7 +138,7 @@ transKbdEvent = (value, kbdtype) ->
 
 jsCtxData = ""
 execCtxMenu = (info) ->
-  jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || "").replace(/'/g, "\\'") + "';"
+  jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
   local = fk.getConfig()
   for i in [0...local.keyConfigSet.length]
     if (keyConfig = local.keyConfigSet[i]).new is info.menuItemId
@@ -686,10 +685,14 @@ analyzeScHelpPage = (resp, lang) ->
 $ ->
   if keyConfigSet = fk.getConfig().keyConfigSet
     keyConfigSet.forEach (keyConfig) ->
-      if ctxMenu = keyConfig.ctxMenu
+      if (ctxMenu = keyConfig.ctxMenu)
+        if keyConfig.mode is "through"
+          actionType = "create pause"
+        else
+          actionType = "create"
         registerCtxMenu
           id: keyConfig.new
-          type: "create"
+          type: actionType
           caption: ctxMenu.caption
           contexts: ctxMenu.contexts
           ->
