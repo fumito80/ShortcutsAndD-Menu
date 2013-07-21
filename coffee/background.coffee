@@ -1,4 +1,3 @@
-
 flexkbd = document.getElementById("flexkbd")
 
 tabStateNotifier =
@@ -21,7 +20,6 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
   if transCode
     scCode = ""
     modifiersCode = 0
-    local = fk.getConfig()
     test = transCode.match(/\[(\w*?)\](.+)/)
     if (test)
       modifiers = RegExp.$1
@@ -34,8 +32,8 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
     else
       modifiersCode = 0
       keyIdentifier = transCode
-    kbdtype = local.config.kbdtype
-    keys = fk.getKeyCodes()[kbdtype].keys
+    kbdtype = andy.local.config.kbdtype
+    keys = andy.getKeyCodes()[kbdtype].keys
     scanCode = -1
     for i in [0...keys.length]
       if keys[i] && (keyIdentifier is keys[i][0] || keyIdentifier is keys[i][1])
@@ -50,8 +48,8 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
         scCode = "0" + modifiersCode.toString(16) + scanCode
     
     unless execMode
-      for i in [0...local.keyConfigSet.length]
-        if (item = local.keyConfigSet[i]).new is scCode
+      for i in [0...andy.local.keyConfigSet.length]
+        if (item = andy.local.keyConfigSet[i]).new is scCode
           execMode = item.mode
           break
     switch execMode
@@ -108,26 +106,9 @@ execBatch = (dfdCaller, request, sendResponse) ->
     dfdCaller.resolve()
   dfdKicker.resolve(0)
 
-registerCtxMenu = (args, sendResponse) ->
-  {id, type, caption, contexts} = args
-  if /pause/.test type
-    ctxData = type: "normal", enabled: false
-  else
-    ctxData = type: "normal", enabled: true
-  if caption
-    ctxData.title = caption
-    ctxData.contexts = [contexts]
-  if /create/.test type
-    ctxData.id = id
-    chrome.contextMenus.create ctxData, -> sendResponse msg: "done"
-  else if /update/.test type
-    chrome.contextMenus.update id, ctxData, -> sendResponse msg: "done"
-  else if type is "delete"
-    chrome.contextMenus.remove id, -> sendResponse msg: "done"
-
 modifierInits = ["c", "a", "s", "w"]
 transKbdEvent = (value, kbdtype) ->
-  keys = fk.getKeyCodes()[kbdtype].keys
+  keys = andy.getKeyCodes()[kbdtype].keys
   modifiers = parseInt(value.substring(0, 2), 16)
   keyCombo = []
   for i in [0...modifierInits.length]
@@ -139,15 +120,14 @@ transKbdEvent = (value, kbdtype) ->
 jsCtxData = ""
 execCtxMenu = (info) ->
   jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
-  local = fk.getConfig()
-  for i in [0...local.keyConfigSet.length]
-    if (keyConfig = local.keyConfigSet[i]).new is info.menuItemId
+  for i in [0...andy.local.keyConfigSet.length]
+    if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
       if keyConfig.mode is "remap"
         keydownMode = "keydown"
-        transCode = transKbdEvent keyConfig.origin, local.config.kbdtype
+        transCode = transKbdEvent keyConfig.origin, andy.local.config.kbdtype
       else
         keydownMode = ""
-        transCode = transKbdEvent keyConfig.new, local.config.kbdtype
+        transCode = transKbdEvent keyConfig.new, andy.local.config.kbdtype
       break
   if transCode
     execShortcut $.Deferred(), ((dfd)->dfd.resolve()), transCode, 0, keydownMode
@@ -162,9 +142,6 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     flexkbd.Sleep sleepMSec if sleepMSec > 0
     sendResponse msg: "done"
     dfd.resolve()
-  if request.action is "aboutCtxMenu"
-    registerCtxMenu request, sendResponse
-    return true
   dfdCommandQueue = dfdCommandQueue.then ->
     dfd = $.Deferred()
     setTimeout((->
@@ -318,7 +295,7 @@ showNotification = ->
         notifications.state = "opened"
 
 showCopyHistory = (dfd, tabId) ->
-  #copyHist = JSON.parse(localStorage.copyHistory || null) || []  
+  #copyHist = JSON.parse(localStorage.copyHistory || null) || []
   #chrome.tabs.sendMessage tabId,
   #  action: "showCopyHistory"
   #  history: copyHist
@@ -363,8 +340,7 @@ openBookmark = (dfd, openmode, url) ->
 
 preOpenBookmark = (keyEvent) ->
   dfd = $.Deferred()
-  local = fk.getConfig()
-  local.keyConfigSet.forEach (item) ->
+  andy.local.keyConfigSet.forEach (item) ->
     if item.new is keyEvent
       {openmode, url, findtab, findStr} = item.bookmark
       if findtab || openmode is "findonly"
@@ -429,9 +405,8 @@ closeTabs = (dfd, fnWhere) ->
 
 execCommand = (keyEvent) ->
   dfd = $.Deferred()
-  local = fk.getConfig()
   pos = 0
-  local.keyConfigSet.forEach (item) ->
+  andy.local.keyConfigSet.forEach (item) ->
     #console.log keyEvent + ": " + key
     if item.new is keyEvent
       switch command = item.command.name
@@ -603,10 +578,27 @@ setConfigPlugin = (keyConfigSet) ->
         sendData.push [item.new, item.origin, item.mode].join(";")
     flexkbd.SetKeyConfig sendData.join("|")
 
-window.fk =
+window.andy =
+  local: null
+  setLocal: ->
+    dfd = $.Deferred()
+    chrome.storage.local.get null, (items) =>
+      unless items.config
+        items.config = {kbdtype: "JP"}
+      @local = items
+      dfd.resolve()
+    dfd.promise()
   saveConfig: (saveData) ->
-    localStorage.flexkbd = JSON.stringify saveData
-    setConfigPlugin saveData.keyConfigSet
+    chrome.storage.local.set saveData, =>
+      @local = saveData
+      setConfigPlugin @local.keyConfigSet
+  remakeCtxMenu: (saveData, spec) ->
+    dfd = $.Deferred()
+    chrome.storage.local.set saveData, =>
+      @local = saveData
+      createCtxMenus().done ->
+        dfd.resolve()
+    dfd.promise()
   getKeyCodes: ->
     JP:
       keys: keysJP
@@ -618,12 +610,11 @@ window.fk =
     scHelp
   getScHelpSect: ->
     scHelpSect
-  getConfig: ->
-    JSON.parse(localStorage.flexkbd || null) || config: {kbdtype: "JP"}
   startEdit: ->
     flexkbd.EndConfigMode()
   endEdit: ->
     flexkbd.StartConfigMode()
+  getCtxMenus: ->
 
 window.pluginEvent = (action, value) ->
   #console.log action + ": " + value
@@ -638,8 +629,6 @@ window.pluginEvent = (action, value) ->
       preOpenBookmark value
     when "command"
       execCommand value
-
-setConfigPlugin fk.getConfig().keyConfigSet
 
 scHelp = {}
 scHelpSect = {}
@@ -682,20 +671,88 @@ analyzeScHelpPage = (resp, lang) ->
       when "TABLE"
         scrapeHelp lang, sectInit, el
 
+registerCtxMenu = (dfd, ctxMenus, index) ->
+  if ctxMenu = ctxMenus[index]
+    {id, type, caption, contexts, parent} = ctxMenus[index]
+    if /pause/.test type
+      ctxData = type: "normal", enabled: false
+    else
+      ctxData = type: "normal", enabled: true
+    if caption
+      ctxData.title = caption
+      ctxData.contexts = [contexts]
+    unless parent is "root"
+      ctxData.parentId = parent
+    if /create/.test type
+      ctxData.id = id
+      chrome.contextMenus.create ctxData, ->
+        #sendResponse msg: "done"
+        registerCtxMenu dfd, ctxMenus, index + 1
+    else if /update/.test type
+      chrome.contextMenus.update id, ctxData, ->
+        #sendResponse msg: "done"
+        registerCtxMenu dfd, ctxMenus, index + 1
+  else
+    dfd.resolve()
+
+registerCtxMenuParent = (dfd, ctxMenus, index) ->
+  if ctxMenu = ctxMenus[index]
+    ctxData =
+      type: "normal"
+      id: ctxMenu.id
+      title: ctxMenu.id
+      contexts: ["all"]
+    chrome.contextMenus.create ctxData, ->
+      registerCtxMenuParent dfd, ctxMenus, index + 1
+  else
+    dfd.resolve()
+
+removeCtxMenu = (dfd, ctxMenus, index) ->
+  if ctxMenu = ctxMenus[index]
+    chrome.contextMenus.remove ctxMenu.id, ->
+      removeCtxMenu dfd, ctxMenus, index + 1
+  else
+    dfd.resolve()
+
+createCtxMenus = ->
+  if keyConfigSet = andy.local.keyConfigSet
+    dfdMain = $.Deferred()
+    chrome.contextMenus.removeAll ->
+      ctxMenus = []
+      ctxMenuParentNames = {}
+      keyConfigSet.forEach (keyConfig) ->
+        if (ctxMenu = keyConfig.ctxMenu)
+          if keyConfig.mode is "through"
+            actionType = "create pause"
+          else
+            actionType = "create"
+          ctxMenus.push
+            id: keyConfig.new
+            order: ctxMenu.order || 999
+            parent: ctxMenu.parent
+            type: actionType
+            caption: ctxMenu.caption
+            contexts: ctxMenu.contexts
+          unless ctxMenu.parent is "root"
+            ctxMenuParentNames[ctxMenu.parent] = ctxMenu.parentOrder || 999
+      ctxMenuParents = []
+      for key of ctxMenuParentNames
+        ctxMenuParents.push id: key, order: ctxMenuParentNames[key]
+      ctxMenuParents.sort (a, b) ->
+        a.order - b.order
+      ctxMenus.sort (a, b) ->
+        a.order - b.order
+      (dfd = $.Deferred()).promise()
+      registerCtxMenuParent dfd, ctxMenuParents, 0
+      dfd.done ->
+        registerCtxMenu dfdMain, ctxMenus, 0
+    dfdMain.promise()
+
 $ ->
-  if keyConfigSet = fk.getConfig().keyConfigSet
-    keyConfigSet.forEach (keyConfig) ->
-      if (ctxMenu = keyConfig.ctxMenu)
-        if keyConfig.mode is "through"
-          actionType = "create pause"
-        else
-          actionType = "create"
-        registerCtxMenu
-          id: keyConfig.new
-          type: actionType
-          caption: ctxMenu.caption
-          contexts: ctxMenu.contexts
-          ->
+  andy.setLocal().done ->
+    if keyConfigSet = andy.local.keyConfigSet
+      setConfigPlugin keyConfigSet
+      createCtxMenus()
   
   getHelp = (lang) ->
     $.get(scHelpPageUrl + lang).done (responseText) ->

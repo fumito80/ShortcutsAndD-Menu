@@ -161,6 +161,7 @@ begin
   // Exit2 --> Modifierキーが押されていない or Shiftのみ ＆ ファンクションキーじゃないとき
   if (modifierFlags in [0, 4])
     and not(scancode in [$3B..$44, $56, $57, $58])
+    and not(scancode = $15D)
     and not((keyDownState = 0) and (virtualScanCode <> 0))
     and not(scriptMode) and not(keydownMode) then
       Exit;
@@ -318,6 +319,8 @@ begin
       end else if keyConfig.mode = 'through' then begin
         Result:= False;
       end;
+      if scancode = $15D then
+        Result:= False;
     end;
   end;
 end;

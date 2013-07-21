@@ -38,7 +38,7 @@
     <form>
       <div class="panel1">Bookmark for <span class="shortcut"></span>
         <input type="text" class="query" size="20" placeholder="Get all"><button type="submit"><i class="icon-search"></i></button>
-        <label><input type="checkbox" class="expand" checked> Expand</label>
+        <label><input type="checkbox" class="expandAll" checked> Expand</label>
       </div>
     </form>
     <div class="result_outer">
@@ -62,39 +62,6 @@
       <div class="inputs"></div>
       <textarea class="content" placeholder="Content"></textarea>
       <div class="otherinput"></div>
-    </form>
-  </div>
-  <div class="popup ctxMenuOptions">
-    <i class="icon-remove" title="Cancel"></i>
-    <form>
-      <div class="panel1">
-        Context Menu for <span class="shortcut"></span>
-        <button type="submit" class="done blue"><i class="icon-ok"></i> Done</button>
-        <button class="delete"><i class="icon-trash"></i> Delete</button><br>
-      </div>
-      <div class="inputs">
-        <label>&nbsp;Menu Title:<br>
-          <input type="text" class="caption">
-        </label>
-        <fieldset>
-          <legend>Target Context</legend>
-          <label><input type="radio" name="menutype" value="page" checked="checked"> Page - Return the page URL</label><br>
-          <label><input type="radio" name="menutype" value="selection"> Selection - Return the selection text</label><br>
-          <label><input type="radio" name="menutype" value="editable"> Editable - Return the page URL or selection text</label><br>          
-          <label><input type="radio" name="menutype" value="link"> Link - Return the link URL</label><br>
-          <label><input type="radio" name="menutype" value="image"> Image - Return the image URL</label><br>
-          <label><input type="radio" name="menutype" value="all"> All - Return any of the above</label><br>
-          <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>cxtData</em>.</div>
-        </fieldset>
-        <div>Optional create under parent menu.</div>
-        <label>Parent menu:<br>
-          <select class="selectParent">
-            <option value="root">Root</option>
-            <option value="new">New parent menu</option>
-          </select>
-        </label><br>
-        <input type="text" class="parentName" placeholder="New parent menu title" disabled="disabled">
-      </div>
     </form>
   </div>
   <div class="popup bookmarkOptions">
@@ -125,6 +92,53 @@
         </label>
       </div>
     </form>
+  </div>
+  <div class="popup ctxMenuOptions">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div class="panel1">
+        Context Menu for <span class="shortcut"></span>
+        <button type="submit" class="done blue"><i class="icon-ok"></i> Done</button>
+        <button class="delete"><i class="icon-trash"></i> Delete</button>
+      </div>
+      <div class="inputs">
+        <label>&nbsp;Menu Title:<br>
+          <input type="text" class="caption">
+        </label>
+        <fieldset>
+          <legend>Target Context</legend>
+          <label><input type="radio" name="menutype" value="page" checked="checked"> <strong>Page</strong> - Return the page URL</label><br>
+          <label><input type="radio" name="menutype" value="selection"> <strong>Selection</strong> - Return the selection text</label><br>
+          <label><input type="radio" name="menutype" value="editable"> <strong>Editable</strong> - Return the page URL or selection text</label><br>          
+          <label><input type="radio" name="menutype" value="link"> <strong>Link</strong> - Return the link URL</label><br>
+          <label><input type="radio" name="menutype" value="image"> <strong>Image</strong> - Return the image URL</label><br>
+          <label><input type="radio" name="menutype" value="all"> <strong>All</strong> - Return any of the above</label><br>
+          <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>cxtData</em>.</div>
+        </fieldset>
+        <label>Parent menu title:<br>
+          <div class="editableCombo">
+            <input type="text" class="parentName" placeholder="New parent menu title">
+            <select class="selectParent"></select>
+          </div>
+        </label><br>
+        <label class="chkShowManager">
+          <input type="checkbox" value="chkShowManager"> Show Context Menu Manager when done
+        </label>
+      </div>
+    </form>
+  </div>
+  <div class="popup ctxMenuManager">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div class="panel1">Context Menu Manager</span>
+        <button type="submit" class="done blue"><i class="icon-ok"></i> Done</button>
+        <button class="delete red"><i class="icon-trash"></i> Delete</button>
+        <label><input type="checkbox" class="expandAll" checked> Expand all</label>
+      </div>
+    </form>
+    <div class="result_outer">
+      <div class="result"></div>
+    </div>
   </div>
   <div class="backscreen"></div>
   <script src="lib/underscore-min.js"></script>

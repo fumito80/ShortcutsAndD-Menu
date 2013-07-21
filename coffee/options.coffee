@@ -1,6 +1,8 @@
 gMaxItems = 100
 lastFocused = null
 keyCodes = {}
+scHelp = null
+scHelpSect = null
 keys = null
 
 WebFontConfig =
@@ -20,14 +22,6 @@ bmOpenMode =
   newwin:    "Open in new window"
   incognito: "Open in incognito window"
 
-ctxMenuIcon =
-  page: "icon-file"
-  selection: "icon-font"
-  editable: "icon-edit"
-  link: "icon-link"
-  image: "icon-picture"
-  all: "icon-asterisk"
-  
 escape = (html) ->
   entity =
   "&": "&amp;"
@@ -137,6 +131,7 @@ KeyConfigView = Backbone.View.extend
     "click button.cog"     : "onClickCog"
     "focus .new,.origin"   : "onFocusKeyInput"
     "keydown .origin"      : "onKeydownOrigin"
+    "keydown .new"         : "onKeydownNew"
     "submit  .memo"        : "onSubmitMemo"
     "blur  .selectMode"    : "onBlurSelectMode"
     "blur  .selectCog"     : "onBlurSelectCog"
@@ -174,11 +169,11 @@ KeyConfigView = Backbone.View.extend
   onChangeCommand: ->
     @onChangeMode null, "command"
   
-  onChangeCtxmenu:->
+  onChangeCtxmenu: ->
     if ctxMenu = @model.get("ctxMenu")
-      @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\nTitle: #{ctxMenu.caption}"><i class="#{ctxMenuIcon[ctxMenu.contexts]}"></i></div>"""
+      @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\nTitle: #{ctxMenu.caption}"><i class="#{tmplCtxMenus[ctxMenu.contexts][1]}"></i></div>"""
       @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu..."
-    else
+    else if @model.get("mode") isnt "disabled"
       @$("td.ctxmenu").empty()
       @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Create context menu..."
     @trigger "resizeInput"
@@ -198,7 +193,8 @@ KeyConfigView = Backbone.View.extend
           input$.tipTip()
           return
       else # Origin
-        if ~~value.substring(2) > 0x200
+        scanCode = ~~value.substring(2)
+        if scanCode > 0x200 || scanCode is 0x15D
           return
       @setKbdValue input$, value
       @model.set input$[0].className.match(/(new|origin)/)[0], value
@@ -274,7 +270,9 @@ KeyConfigView = Backbone.View.extend
     endEdit()
     false
   
-  onClickMode: ->
+  onClickMode: (event) ->
+    if event.currentTarget.getAttribute("title") is "Pause"
+      return
     if @$(".selectMode").toggle().is(":visible")
       @$(".selectMode").focus()
       @$(".mode").addClass("selecting")
@@ -442,7 +440,7 @@ KeyConfigView = Backbone.View.extend
       editOption = iconName: "icon-pencil", command: "Edit description"
     tdDesc.append @tmplDesc editOption
     if mode is "disabled"
-      @$(".addKey,.copySC,.seprater.1st,ctxmenu").remove()
+      @$(".addKey,.copySC,.seprater.1st,div.ctxmenu").remove()
     if editOption.iconName is ""
       tdDesc.find(".edit").remove()
     if pause
@@ -611,6 +609,36 @@ KeyConfigSetView = Backbone.View.extend
   onShowPopup: (name, model, options) ->
     @trigger "showPopup", name, model, options
   
+  onGetCtxMenuParents: (container) ->
+    parents = []
+    @collection.models.forEach (model) ->
+      if ctxMenu = model.get "ctxMenu"
+        unless (parent = ctxMenu.parent) is "root"
+          parents.push parent
+    container.parents = _.unique parents
+  
+  onRemakeCtxMenu: (container) ->
+    andy.remakeCtxMenu(@getSaveData()).done ->
+      container.dfd.resolve()
+
+  onGetCtxMenues: (container) ->
+    container.ctxMenus = []
+    menuParents = {}
+    @collection.models.forEach (model) ->
+      if ctxMenu = model.get "ctxMenu"
+        container.ctxMenus.push
+          id: model.id
+          caption: ctxMenu.caption
+          contexts: ctxMenu.contexts
+          parent: ctxMenu.parent
+          order: ctxMenu.order || 999
+        menuParents[ctxMenu.parent] = ctxMenu.parentOrder || 999
+    container.parents = []
+    for key of menuParents
+      container.parents.push id: key, order: menuParents[key]
+    container.ctxMenus.sort (a, b) -> a.order - b.order
+    container.parents.sort (a, b) -> a.order - b.order
+  
   # DOM Events
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
@@ -722,20 +750,21 @@ windowOnResize = ->
     $(".result_outer").getNiceScroll().resize()
   ), 200)
 
-fk = chrome.extension.getBackgroundPage().fk
-saveData = fk.getConfig()
-keyCodes = fk.getKeyCodes()
-scHelp   = fk.getScHelp()
-scHelpSect = fk.getScHelpSect()
-
 startEdit = ->
-  fk.startEdit()
+  andy.startEdit()
 
 endEdit = ->
-  fk.endEdit()
+  andy.endEdit()
+
+andy = chrome.extension.getBackgroundPage().andy
 
 $ = jQuery
 $ ->
+  keyCodes = andy.getKeyCodes()
+  scHelp   = andy.getScHelp()
+  scHelpSect = andy.getScHelpSect()
+  saveData = andy.local #fk.getConfig()
+  
   headerView = new HeaderView
     model: new Config(saveData.config)
   headerView.render()
@@ -750,20 +779,24 @@ $ ->
   commandsView = new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
   ctxMenuOptionsView = new CtxMenuOptionsView {}
+  ctxMenuManagerView = new CtxMenuManagerView {}
   
   headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
+  ctxMenuOptionsView.on "getCtxMenuParents", keyConfigSetView.onGetCtxMenuParents, keyConfigSetView
+  ctxMenuOptionsView.on "remakeCtxMenu"    , keyConfigSetView.onRemakeCtxMenu    , keyConfigSetView
+  ctxMenuManagerView.on "getCtxMenues"     , keyConfigSetView.onGetCtxMenues     , keyConfigSetView
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action
       when "kbdEvent"
         keyConfigSetView.collection.trigger "kbdEvent", request.value
       when "saveConfig"
-        fk.saveConfig keyConfigSetView.getSaveData()
+        andy.saveConfig keyConfigSetView.getSaveData()
   
   $(window)
     .on "unload", ->
-      fk.saveConfig keyConfigSetView.getSaveData()
+      andy.saveConfig keyConfigSetView.getSaveData()
     .on "resize", ->
       windowOnResize()
     .on "click", ->

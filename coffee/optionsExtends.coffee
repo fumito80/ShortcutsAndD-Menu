@@ -5,16 +5,13 @@ commandOptionsView = null
 ctxMenuOptionsView = null
 
 PopupBaseView = Backbone.View.extend
-
   initialize: (options) ->
     keyConfigSetView.on "showPopup", @onShowPopup, @
-  
   events:
     "submit form"        : "onSubmitForm"
     "click  .icon-remove": "onClickIconRemove"
-  
   render: -> # Virtual
-  
+  onSubmitForm: -> # Virtual
   onShowPopup: (name, model, options) ->
     unless name is @name
       return false
@@ -27,26 +24,90 @@ PopupBaseView = Backbone.View.extend
       cursor: "move"
       delay: 200
       cancel: "input,textarea,button,select,option,.bookmarkPanel"
-      stop: => @onStopSort()
+      stop: => @onStopDrag()
     @el.style.pixelLeft = Math.round((window.innerWidth  - @el.offsetWidth)  / 2)
     @el.style.pixelTop  = Math.round((window.innerHeight - @el.offsetHeight) / 2)
     @$(".caption").focus()
     $(".backscreen").show()
-  
-  onStopSort: -> # Virtual
-  
+  onStopDrag: -> # Virtual
   onClickIconRemove: ->
     @hidePopup()
-  
   hidePopup: ->
     $(".backscreen").hide()
     @$el.hide()
-  
   tmplHelp: _.template """
     <a href="helpview.html#<%=name%>" target="_blank" class="help" title="help">
       <i class="icon-question-sign" title="Help"></i>
     </a>
     """
+
+class EditableBaseView extends PopupBaseView
+  onShowPopup: (name, model, options) ->
+    unless super(name, model, options)
+      return false
+    startEdit()
+  hidePopup: ->
+    endEdit()
+    super()
+
+class ExplorerBaseView extends PopupBaseView
+  events: _.extend
+    "click .title"      : "onClickFolder"
+    "click .expand-icon": "onClickExpandIcon"
+    "click .expandAll"  : "onClickExpandAll"
+    PopupBaseView.prototype.events
+  constructor: (options) ->
+    super(options)
+    ctx = document.getCSSCanvasContext('2d', 'triangle', 8, 5.5);
+    ctx.fillStyle = '#000000'
+    ctx.translate(.5, .5)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(0, 1)
+    ctx.lineTo(3.5, 4.5)
+    ctx.lineTo(7, 1)
+    ctx.lineTo(7, 0)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+    @$(".result_outer").niceScroll
+      cursorwidth: 12
+      cursorborderradius: 6
+      smoothscroll: true
+      cursoropacitymin: .1
+      cursoropacitymax: .6
+    @elResult$ = @$(".result")
+  onShowPopup: (name, model, options) ->
+    unless super(name, model, options)
+      return false
+    @$(".result_outer").getNiceScroll().show()
+  onStopDrag: ->
+    @$(".result_outer").getNiceScroll().resize()
+  hidePopup: ->
+    @$(".result_outer").getNiceScroll().hide()
+    super()
+  onClickFolder: (event) ->
+    visible = (target$ = $(event.currentTarget).parent()).hasClass("opened")
+    if visible
+      target$.removeClass("opened expanded")
+    else
+      target$.addClass("opened expanded")
+    windowOnResize()
+    event.stopPropagation()
+  onClickExpandIcon: (event) ->
+    expanded = (target$ = $(event.currentTarget).parent()).hasClass("expanded")
+    if expanded
+      target$.removeClass("expanded")
+    else
+      target$.addClass("expanded")
+    windowOnResize()
+    event.stopPropagation()
+  onClickExpandAll: ->
+    if @$(".expandAll").is(":checked")
+      @$(".folder").addClass("opened expanded")
+    else
+      @$(".folder").removeClass("opened expanded")
+    windowOnResize()
 
 commandsDisp =
   createTab:      ["tab", "Create new tab"]
@@ -88,7 +149,7 @@ catnames =
   clip: "Clipboard commands"
   custom: "Other"
 
-class CommandOptionsView extends PopupBaseView
+class CommandOptionsView extends EditableBaseView
   name: "commandOptions"
   el: ".commandOptions"
   constructor: (options) ->
@@ -117,7 +178,6 @@ class CommandOptionsView extends PopupBaseView
       @$(".content").focus()[0].setSelectionRange(0, 0)
     else
       @$(".caption").focus()
-    startEdit()
   onSubmitForm: ->
     unless (content = @$(".content").val()) is ""
       options = {}
@@ -138,9 +198,6 @@ class CommandOptionsView extends PopupBaseView
         .trigger "change:command"
       @hidePopup()
     false
-  hidePopup: ->
-    endEdit()
-    super()
   tmplOptions: _.template """
     <label>
       <input type="checkbox" value="<%=value%>" <%=checked%>> <%=caption%>
@@ -150,7 +207,6 @@ class CommandOptionsView extends PopupBaseView
 class CommandsView extends PopupBaseView
   name: "command"
   el: ".commands"
-  
   render: ->
     target$ = @$(".commandRadios")
     target$.empty()
@@ -166,13 +222,11 @@ class CommandsView extends PopupBaseView
           key: key
           value: commandsDisp[key][1]
     @
-  
   onShowPopup: (name, model, options) ->
     unless super(name, model)
       return
     @$(".radioCommand").val [options.name] if options
     @$el.append @tmplHelp @
-  
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
       @hidePopup()
@@ -183,7 +237,6 @@ class CommandsView extends PopupBaseView
           .set({"command": name: command}, {silent: true})
           .trigger "change:command"
     false
-
   tmplItem: _.template """
     <div>
       <label>
@@ -193,7 +246,7 @@ class CommandsView extends PopupBaseView
     </div>
     """
 
-class BookmarkOptionsView extends PopupBaseView
+class BookmarkOptionsView extends EditableBaseView
   name: "bookmarkOptions"
   el:   ".bookmarkOptions"
   events: _.extend
@@ -214,10 +267,6 @@ class BookmarkOptionsView extends PopupBaseView
     (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @options.findtab) is undefined then true else findtab
     @onClickFindTab currentTarget: elFindtab
     @$el.append @tmplHelp @
-  onShowPopup: (name, model, options) ->
-    unless super(name, model, options)
-      return
-    startEdit()
   onSubmitForm: ->
     options = {}
     $.each @$("form input[type='checkbox']"), (i, option) =>
@@ -244,42 +293,13 @@ class BookmarkOptionsView extends PopupBaseView
       @$(".findStr").removeAttr("disabled")
     else
       @$(".findStr").attr("disabled", "disabled").blur()
-  hidePopup: ->
-    endEdit()
-    super()
 
-class BookmarksView extends PopupBaseView
+class BookmarksView extends ExplorerBaseView
   name: "bookmark"
   el: ".bookmarks"
   events: _.extend
-    "click  a"           : "onClickBookmark"
-    "click  .title"      : "onClickFolder"
-    "click  .expand-icon": "onClickExpandIcon"
-    "click  .expand"     : "onClickExpand"
-    PopupBaseView.prototype.events
-  
-  constructor: (options) ->
-    super(options)
-    @elBookmark$ = @$(".result")
-    ctx = document.getCSSCanvasContext('2d', 'triangle', 8, 5.5);
-    ctx.fillStyle = '#000000'
-    ctx.translate(.5, .5)
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(0, 1)
-    ctx.lineTo(3.5, 4.5)
-    ctx.lineTo(7, 1)
-    ctx.lineTo(7, 0)
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-    @$(".result_outer").niceScroll
-      cursorwidth: 12
-      cursorborderradius: 6
-      smoothscroll: true
-      cursoropacitymin: .1
-      cursoropacitymax: .6
-  
+    "click  a": "onClickBookmark"
+    ExplorerBaseView.prototype.events
   render: ->
     height = window.innerHeight - 60
     @$(".result_outer").height(height - 35)
@@ -287,55 +307,26 @@ class BookmarksView extends PopupBaseView
     if @$(".result").children().length is 0
       @onSubmitForm()
     @
-  
-  onClickFolder: (event) ->
-    visible = (target$ = $(event.currentTarget).parent()).hasClass("opened")
-    if visible
-      target$.removeClass("opened expanded")
-    else
-      target$.addClass("opened expanded")
-    windowOnResize()
-    event.stopPropagation()
-  
-  onClickExpandIcon: (event) ->
-    expanded = (target$ = $(event.currentTarget).parent()).hasClass("expanded")
-    if expanded
-      target$.removeClass("expanded")
-    else
-      target$.addClass("expanded")
-    windowOnResize()
-    event.stopPropagation()
-  
-  onClickExpand: ->
-    if @$(".expand").is(":checked")
-      @$(".folder").addClass("opened expanded")
-    else
-      @$(".folder").removeClass("opened expanded")
-    windowOnResize()
-  
   onShowPopup: (name, model) ->
     unless super(name, model)
       return
     if (target = @$("input.query")).val()
       target.focus()
-    @$(".result_outer").getNiceScroll().show()
-  
   onSubmitForm: ->
     @$(".result").empty()
     query = @$("input.query").focus().val()
     if query
-      @$(".expand")[0].checked = true
-    state = if @$(".expand").is(":checked") then "opened expanded" else ""
+      @$(".expandAll")[0].checked = true
+    state = if @$(".expandAll").is(":checked") then "opened expanded" else ""
     chrome.bookmarks.getTree (treeNode) =>
       treeNode.forEach (node) =>
-        @digBookmarks node, @elBookmark$, query, 0, state
-      @elBookmark$.append recent = $(@tmplFolder("title": "Recent", "state": state, "indent": 0))
+        @digBookmarks node, @elResult$, query, 0, state
+      @elResult$.append recent = $(@tmplFolder("title": "Recent", "state": state, "indent": 0))
       recent.find(".title").prepend """<img src="images/star.png">"""
       chrome.bookmarks.getRecent 50, (treeNode) =>
         treeNode.forEach (node) =>
           @digBookmarks node, recent, query, 1, state
     false
-  
   digBookmarks: (node, parent, query, indent, state) ->
     if node.title
       node.state = state
@@ -353,11 +344,6 @@ class BookmarksView extends PopupBaseView
       parent.parent().addClass("hasFolder")
       node.children.forEach (child) =>
         @digBookmarks child, parent, query, indent + 1, state
-  
-  hidePopup: ->
-    @$(".result_outer").getNiceScroll().hide()
-    super()
-  
   onClickBookmark: (event) ->
     @hidePopup()
     target = $(event.currentTarget)
@@ -366,28 +352,34 @@ class BookmarksView extends PopupBaseView
       url:   target.attr("title")
       bmId:  target.attr("data-id")
     false
-  
-  onStopSort: ->
-    @$(".result_outer").getNiceScroll().resize()
-  
   tmplFolder: _.template """
     <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
       <span class="expand-icon"></span><span class="title"><%=title%></span>
     </div>
     """
-
   tmplLink: _.template """
     <div class="link" style="text-indent:<%=indent%>em;">
       <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);"><%=title%></a>
     </div>
     """
 
-class CtxMenuOptionsView extends PopupBaseView
+tmplCtxMenus =
+  page:      ["Return the page URL", "icon-file"]
+  selection: ["Return the selection text", "icon-font"]
+  editable:  ["Return the page URL or selection text", "icon-edit"]
+  link:      ["Return the link URL", "icon-link"]
+  image:     ["Return the image URL", "icon-picture"]
+  all:       ["Return any of the above", "icon-asterisk"]
+
+class CtxMenuOptionsView extends EditableBaseView
   name: "ctxMenuOptions"
   el: ".ctxMenuOptions"
   events: _.extend
     "click  .done,.delete": "onClickSubmit"
-    "change .selectParent": "onClickSelectParent"
+    "change .selectParent": "onChangeSelectParent"
+    "click  .selectParent": "onClickSelectParent"
+    "focus  .parentName"  : "onFocusParentName"
+    "blur   .parentName"  : "onBlurParentName"
     PopupBaseView.prototype.events
   render: ->
     @ctxMenu = @model.get "ctxMenu"
@@ -395,24 +387,35 @@ class CtxMenuOptionsView extends PopupBaseView
     @$el.append @tmplHelp @
     @$("input[value='#{(@ctxMenu?.contexts || 'page')}']")[0].checked = true
     if @ctxMenu
-      @$(".delete").removeClass("disabled").removeAttr("disabled")
+      @$(".delete").addClass("red").removeClass("disabled").removeAttr("disabled")
     else
-      @$(".delete").addClass("disabled").attr("disabled", "disabled")
-    if (selectParent$ = @$(".selectParent")).val() is "new"
+      @$(".delete").removeClass("red").addClass("disabled").attr("disabled", "disabled")
+    lastParent = (selectParent$ = @$(".selectParent")).val()
+    @trigger "getCtxMenuParents", container = {}
+    selectParent$.html @tmplParentMenu
+    container.parents.forEach (parentName) ->
+      selectParent$.append """<option value="#{parentName}">#{parentName}</option>"""
+    if parent = @ctxMenu?.parent
+      selectParent$.val parent
+    else if lastParent in container.parents
+      selectParent$.val lastParent
+    else
       selectParent$.val "root"
-      @$(".parentName").attr("disabled", "disabled")
-  onShowPopup: (name, model, options) ->
-    unless super(name, model, options)
-      return
-    startEdit()
-  onClickSelectParent: (event) ->
+    @$(".parentName").val("").hide()
+  onChangeSelectParent: (event) ->
     if event.currentTarget.value isnt "new"
-      @$(".parentName").attr("disabled", "disabled").blur()
+      @$(".parentName").hide()
     else
-      @$(".parentName").removeAttr("disabled").focus()
+      @$(".parentName").show().focus()
+  onClickSelectParent: (event) ->
+    event.preventDefault()
+  onFocusParentName: (event) ->
+    @$(".selectParent").addClass "focus"
+  onBlurParentName: ->
+    @$(".selectParent").removeClass "focus"
   onSubmitForm: ->
     false
-  setContextMenu: (actionType, id, caption, contexts, callback = ->) ->
+  setContextMenu: (actionType, id, caption, contexts, parentName, callback = ->) ->
     sendData =
       type: actionType
       id: id
@@ -420,38 +423,88 @@ class CtxMenuOptionsView extends PopupBaseView
     if caption && contexts
       sendData.caption = caption
       sendData.contexts = contexts
+      sendData.parent = parentName
     chrome.runtime.sendMessage sendData, callback
   pause: (id) ->
     @setContextMenu "update pause", id
   resume: (id) ->
     @setContextMenu "update", id
   onClickSubmit: (event) ->
+    if (parentName = @$(".selectParent").val()) is "new"
+      parentName = $.trim @$(".parentName").val()
+    if parentName is ""
+      return
     unless (caption = @$(".caption").val()) is ""
       menutype = @$("input[name='menutype']:checked").attr("value")
-      #that = this
       if /delete/.test event?.currentTarget.className
         unless confirm "Are you sure you want to delete this Context Menu?"
           return false
-        actionType = "delete"
-        callback = (resp) ->
-          if resp.msg is "done"
-            @model.unset("ctxMenu")
-            @hidePopup()
-          else
-            alert resp.msg
+        @model.unset("ctxMenu")
       else
-        callback = (resp) ->
-          if resp.msg is "done"
-            @model.set("ctxMenu", caption: caption, contexts: menutype)
-            @hidePopup()
-          else
-            alert resp.msg
-        if @ctxMenu
-          actionType = "update"
-        else
-          actionType = "create"
-      @setContextMenu actionType, @model.id, caption, menutype, callback.bind(@)
+        @model.set("ctxMenu", caption: caption, contexts: menutype, parent: parentName)
+      (dfd = $.Deferred()).promise()
+      @trigger "remakeCtxMenu", dfd: dfd
+      dfd.done =>
+        @hidePopup()
+        if @$("input[value='chkShowManager']").is(":checked")
+          @trigger "showPopup", "ctxMenuManager", @model
     false
-  hidePopup: ->
-    endEdit()
-    super()
+  tmplParentMenu: """
+    <option value="root">None(Root)</option>
+    <option value="new">Create under new parent menu...</option>
+    """
+  tmplContexts: _.template """
+    <label>
+      <input type="radio" name="menutype" value="<%=value%>"> <strong><%=caption%></strong> - <%=desc%>
+    </label><br>
+    """
+
+class CtxMenuManagerView extends ExplorerBaseView
+  name: "ctxMenuManager"
+  el: ".ctxMenuManager"
+  events: _.extend
+    "click  a": "onClickBookmark"
+    ExplorerBaseView.prototype.events
+  constructor: (options) ->
+    super(options)
+    ctxMenuOptionsView.on "showPopup", @onShowPopup, @
+  render: ->
+    height = window.innerHeight - 60 #height
+    @$(".result_outer").height(height - 35)
+    @$el.height(height)
+    #@$el.css("max-height", maxHeight + "px")
+    @setContextMenu()
+    @
+  onShowPopup: (name, model) ->
+    unless super(name, model)
+      return
+  setContextMenu: ->
+    @$(".result").empty()
+    @trigger "getCtxMenues", container = {}
+    for key of tmplCtxMenus
+      if _.find(container.ctxMenus, (ctxMenu) -> ctxMenu.contexts is key)
+        @elResult$.append context$ = $(@tmplContexts
+          "contexts": key
+          "dispname": key.substring(0, 1).toUpperCase() + key.substring(1)
+          "icon": tmplCtxMenus[key][1]
+          )
+        container.parents.forEach (parentMenu) =>
+          context$.append folder$ = $(@tmplFolder "id" : parentMenu.id)
+          folder$[0].ctxParent = parentMenu.id
+    container.ctxMenus.forEach (ctxMenu) =>
+      $.each @$("." + ctxMenu.contexts + " .folder"), (i, el) =>
+        if el.ctxParent is ctxMenu.parent
+          $(el).append @tmplMenuItem id: ctxMenu.id, caption: ctxMenu.caption
+  tmplContexts: _.template """
+    <div class="contexts <%=contexts%>">
+      <span class="expand-icon"></span><span class="contexts"><i class="<%=icon%> contextIcon"></i><%=dispname%></span>
+    </div>
+    """
+  tmplFolder: _.template """
+    <div class="folder parent opened expanded">
+      <span class="expand-icon"></span><span class="title"><%=id%></span>
+    </div>
+    """
+  tmplMenuItem: _.template """
+    <div class="ctxMenuItem" id="<%=id%>"><%=caption%></div>
+    """

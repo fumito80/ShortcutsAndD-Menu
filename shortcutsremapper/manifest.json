@@ -19,6 +19,7 @@
   "permissions": [
     "*://*/*",
     "chrome://favicon/*",
+    "storage",
     "contextMenus",
     "bookmarks",
     "cookies",

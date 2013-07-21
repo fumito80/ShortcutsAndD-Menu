@@ -53,6 +53,7 @@ keyIdentifiers_cmn =
   "PageUp"   : ["PageUp"]
   "CapsLock" : ["Caps Lock", "Caps Lock"]
   #"U+00F0"   : ["Caps Lock"]
+  #"U+005D"   : ["Application"]
 
 keyIdentifiers = {}
 keyIdentifiers.US = _.extend
