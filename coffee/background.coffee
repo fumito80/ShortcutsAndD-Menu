@@ -585,6 +585,8 @@ window.andy =
     chrome.storage.local.get null, (items) =>
       unless items.config
         items.config = {kbdtype: "JP"}
+      unless items.ctxMenuFolderSet
+        items.ctxMenuFolderSet = []
       @local = items
       dfd.resolve()
     dfd.promise()
@@ -592,7 +594,7 @@ window.andy =
     chrome.storage.local.set saveData, =>
       @local = saveData
       setConfigPlugin @local.keyConfigSet
-  remakeCtxMenu: (saveData, spec) ->
+  remakeCtxMenu: (saveData) ->
     dfd = $.Deferred()
     chrome.storage.local.set saveData, =>
       @local = saveData
@@ -673,7 +675,7 @@ analyzeScHelpPage = (resp, lang) ->
 
 registerCtxMenu = (dfd, ctxMenus, index) ->
   if ctxMenu = ctxMenus[index]
-    {id, type, caption, contexts, parent} = ctxMenus[index]
+    {id, type, caption, contexts, parentId} = ctxMenus[index]
     if /pause/.test type
       ctxData = type: "normal", enabled: false
     else
@@ -681,47 +683,42 @@ registerCtxMenu = (dfd, ctxMenus, index) ->
     if caption
       ctxData.title = caption
       ctxData.contexts = [contexts]
-    unless parent is "root"
-      ctxData.parentId = parent
+    unless parentId is "route"
+      ctxData.parentId = parentId
     if /create/.test type
       ctxData.id = id
       chrome.contextMenus.create ctxData, ->
-        #sendResponse msg: "done"
         registerCtxMenu dfd, ctxMenus, index + 1
     else if /update/.test type
       chrome.contextMenus.update id, ctxData, ->
-        #sendResponse msg: "done"
         registerCtxMenu dfd, ctxMenus, index + 1
-  else
-    dfd.resolve()
-
-registerCtxMenuParent = (dfd, ctxMenus, index) ->
-  if ctxMenu = ctxMenus[index]
-    ctxData =
-      type: "normal"
-      id: ctxMenu.id
-      title: ctxMenu.id
-      contexts: ["all"]
-    chrome.contextMenus.create ctxData, ->
-      registerCtxMenuParent dfd, ctxMenus, index + 1
-  else
-    dfd.resolve()
-
-removeCtxMenu = (dfd, ctxMenus, index) ->
-  if ctxMenu = ctxMenus[index]
-    chrome.contextMenus.remove ctxMenu.id, ->
-      removeCtxMenu dfd, ctxMenus, index + 1
   else
     dfd.resolve()
 
 createCtxMenus = ->
   if keyConfigSet = andy.local.keyConfigSet
+    ctxMenuFolderSet = andy.local.ctxMenuFolderSet
     dfdMain = $.Deferred()
     chrome.contextMenus.removeAll ->
       ctxMenus = []
-      ctxMenuParentNames = {}
       keyConfigSet.forEach (keyConfig) ->
         if (ctxMenu = keyConfig.ctxMenu)
+          unless ctxMenu.parentId is "route"
+            existsFolder = false
+            for i in [0...ctxMenus.length]
+              if ctxMenus[i].id is ctxMenu.parentId
+                existsFolder = true
+            unless existsFolder
+              for i in [0...ctxMenuFolderSet.length]
+                if ctxMenuFolderSet[i].id is ctxMenu.parentId
+                  folder = ctxMenuFolderSet[i]
+                  ctxMenus.push
+                    id: folder.id
+                    order: ctxMenu.order || 999
+                    parentId: "route"
+                    type: "create"
+                    caption: folder.title
+                    contexts: folder.contexts
           if keyConfig.mode is "through"
             actionType = "create pause"
           else
@@ -729,23 +726,12 @@ createCtxMenus = ->
           ctxMenus.push
             id: keyConfig.new
             order: ctxMenu.order || 999
-            parent: ctxMenu.parent
+            parentId: ctxMenu.parentId
             type: actionType
             caption: ctxMenu.caption
             contexts: ctxMenu.contexts
-          unless ctxMenu.parent is "root"
-            ctxMenuParentNames[ctxMenu.parent] = ctxMenu.parentOrder || 999
-      ctxMenuParents = []
-      for key of ctxMenuParentNames
-        ctxMenuParents.push id: key, order: ctxMenuParentNames[key]
-      ctxMenuParents.sort (a, b) ->
-        a.order - b.order
-      ctxMenus.sort (a, b) ->
-        a.order - b.order
-      (dfd = $.Deferred()).promise()
-      registerCtxMenuParent dfd, ctxMenuParents, 0
-      dfd.done ->
-        registerCtxMenu dfdMain, ctxMenus, 0
+      ctxMenus.sort (a, b) -> a.order - b.order
+      registerCtxMenu dfdMain, ctxMenus, 0
     dfdMain.promise()
 
 $ ->

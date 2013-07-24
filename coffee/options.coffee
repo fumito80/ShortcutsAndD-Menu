@@ -68,6 +68,7 @@ HeaderView = Backbone.View.extend
   
   events:
     "click button.addKeyConfig": "onClickAddKeyConfig"
+    "click .ctxmgr"            : "onClickCtxmgr"
     "change select.kbdtype"    : "onChangeSelKbd"
   
   initialize: (options) ->
@@ -83,6 +84,9 @@ HeaderView = Backbone.View.extend
   onClickAddKeyConfig: (event) ->
     @trigger "clickAddKeyConfig", (event)
 
+  onClickCtxmgr: ->
+    @trigger "showPopup", "ctxMenuManager"
+  
   onChangeSelKbd: (event) ->
     @trigger "changeSelKbd", (event)
     @setScHelp @$("select.kbdtype").val()
@@ -102,14 +106,14 @@ HeaderView = Backbone.View.extend
         .text("Keyboard shortcuts")
         .attr "href", @scHelpUrl + "en"
   
-Config = Backbone.Model.extend({})
+Config = Backbone.Model.extend {}
 
 KeyConfig = Backbone.Model.extend
   idAttribute: "new"
   defaults:
     mode: "remap"
 
-KeyConfigSet = Backbone.Collection.extend(model: KeyConfig)
+KeyConfigSet = Backbone.Collection.extend model: KeyConfig
 
 KeyConfigView = Backbone.View.extend
 
@@ -171,6 +175,9 @@ KeyConfigView = Backbone.View.extend
   
   onChangeCtxmenu: ->
     if ctxMenu = @model.get("ctxMenu")
+      unless ctxMenu.parentId is "route"
+        @model.collection.trigger "getCtxMenuContexts", container = parentId: ctxMenu.parentId
+        ctxMenu.contexts = container.contexts
       @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\nTitle: #{ctxMenu.caption}"><i class="#{tmplCtxMenus[ctxMenu.contexts][1]}"></i></div>"""
       @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu..."
     else if @model.get("mode") isnt "disabled"
@@ -520,7 +527,7 @@ KeyConfigSetView = Backbone.View.extend
     "click .addnew": "onClickAddnew"
     "blur  .addnew": "onBlurAddnew"
     "click": "onClickBlank"
-    
+  
   initialize: (options) ->
     @collection.comparator = (model) ->
       model.get("ordernum")
@@ -609,13 +616,13 @@ KeyConfigSetView = Backbone.View.extend
   onShowPopup: (name, model, options) ->
     @trigger "showPopup", name, model, options
   
-  onGetCtxMenuParents: (container) ->
-    parents = []
-    @collection.models.forEach (model) ->
-      if ctxMenu = model.get "ctxMenu"
-        unless (parent = ctxMenu.parent) is "root"
-          parents.push parent
-    container.parents = _.unique parents
+  #onGetCtxMenuParents: (container) ->
+  #  parents = []
+  #  @collection.models.forEach (model) ->
+  #    if ctxMenu = model.get "ctxMenu"
+  #      unless (parent = ctxMenu.parent) is "route"
+  #        parents.push parent
+  #  container.parents = _.unique parents
   
   onRemakeCtxMenu: (container) ->
     andy.remakeCtxMenu(@getSaveData()).done ->
@@ -623,21 +630,15 @@ KeyConfigSetView = Backbone.View.extend
 
   onGetCtxMenues: (container) ->
     container.ctxMenus = []
-    menuParents = {}
     @collection.models.forEach (model) ->
       if ctxMenu = model.get "ctxMenu"
         container.ctxMenus.push
           id: model.id
           caption: ctxMenu.caption
           contexts: ctxMenu.contexts
-          parent: ctxMenu.parent
+          parentId: ctxMenu.parentId
           order: ctxMenu.order || 999
-        menuParents[ctxMenu.parent] = ctxMenu.parentOrder || 999
-    container.parents = []
-    for key of menuParents
-      container.parents.push id: key, order: menuParents[key]
     container.ctxMenus.sort (a, b) -> a.order - b.order
-    container.parents.sort (a, b) -> a.order - b.order
   
   # DOM Events
   onClickAddKeyConfig: (event) ->
@@ -650,7 +651,6 @@ KeyConfigSetView = Backbone.View.extend
     newItem$ = $(@tmplAddNew placeholder: @placeholder)
     @$("tbody")[0].insertBefore newItem$[0], lastFocused
     newItem$.find(".addnew").focus()[0].scrollIntoViewIfNeeded()
-    #$(@tmplAddNew placeholder: @placeholder).appendTo(@$("tbody")).find(".addnew").focus()[0].scrollIntoView()
     @$("tbody").sortable "disable"
     windowOnResize()
   
@@ -693,6 +693,7 @@ KeyConfigSetView = Backbone.View.extend
   getSaveData: ->
     @collection.remove @collection.findWhere new: @placeholder
     config: @model.toJSON()
+    ctxMenuFolderSet: ctxMenuManagerView.collection.sort().toJSON()
     keyConfigSet: @collection.toJSON()
   
   tmplAddNew: _.template """
@@ -763,29 +764,38 @@ $ ->
   keyCodes = andy.getKeyCodes()
   scHelp   = andy.getScHelp()
   scHelpSect = andy.getScHelpSect()
-  saveData = andy.local #fk.getConfig()
+  saveData = andy.local
   
   headerView = new HeaderView
     model: new Config(saveData.config)
   headerView.render()
   
+  keyConfigSet = new KeyConfigSet()
   keyConfigSetView = new KeyConfigSetView
     model: new Config(saveData.config)
-    collection: new KeyConfigSet()
-  keyConfigSetView.render(saveData.keyConfigSet)
+    collection: keyConfigSet
   
   bookmarksView = new BookmarksView {}
   bookmarkOptionsView = new BookmarkOptionsView {}
   commandsView = new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
-  ctxMenuOptionsView = new CtxMenuOptionsView {}
-  ctxMenuManagerView = new CtxMenuManagerView {}
+  ctxMenuFolderSet = new CtxMenuFolderSet()
+  ctxMenuOptionsView = new CtxMenuOptionsView
+    collection: ctxMenuFolderSet
+  ctxMenuManagerView = new CtxMenuManagerView
+    collection: ctxMenuFolderSet
   
   headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  ctxMenuOptionsView.on "getCtxMenuParents", keyConfigSetView.onGetCtxMenuParents, keyConfigSetView
-  ctxMenuOptionsView.on "remakeCtxMenu"    , keyConfigSetView.onRemakeCtxMenu    , keyConfigSetView
-  ctxMenuManagerView.on "getCtxMenues"     , keyConfigSetView.onGetCtxMenues     , keyConfigSetView
+  #ctxMenuOptionsView.on "getCtxMenuParents", keyConfigSetView.onGetCtxMenuParents, keyConfigSetView
+  ctxMenuOptionsView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
+  ctxMenuOptionsView.on "remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView
+  ctxMenuManagerView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
+  ctxMenuManagerView.on "remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView
+  keyConfigSet.on "getCtxMenuContexts" , ctxMenuManagerView.onGetCtxMenuContexts, ctxMenuManagerView
+  
+  ctxMenuFolderSet.reset saveData.ctxMenuFolderSet
+  keyConfigSetView.render(saveData.keyConfigSet)
   
   chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     switch request.action

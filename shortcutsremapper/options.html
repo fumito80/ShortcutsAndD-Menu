@@ -18,6 +18,7 @@
     <select class="kbdtype"></select>
     <a href="#" target="_blank" class="scHelp"></a>
     <a href="helpview.html" target="_blank" class="helpview">ヘルプ</a>
+    <button class="ctxmgr"><i <i class="icon-reorder"></i> Context Menu mgr</button>
     <button class="addKeyConfig"><i class="icon-plus-sign"></i> Add new</button>
   </div>
   <div class="fixed-table-container">
@@ -107,12 +108,12 @@
         </label>
         <fieldset>
           <legend>Target Context</legend>
-          <label><input type="radio" name="menutype" value="page" checked="checked"> <strong>Page</strong> - Return the page URL</label><br>
-          <label><input type="radio" name="menutype" value="selection"> <strong>Selection</strong> - Return the selection text</label><br>
-          <label><input type="radio" name="menutype" value="editable"> <strong>Editable</strong> - Return the page URL or selection text</label><br>          
-          <label><input type="radio" name="menutype" value="link"> <strong>Link</strong> - Return the link URL</label><br>
-          <label><input type="radio" name="menutype" value="image"> <strong>Image</strong> - Return the image URL</label><br>
-          <label><input type="radio" name="menutype" value="all"> <strong>All</strong> - Return any of the above</label><br>
+          <label><input type="radio" name="ctxType" value="page" checked="checked"> <strong>Page</strong> - Return the page URL</label><br>
+          <label><input type="radio" name="ctxType" value="selection"> <strong>Selection</strong> - Return the selection text</label><br>
+          <label><input type="radio" name="ctxType" value="editable"> <strong>Editable</strong> - Return the page URL or selection text</label><br>          
+          <label><input type="radio" name="ctxType" value="link"> <strong>Link</strong> - Return the link URL</label><br>
+          <label><input type="radio" name="ctxType" value="image"> <strong>Image</strong> - Return the image URL</label><br>
+          <label><input type="radio" name="ctxType" value="all"> <strong>All</strong> - Return any of the above</label><br>
           <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>cxtData</em>.</div>
         </fieldset>
         <label>Parent menu title:<br>
@@ -121,9 +122,10 @@
             <select class="selectParent"></select>
           </div>
         </label><br>
+        <!--
         <label class="chkShowManager">
-          <input type="checkbox" value="chkShowManager"> Show Context Menu Manager when done
-        </label>
+          <input type="checkbox" value="chkShowManager" checked> Show Context Menu Manager when done
+        </label>-->
       </div>
     </form>
   </div>
@@ -131,14 +133,29 @@
     <i class="icon-remove" title="Cancel"></i>
     <form>
       <div class="panel1">Context Menu Manager</span>
-        <button type="submit" class="done blue"><i class="icon-ok"></i> Done</button>
+        <button class="done blue"><i class="icon-ok"></i> Done</button>
+        <!--
+        <ul class="button-bar">
+        <li class="first"><a href=""><i class="icon-plus"></i> New</a></li>
+        <li><a href=""><i class="icon-pencil"></i> Rename</a></li>
+        <li><a href=""><i class="icon-undo"></i> UndoAll</a></li>
+        <li class="last"><a href=""><i class="icon-trash"></i> Delete</a></li>
+        </ul> 
         <button class="delete red"><i class="icon-trash"></i> Delete</button>
         <label><input type="checkbox" class="expandAll" checked> Expand all</label>
+        -->
       </div>
     </form>
     <div class="result_outer">
       <div class="result"></div>
     </div>
+    <div class="editButtons">
+      <button class="newmenu small"><i class="icon-plus"></i> Add Menu</a></button><br>
+      <button class="newfolder small"><i class="icon-folder-close-alt"></i> Add Folder</a></button><br>
+      <button class="rename small"><i class="icon-pencil"></i> Rename</a></button><br><br>
+      <button class="remove small"><i class="icon-trash"></i> Remove</a></button>
+    </div>
+    <div class="undobuf"></div>
   </div>
   <div class="backscreen"></div>
   <script src="lib/underscore-min.js"></script>
