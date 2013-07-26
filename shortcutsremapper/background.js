@@ -1168,51 +1168,53 @@
       ctxMenuFolderSet = andy.local.ctxMenuFolderSet;
       dfdMain = $.Deferred();
       chrome.contextMenus.removeAll(function() {
-        var ctxMenus;
-        ctxMenus = [];
+        var ctxMenus, targetCtxMenus;
+        targetCtxMenus = [];
         keyConfigSet.forEach(function(keyConfig) {
-          var actionType, ctxMenu, existsFolder, folder, i, _i, _j, _ref, _ref1;
+          var ctxMenu;
           if ((ctxMenu = keyConfig.ctxMenu)) {
-            if (ctxMenu.parentId !== "route") {
-              existsFolder = false;
-              for (i = _i = 0, _ref = ctxMenus.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
-                if (ctxMenus[i].id === ctxMenu.parentId) {
-                  existsFolder = true;
-                }
-              }
-              if (!existsFolder) {
-                for (i = _j = 0, _ref1 = ctxMenuFolderSet.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-                  if (ctxMenuFolderSet[i].id === ctxMenu.parentId) {
-                    folder = ctxMenuFolderSet[i];
-                    ctxMenus.push({
-                      id: folder.id,
-                      order: ctxMenu.order || 999,
-                      parentId: "route",
-                      type: "create",
-                      caption: folder.title,
-                      contexts: folder.contexts
-                    });
-                  }
-                }
-              }
-            }
+            ctxMenu.id = keyConfig.id;
+            ctxMenu.order = ctxMenu.order || 999;
             if (keyConfig.mode === "through") {
-              actionType = "create pause";
+              ctxMenu.type = "create pause";
             } else {
-              actionType = "create";
+              ctxMenu.type = "create";
             }
-            return ctxMenus.push({
-              id: keyConfig["new"],
-              order: ctxMenu.order || 999,
-              parentId: ctxMenu.parentId,
-              type: actionType,
-              caption: ctxMenu.caption,
-              contexts: ctxMenu.contexts
-            });
+            return targetCtxMenus.push(ctxMenu);
           }
         });
-        ctxMenus.sort(function(a, b) {
+        targetCtxMenus.sort(function(a, b) {
           return a.order - b.order;
+        });
+        ctxMenus = [];
+        targetCtxMenus.forEach(function(ctxMenu) {
+          var existsFolder, folder, i, _i, _j, _ref, _ref1;
+          if (ctxMenu.parentId !== "route") {
+            existsFolder = false;
+            for (i = _i = 0, _ref = ctxMenus.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+              if (ctxMenus[i].id === ctxMenu.parentId) {
+                existsFolder = true;
+                break;
+              }
+            }
+            if (!existsFolder) {
+              for (i = _j = 0, _ref1 = ctxMenuFolderSet.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+                if (ctxMenuFolderSet[i].id === ctxMenu.parentId) {
+                  folder = ctxMenuFolderSet[i];
+                  ctxMenus.push({
+                    id: folder.id,
+                    order: ctxMenu.order,
+                    parentId: "route",
+                    type: "create",
+                    caption: folder.title,
+                    contexts: folder.contexts
+                  });
+                  break;
+                }
+              }
+            }
+          }
+          return ctxMenus.push(ctxMenu);
         });
         return registerCtxMenu(dfdMain, ctxMenus, 0);
       });

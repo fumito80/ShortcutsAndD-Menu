@@ -60,17 +60,13 @@ transKbdEvent = (value) ->
   "[" + keyCombo.join("") + "]" + keyIdenfiers[0]
 
 HeaderView = Backbone.View.extend
-
   scHelpUrl: "https://support.google.com/chrome/answer/157179?hl="
-  
   # Backbone Buitin Events
   el: "div.header"
-  
   events:
     "click button.addKeyConfig": "onClickAddKeyConfig"
     "click .ctxmgr"            : "onClickCtxmgr"
     "change select.kbdtype"    : "onChangeSelKbd"
-  
   initialize: (options) ->
     # キーボード設定
     keys = keyCodes[kbdtype = @model.get("kbdtype")].keys
@@ -79,24 +75,20 @@ HeaderView = Backbone.View.extend
       selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
     selectKbd$.val kbdtype
     @setScHelp kbdtype
-  
   # DOM Events
   onClickAddKeyConfig: (event) ->
     @trigger "clickAddKeyConfig", (event)
-
   onClickCtxmgr: ->
     @trigger "showPopup", "ctxMenuManager"
-  
   onChangeSelKbd: (event) ->
     @trigger "changeSelKbd", (event)
     @setScHelp @$("select.kbdtype").val()
-  
   # Object method
-  setScHelp: (kbdtype) ->
+  setScHelp0: (kbdtype) ->
     @$(".scHelp")
       .text("ショートカットキー一覧")
       .attr "href", @scHelpUrl + "ja"
-  setScHelp0: (kbdtype) ->
+  setScHelp: (kbdtype) ->
     if kbdtype is "JP"
       @$(".scHelp")
         .text("ショートカットキー一覧")
@@ -105,7 +97,11 @@ HeaderView = Backbone.View.extend
       @$(".scHelp")
         .text("Keyboard shortcuts")
         .attr "href", @scHelpUrl + "en"
-  
+  onEnterCtxMenuSelMode: ->
+    @$("button").attr("disabled", "disabled").addClass("disabled")
+  onLeaveCtxMenuSelMode: ->
+    @$("button").removeAttr("disabled").removeClass("disabled")
+
 Config = Backbone.Model.extend {}
 
 KeyConfig = Backbone.Model.extend
@@ -149,6 +145,8 @@ KeyConfigView = Backbone.View.extend
       "change:ctxMenu":  @onChangeCtxmenu
       "setFocus":        @onClickInput
       "remove":          @onRemove
+      "setUnselectable": @onSetUnselectable
+      "triggerEventCtxMenuSelected": @onTriggerCtxMenuSelected
       @
     @model.collection.on
       "kbdEvent":    @onKbdEvent
@@ -190,13 +188,30 @@ KeyConfigView = Backbone.View.extend
     @off null, null, null
     @remove()
   
+  onSetUnselectable: (unSelectable) ->
+    if unSelectable
+      @$el.addClass "unselectable"
+    else
+      @$el.removeClass "unselectable"
+  
+  onTriggerCtxMenuSelected: ->
+    if @$el.hasClass("unselectable")
+      @$el.removeClass "ui-selected unselectable"
+    else if @$el.hasClass("ui-selected")
+      @$el.removeClass "ui-selected"
+      shortcut = decodeKbdEvent @model.id
+      @trigger "addCtxMenu",
+        id: @model.id
+        caption: @getDescription() || shortcut
+        shortcut: shortcut
+  
   # Collection Events
   onKbdEvent: (value) ->
     input$ = @$("div:focus")
     if input$.length > 0
       if input$.hasClass "new"
         if @model.id isnt value && @model.collection.findWhere(new: value)
-          $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
+          $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" already exists.")
           input$.tipTip()
           return
       else # Origin
@@ -261,12 +276,15 @@ KeyConfigView = Backbone.View.extend
       value1: text
       (msg) ->
   
-  onClickCtxMenu: ->
+  getDescription: ->
     if @model.get("mode") is "remap"
       desc = @$(".desc").find(".content,.memo").text()
     else
       desc = @$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()
-    @trigger "showPopup", "ctxMenuOptions", @model, desc: $.trim(desc)
+    $.trim(desc)
+  
+  onClickCtxMenu: ->
+    @trigger "showPopup", "ctxMenuOptions", @model, desc: @getDescription()
   
   onClickInputMemo: ->
     event.stopPropagation()
@@ -353,11 +371,9 @@ KeyConfigView = Backbone.View.extend
   onClickPause: ->
     @model.set("lastMode", @model.get("mode"))
     @onChangeMode(null, "through")
-    ctxMenuOptionsView.pause @model.id
   
   onClickResume: ->
     @onChangeMode(null, @model.get("lastMode"))
-    ctxMenuOptionsView.resume @model.id
   
   onClickRemove: ->
     shortcut = decodeKbdEvent @model.id
@@ -539,13 +555,14 @@ KeyConfigSetView = Backbone.View.extend
   render: (keyConfigSet) ->
     @$el.append @template()
     @collection.set keyConfigSet
-    @$("tbody").sortable
-      delay: 300
-      scroll: true
-      cursor: "move"
-      update: => @onUpdateSort()
-      start: => @onStartSort()
-      stop: => @onStopSort()
+    @$("tbody")
+      .sortable
+        delay: 300
+        scroll: true
+        cursor: "move"
+        update: => @onUpdateSort()
+        start: => @onStartSort()
+        stop: => @onStopSort()
     $(".fixed-table-container-inner").niceScroll
       #cursorcolor: "#1E90FF"
       cursorwidth: 12
@@ -563,6 +580,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "removeConfig", @onChildRemoveConfig, @
     keyConfigView.on "resizeInput" , @onChildResizeInput , @
     keyConfigView.on "showPopup"   , @onShowPopup        , @
+    keyConfigView.on "addCtxMenu"  , @onAddCtxMenu       , @
     divAddNew = @$("tr.addnew")[0] || null
     tbody = @$("tbody")[0]
     tbody.insertBefore keyConfigView.render(@model.get("kbdtype")).el, divAddNew
@@ -585,7 +603,7 @@ KeyConfigSetView = Backbone.View.extend
       else
         return
     if @collection.findWhere(new: value)
-      $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" is already exists.")
+      $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" already exists.")
       @$("div.addnew").tipTip()
       return
     if ~~value.substring(2) > 0x200
@@ -616,18 +634,24 @@ KeyConfigSetView = Backbone.View.extend
   onShowPopup: (name, model, options) ->
     @trigger "showPopup", name, model, options
   
-  #onGetCtxMenuParents: (container) ->
-  #  parents = []
-  #  @collection.models.forEach (model) ->
-  #    if ctxMenu = model.get "ctxMenu"
-  #      unless (parent = ctxMenu.parent) is "route"
-  #        parents.push parent
-  #  container.parents = _.unique parents
-  
   onRemakeCtxMenu: (container) ->
     andy.remakeCtxMenu(@getSaveData()).done ->
       container.dfd.resolve()
-
+  
+  onAddCtxMenu: (ctxMenu) ->
+    @trigger "addCtxMenu", ctxMenu
+  
+  onTriggerEventSelected: ->
+    @collection.models.forEach (model) ->
+      model.trigger "triggerEventCtxMenuSelected"
+  
+  onSetCtxMenus: (ctxMenus) ->
+    @collection.models.forEach (model) ->
+      model.unset("ctxMenu")
+    ctxMenus.forEach (ctxMenu) =>
+      model = @collection.get ctxMenu.id
+      model.set "ctxMenu", ctxMenu
+    
   onGetCtxMenues: (container) ->
     container.ctxMenus = []
     @collection.models.forEach (model) ->
@@ -637,9 +661,35 @@ KeyConfigSetView = Backbone.View.extend
           caption: ctxMenu.caption
           contexts: ctxMenu.contexts
           parentId: ctxMenu.parentId
+          shortcut: decodeKbdEvent model.id
           order: ctxMenu.order || 999
     container.ctxMenus.sort (a, b) -> a.order - b.order
+
+  onEnterCtxMenuSelMode: (entried) ->
+    @$("button").attr("disabled", "disabled").addClass("disabled")
+    @collection.models.forEach (model) ->
+      model.trigger "setUnselectable", if model.id in entried then true else false
+    @$("tbody")
+      .sortable("disable")
+      .selectable
+        cancel: "tr:has(div.ctxmenu-icon),span"
+        filter: "tr"
+      .find("tr:has(div.mode[title='Disabled'])").addClass("unselectable").end()
+      .find("tr:has(div.ctxmenu-icon)").addClass("unselectable").end()
+      .find("div.mode,div.new,div.origin").addClass "unselectable"
   
+  onLeaveCtxMenuSelMode: (cancel) ->
+    if cancel
+      removeClass = "ui-selected unselectable"
+    else
+      removeClass = ""
+    @$("button").removeAttr("disabled").removeClass("disabled")
+    @$("tbody")
+      .selectable("destroy")
+      .sortable("enable")
+      .find("div.unselectable").removeClass("unselectable").end()
+      .find("tr.unselectable").removeClass(removeClass)
+
   # DOM Events
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
@@ -793,7 +843,12 @@ $ ->
   ctxMenuManagerView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
   ctxMenuManagerView.on "remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView
   keyConfigSet.on "getCtxMenuContexts" , ctxMenuManagerView.onGetCtxMenuContexts, ctxMenuManagerView
-  
+  ctxMenuManagerView.on "enterCtxMenuSelMode", keyConfigSetView.onEnterCtxMenuSelMode, keyConfigSetView
+  ctxMenuManagerView.on "enterCtxMenuSelMode", headerView.onEnterCtxMenuSelMode, headerView
+  ctxMenuManagerView.on "leaveCtxMenuSelMode", keyConfigSetView.onLeaveCtxMenuSelMode, keyConfigSetView
+  ctxMenuManagerView.on "leaveCtxMenuSelMode", headerView.onLeaveCtxMenuSelMode, headerView
+  ctxMenuManagerView.on "triggerEventSelected", keyConfigSetView.onTriggerEventSelected, keyConfigSetView
+  ctxMenuManagerView.on "setCtxMenus", keyConfigSetView.onSetCtxMenus, keyConfigSetView
   ctxMenuFolderSet.reset saveData.ctxMenuFolderSet
   keyConfigSetView.render(saveData.keyConfigSet)
   

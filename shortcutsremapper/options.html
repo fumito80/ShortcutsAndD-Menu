@@ -134,29 +134,38 @@
     <form>
       <div class="panel1">Context Menu Manager</span>
         <button class="done blue"><i class="icon-ok"></i> Done</button>
-        <!--
-        <ul class="button-bar">
-        <li class="first"><a href=""><i class="icon-plus"></i> New</a></li>
-        <li><a href=""><i class="icon-pencil"></i> Rename</a></li>
-        <li><a href=""><i class="icon-undo"></i> UndoAll</a></li>
-        <li class="last"><a href=""><i class="icon-trash"></i> Delete</a></li>
-        </ul> 
-        <button class="delete red"><i class="icon-trash"></i> Delete</button>
-        <label><input type="checkbox" class="expandAll" checked> Expand all</label>
-        -->
       </div>
     </form>
     <div class="result_outer">
       <div class="result"></div>
     </div>
     <div class="editButtons">
-      <button class="newmenu small"><i class="icon-plus"></i> Add Menu</a></button><br>
-      <button class="newfolder small"><i class="icon-folder-close-alt"></i> Add Folder</a></button><br>
-      <button class="rename small"><i class="icon-pencil"></i> Rename</a></button><br><br>
-      <button class="remove small"><i class="icon-trash"></i> Remove</a></button>
+      <button class="newmenu small disabled" disabled="disabled"><i class="icon-plus-sign"></i> Add Menu</a></button><br>
+      <button class="newfolder small disabled" disabled="disabled"><i class="icon-folder-close-alt"></i> Add Folder</a></button><br>
+      <button class="rename small disabled" disabled="disabled"><i class="icon-pencil"></i> Rename</a></button><br><br>
+      <button class="remove small disabled" disabled="disabled"><i class="icon-trash"></i> Remove</a></button><br>
+      <!-- <button class="trash small disabled" disabled="disabled"><i class="icon-refresh"></i> Trash bin</a></button> -->
     </div>
-    <div class="undobuf"></div>
   </div>
+  <div class="popup ctxMenusGetter">
+    <div class="panel1">
+      <span class="message"></span><br>
+      <div class="buttons">
+        <button class="add blue"><i class="icon-plus-sign"></i> Add</button>
+        <button class="cancel"><i class="icon-ban-circle"></i> Cancel</button><br>
+      </div>
+    </div>
+  </div>
+  <!--
+  <div class="trashBin">
+    <i class="icon-remove" title="Cancel"></i>
+    <div class="panel1">
+      <i class="icon-trash"></i>
+      <span>Trash bin</span>
+      <div class="buffer"></div>
+    </div>
+  </div>
+  -->
   <div class="backscreen"></div>
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery-2.0.0.min.js"></script>

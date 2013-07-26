@@ -38,3 +38,6 @@ body {
   background: #ddf;
   color: #000000;
 }
+#content pre {
+  font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
+}

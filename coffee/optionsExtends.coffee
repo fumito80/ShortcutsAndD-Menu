@@ -54,8 +54,8 @@ class EditableBaseView extends PopupBaseView
 
 class ExplorerBaseView extends PopupBaseView
   events: _.extend
-    "click .expand-icon" : "onClickExpandIcon"
-    "click .expandAll"   : "onClickExpandAll"
+    "click .expand-icon": "onClickExpandIcon"
+    "click .expandAll"  : "onClickExpandAll"
     PopupBaseView.prototype.events
   constructor: (options) ->
     super(options)
@@ -68,10 +68,6 @@ class ExplorerBaseView extends PopupBaseView
     ctx.lineTo(8/2-.5, 8/2+.5)
     ctx.lineTo(0, .5)
     ctx.lineTo(0, 0)
-    #ctx.lineTo(0, 1)
-    #ctx.lineTo(3.5, 4.5)
-    #ctx.lineTo(7, 1)
-    #ctx.lineTo(7, 0)
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
@@ -381,7 +377,7 @@ tmplCtxMenus =
 getUuid = ->
   S4 = ->
     (((1+Math.random())*0x10000)|0).toString(16).substring(1)
-  [S4(), S4(), S4(), S4()].join("") + (new Date / 1000 | 0)
+  [S4(), S4()].join("") + (new Date / 1000 | 0)
 
 class CtxMenuOptionsView extends EditableBaseView
   name: "ctxMenuOptions"
@@ -443,7 +439,7 @@ class CtxMenuOptionsView extends EditableBaseView
     else
       ctxType = @$("input[name='ctxType']:checked").attr("value")
       if parentId is "route"
-        @model.set("ctxMenu", caption: caption, contexts: ctxType, parentId: parentId, order: @ctxMenu?order)
+        @model.set("ctxMenu", caption: caption, contexts: ctxType, parentId: parentId, order: @ctxMenu?.order)
       else
         if parentId is "new"
           if model = @collection.findWhere(contexts: ctxType, title: parentName)
@@ -474,27 +470,63 @@ class CtxMenuOptionsView extends EditableBaseView
 CtxMenuFolder = Backbone.Model.extend {}
 CtxMenuFolderSet = Backbone.Collection.extend model: CtxMenuFolder
 
+class CtxMenuGetterView extends PopupBaseView
+  el: ".ctxMenusGetter"
+  events: _.extend
+    "click .add": "onClickAdd"
+    "click .cancel": "onClickCancel"
+    PopupBaseView.prototype.events
+  constructor: (options) ->
+    super(options)
+    @$el
+      .css(top: 0, right: "30px")
+      .draggable
+        cursor: "move"
+        delay: 200
+        cancel: "input,textarea,button,select,option"
+  render: (message) ->
+    @$(".message").html @tmplMessage message
+    @$el.show(200)
+    @
+  hidePopup: ->
+    @$el.hide(200)
+  onClickAdd: ->
+    @$el.hide(200)
+    @trigger "addCtxMenus"
+  onClickCancel: ->
+    @$el.hide(200)
+    @trigger "addCtxMenus", true
+  #tmplMessage: _.template """
+  #  Add entries to the <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contexts%></strong> context menu <%=folder%><br>you can select the functions of the keyboard shortcut.
+  #  """
+  tmplMessage: _.template """
+    Add entries to the context menu <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contextName%></strong><%=folder%>, <br>from the functions that you selected.
+    """
+
 class CtxMenuManagerView extends ExplorerBaseView
   name: "ctxMenuManager"
   el: ".ctxMenuManager"
   events: _.extend
-    #"click .title"       : "onClickExpandIcon"
-    #"click span.contexts": "onClickExpandIcon"
-    "click span[tabindex='0']": "onClickItem"
+    "mousedown span[tabindex='0']": "onClickItem"
+    "mousedown button,input,a": "onClickClickable"
     "mousedown .newmenu"  : "onClickNew"
-    "mousedown .newfolder": "onClickNew"
+    "mousedown .newfolder": "onClickNewFolder"
     "mousedown .rename"   : "onClickRen"
-    "mousedown .del"      : "onClickDelete"
+    "dblclick  .menuCaption,.title": "onClickRen"
+    "keydown   .menuCaption,.title": "onKeydownCaption"
+    "mousedown .remove"   : "onClickRemove"
     "submit .editCaption" : "doneEditCaption"
     "blur .editCaption input": "cancelEditCaption"
-    #"mouseover span.title,span.menuCaption": "onHoverMoveItem"
-    #"mouseout  span.title,span.menuCaption": "onHoverOffMoveItem"
-    #"mouseenter .droppable": "onMouseoverDroppable"
+    "mousedown"           : "onClickBlank"
+    "click .done"         : "onClickDone"
     ExplorerBaseView.prototype.events
   constructor: (options) ->
     super(options)
+    @ctxMenuGetterView = new CtxMenuGetterView {}
+    @ctxMenuGetterView.on "addCtxMenus", @onAddCtxMenus, @
     ctxMenuOptionsView.on "showPopup", @onShowPopup, @
     headerView.on "showPopup", @onShowPopup, @
+    keyConfigSetView.on "addCtxMenu", @onAddCtxMenu, @
     ctx = document.getCSSCanvasContext("2d", "empty", 18, 18);
     ctx.strokeStyle = "#CC0000"
     ctx.lineWidth = "2"
@@ -527,26 +559,10 @@ class CtxMenuManagerView extends ExplorerBaseView
     @$(".result_outer").height(height - 35)
     @$el.height(height)
     @setContextMenu()
-    @$(".folders").sortable
-      scroll: true
-      handle: ".title,.menuCaption"
-      connectWith: ".folders"
-      placeholder: "ui-placeholder"
-      cancel: ".dummy"
-      delay: 200
-      update: (event, ui) => @onUpdateFolder event, ui
-      start:  (event, ui) => @onStartSort event, ui
-      stop:   (event, ui) => @onStopSort event, ui
-    @$(".ctxMenus").sortable
-      scroll: true
-      handle: ".menuCaption"
-      connectWith: ".ctxMenus"
-      placeholder: "ui-placeholder"
-      cancel: ".dummy"
-      delay: 200
-      update: (event, ui) => @onUpdateMenu event, ui
-      start: (event, ui) => @onStartSort event, ui
-      stop: (event, ui)  => @onStopSort event, ui
+    @setSortable ".folders", ".title,.menuCaption", @onUpdateFolder
+    @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
+    $.each @$(".editButtons button"), (i, el) =>
+      @disableButton _.map(document.querySelectorAll(".editButtons button"), (el) -> el.className.match(/^(\w+)\s/)[1])
     @
   onShowPopup: (name, model, options) ->
     unless super(name, model, options)
@@ -555,49 +571,172 @@ class CtxMenuManagerView extends ExplorerBaseView
   hidePopup: ->
     endEdit()
     super()
-  onUpdateFolder: (event, ui) ->
-    $.each @$(".folders"), (i, folders) ->
+  onSubmitForm: ->
+    false
+  setSortable: (selector, handle, fnDoneUpdate) ->
+    @$(selector).sortable
+      scroll: true
+      handle: handle
+      connectWith: selector
+      placeholder: "ui-placeholder"
+      delay: 200
+      update: (event, ui) => fnDoneUpdate event, ui, @
+      start: (event, ui) => @onStartSort event, ui
+      stop: (event, ui)  => @onStopSort event, ui, @
+  setFolderDroppable: (target$) ->
+    that = this
+    target$.droppable
+      accept: ".ctxMenuItem.route"
+      tolerance: "pointer"
+      hoverClass: "drop-folder-hover"
+      over: -> $(".folders .ui-placeholder").hide()
+      out: -> $(".folders .ui-placeholder").show()
+      drop: (event, ui) ->
+        ctxMenu$ = $(@).find(".ctxMenus")
+        ui.draggable.hide "fast", ->
+          that.onUpdateMenu null, item: $(@).appendTo(ctxMenu$).removeClass("route").show().find("span[tabindex='0']").focus(), that
+  onUpdateFolder: (event, ui, view) ->
+    if ui && _.filter(ui.item.parent().find(".title"), (title) -> title.textContent is ui.item.prevInfo?.text).length > 1
+      alert("A folder with the name '#{ui.item.prevInfo.text}' already exists.")
+      folders$ = view.$(".folders." + ui.item.prevInfo.contexts)
+      ref = folders$.children().eq(ui.item.prevInfo.order).get(0) || null
+      folders$[0].insertBefore ui.item[0], ref
+      return
+    $.each view.$(".folders"), (i, folders) ->
       if (folders$ = $(folders)).find(".folder,.ctxMenuItem").length > 0
         folders$.parents(".contexts").addClass("hasFolder")
       else
         folders$.parents(".contexts").removeClass("hasFolder")
     ui.item.focus() if ui
-  onUpdateMenu: (event, ui) ->
-    $.each @$(".ctxMenus"), (i, menuItem) ->
+  onUpdateMenu: (event, ui, view) ->
+    $.each view.$(".ctxMenus"), (i, menuItem) ->
       if (menuItem$ = $(menuItem)).find(".ctxMenuItem,.dummy").length is 0
         menuItem$.parents(".folder").removeClass("hasFolder")
-    ui.item.parents(".folder").addClass("hasFolder")
-    ui.item.focus()
+    if ui
+      ui.item.parents(".folder").addClass("hasFolder")
+      ui.item.focus()
   onGetCtxMenuContexts: (container) ->
     container.contexts = @collection.get(container.parentId).get "contexts"
+  onClickDone: ->
+    newCtxMenu = []
+    $.each @$(".ctxMenuItem"), (i, el) =>
+      menu$ = $(el)
+      message = id: el.id
+      message.caption = menu$.find(".menuCaption").text()
+      message.order = i + 1
+      message.parentId = menu$.parents(".folder").get(0)?.id || "route"
+      contexts = menu$.parents(".folders")[0].className.match(/folders\s(\w+)/)[1]
+      if message.parentId is "route"
+        message.contexts = contexts
+      else
+        unless @collection.findWhere(id: message.parentId, contexts: contexts)
+          @collection.add
+            id: message.parentId
+            contexts: contexts
+            title: @$("#" + message.parentId + " .title").text()
+      newCtxMenu.push message
+    @trigger "setCtxMenus", newCtxMenu
+    @trigger "getCtxMenues", container = {}
+    (_.difference @collection.pluck("id"), _.pluck(container.ctxMenus, "parentId")).forEach (id) =>
+      @collection.remove @collection.get(id)
+    (dfd = $.Deferred()).promise()
+    @trigger "remakeCtxMenu", dfd: dfd
+    dfd.done =>
+      @hidePopup()
+    false
+  onClickBlank: ->
+    #@$(":focus").blur()
+    #$.each @$(".editButtons button"), (i, el) =>
+    #  @disableButton _.map(document.querySelectorAll(".editButtons button"), (el) -> el.className.match(/^(\w+)\s/)[1])
+  onClickClickable: (event) ->
+    event.stopPropagation()
+    event.preventDefault()
+  onClickNew: (event) ->
+    unless /contexts|title/.test (target$ = $(document.activeElement)).get(0)?.className
+      return
+    @activeFolder = {}
+    if target$.hasClass("contexts")
+      @activeFolder.folder = ""
+      contexts$ = target$
+      @activeFolder.parentId = "route"
+      @activeFolder.contexts = (className = target$.parent()[0].className).match(/droppable\s(\w+)/)[1]
+      @activeFolder.selector = "." + className.replace(/\s/g, ".") + " .contexts"
+    else
+      @activeFolder.folder = " in the folder '<strong>#{target$.text()}</strong>'"
+      contexts$ = target$.parents("div.contexts").find("span.contexts")
+      @activeFolder.parentId = target$.parent()[0].id
+      @activeFolder.selector = "#" + @activeFolder.parentId + " .title"
+    @activeFolder.icon = contexts$.find("i")[0].className
+    @activeFolder.contextName = contexts$.text()
+    @ctxMenuGetterView.render @activeFolder
+    entried = _.map(@$(".ctxMenuItem"), (el) -> el.id)
+    @trigger "enterCtxMenuSelMode", entried
+    @$(".result_outer").getNiceScroll().hide()
+    @$el.hide()
+    $(".backscreen").hide()
+  onAddCtxMenu: (ctxMenu) ->
+    @setContextMenuItem _.extend(ctxMenu, @activeFolder)
+    @$("#" + ctxMenu.id).hide().show(300)
+    @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
+    @$(".folders").sortable "refresh"
+  onAddCtxMenus: (cancel) ->
+    @trigger "leaveCtxMenuSelMode", cancel
+    @$el.show()
+    @$(".result_outer").getNiceScroll().show()
+    $(".backscreen").show()
+    @$(@activeFolder.selector).focus()
+    if cancel
+      return
+    @trigger "triggerEventSelected"
+    @onUpdateMenu null, null, @
+    @onUpdateFolder null, null, @
+    @$(@activeFolder.selector).focus()
+  onClickNewFolder: (event) ->
+    unless (target$ = $(document.activeElement)).hasClass("contexts")
+      return
+    folders$ = target$.parents(".contexts").find ".folders"
+    (newFolder$ = $(@tmplFolder id: getUuid(), title: "").appendTo(folders$)).find(".title").focus()
+    @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
+    @$(".folders").sortable "refresh"
+    @setFolderDroppable newFolder$
+    @enableButton ["rename", "remove", "newmenu"]
+    @disableButton ["newfolder"]
+    @onClickRen event
+  onKeydownCaption: (event) ->
+    if event.originalEvent.keyIdentifier is "F2"
+      @onClickRen event
   onClickRen: (event) ->
-    target$ = $(document.activeElement)
-    target$.hide().parent().find(".editCaption input:first").val(target$.text()).show(100, -> $(this).focus())
-    #target$.hide().parent().find(".editCaption input").val(target$.text()).show().focus()
+    unless /title|menuCaption/.test (target$ = $(document.activeElement))[0].className
+      return
+    editer$ = target$.hide().parent().find(".editCaption input:first").show()
+    editer$.val(target$.text()).focus()
+    event.preventDefault()
   escapeAmp: (text) ->
-    text.replace /&/g, ""
+    text.replace(/&&/g, "^ampersand^").replace(/&/g, "").replace /^ampersand^/g, ""
   doneEditCaption: (event) ->
-    unless value = $.trim (editer$ = $(event.currentTarget).find("> input")).val()
-      @cancelEditCaption currentTarget: editer$[0]
+    if value = $.trim (editer$ = $(event.currentTarget).find("> input")).val()
+      if (folder$ = editer$.parent().parent()).hasClass "folder"
+        notExists = true
+        $.each folder$.parent().find(".title"), (i, title) ->
+          if folder$[0] isnt title.parentNode && title.textContent is value
+            $("#tiptip_content").text("Folder '#{value}' already exists.")
+            editer$.tipTip()
+            return notExists = false
+        return false if !notExists
+    else
+      editer$.blur()
       return false
-    editer$.hide().parents("div:first").find("> .title,> .menuCaption").show().text(value)
+    editer$.hide().parents("div:first").find("> .title,> .menuCaption").show().text(value).focus()
     false
   cancelEditCaption: (event) ->
-    (editer$ = $(event.currentTarget)).hide().parents("div:first").find(".title,.menuCaption").show()
-  onClickUndo: ->
-    @render()
-  onClickDelete: (event) ->
-    if /ctxMenuItem|folder/.test className = (elActive = document.activeElement).className
-      active$ = $(elActive)
-      if /ctxMenuItem/.test className
-        elActive.info = "type": "menu": "parentId": active$.parents(".folder").find(".title").text()
-        @onUpdateMenu event, active$
-      else
-        elActive.info = "type": "folder": "parentId": active$.parent().className 
-        @onUpdateFolder()
-      active$.data parent: active$.parents(".contexts").className
-      
-      @$(".undobuf").append active$ = $(document.activeElement)
+    unless (target$ = $(event.currentTarget).hide().parents("div:first").find(".title,.menuCaption").show()).text()
+      target$.parents(".folder").remove()
+  onClickRemove: (event) ->
+    unless /title|menuCaption/.test (active$ = $(document.activeElement))[0].className
+      return
+    active$.parent().remove()
+    @onUpdateMenu null, null, @
+    @onUpdateFolder null, null, @
   enableButton: (buttonClasses) ->
     buttonClasses.forEach (className) ->
       @$("button." + className).removeClass("disabled").removeAttr("disabled")
@@ -605,8 +744,6 @@ class CtxMenuManagerView extends ExplorerBaseView
     buttonClasses.forEach (className) ->
       @$("button." + className).addClass("disabled").attr("disabled", "disabled")
   onClickItem: (event) ->
-    event.currentTarget.focus()
-    event.preventDefault()
     switch event.currentTarget.className
       when "contexts"
         @enableButton ["newmenu", "newfolder"]
@@ -617,6 +754,9 @@ class CtxMenuManagerView extends ExplorerBaseView
       when "menuCaption"
         @enableButton ["rename", "remove"]
         @disableButton ["newmenu", "newfolder"]
+    event.currentTarget.focus()
+    event.preventDefault()
+    event.stopPropagation()
   onHoverMoveItem: (event) ->
     #@$(event.currentTarget).find("> .updown").show()
   onHoverOffMoveItem: ->
@@ -624,10 +764,18 @@ class CtxMenuManagerView extends ExplorerBaseView
   onMouseoverDroppable: ->
     @$(".ctxMenus .ui-placeholder").hide()
   onStartSort: (event, ui) ->
-    ui.item.find("span[tabindex='0']").focus()
+    ui.item.find("span[tabindex='0']:first").focus()
+    if /folder/.test ui.item[0].className
+      ui.item.addClass("sorting").find(".ctxMenus").hide()
+      ui.item.prevInfo =
+        contexts: ui.item.parent()[0].className.match(/folders\s(\w+)/)[1]
+        order: ui.item.parent().children().index(ui.item)
+        text: ui.item.find(".title").text()
     #ui.find("> .updown").show()
-  onStopSort: (event, ui) ->
-    ui.item.find("span[tabindex='0']").focus()
+  onStopSort: (event, ui, view) ->
+    ui.item.find("span[tabindex='0']:first").focus()
+    view.$(".folder").removeClass("sorting")
+    view.$(".ctxMenus").show()
     #@$(".updown").hide()
   onClickExpandIcon: (event) ->
     @$(event.currentTarget).parents(".folder").focus()
@@ -638,7 +786,7 @@ class CtxMenuManagerView extends ExplorerBaseView
       target$.addClass("expanded")
     windowOnResize()
     event.stopPropagation()
-  setContextMenu: ->
+  setContextMenu: () ->
     @$(".result").empty()
     @trigger "getCtxMenues", container = {}
     ctxMenus = container.ctxMenus
@@ -658,28 +806,23 @@ class CtxMenuManagerView extends ExplorerBaseView
         drop: (event, ui) ->
           target$ = $(".folders." + this.className.match(/droppable\s(\w+)/)[1])
           ui.draggable.hide "fast", ->
-            that.onUpdateMenu null, item: $(this).appendTo(target$).addClass("route").show().find("span[tabindex='0']").focus()
-    container.ctxMenus.forEach (ctxMenu) =>
-      if ctxMenu.parentId is "route"
-        dest$ = @$(".contexts .folders." + ctxMenu.contexts)
-      else
-        unless (dest$ = @$("#" + ctxMenu.parentId + " .ctxMenus")).length > 0
-          folder = @collection.get ctxMenu.parentId
-          @$(".contexts .folders." + folder.get("contexts")).append @tmplFolder id: folder.id, title: folder.get("title")
-          dest$ = @$("#" + ctxMenu.parentId + " .ctxMenus")
-          that = this
-          @$("#" + ctxMenu.parentId).droppable
-            accept: ".ctxMenuItem.route"
-            tolerance: "pointer"
-            hoverClass: "drop-folder-hover"
-            over: -> $(".folders .ui-placeholder").hide()
-            out: -> $(".folders .ui-placeholder").show()
-            drop: (event, ui) ->
-              target$ = $(this).find(".ctxMenus")
-              ui.draggable.hide "fast", ->
-                that.onUpdateMenu null, item: $(this).appendTo(target$).removeClass("route").show().find("span[tabindex='0']").focus()
-      dest$.append @tmplMenuItem id: ctxMenu.id, caption: ctxMenu.caption
-    @onUpdateFolder()
+            that.onUpdateMenu null, item: $(this).appendTo(target$).addClass("route").show().find("span[tabindex='0']").focus(), that
+    ctxMenus.forEach (ctxMenu) =>
+      @setContextMenuItem ctxMenu
+    @onUpdateMenu null, null, @
+    @onUpdateFolder null, null, @
+  setContextMenuItem: (ctxMenu) ->
+    if ctxMenu.parentId is "route"
+      dest$ = @$(".contexts .folders." + ctxMenu.contexts)
+      ctxMenu.route = " route"
+    else
+      ctxMenu.route = ""
+      unless (dest$ = @$("#" + ctxMenu.parentId + " .ctxMenus")).length > 0
+        folder = @collection.get ctxMenu.parentId
+        @$(".contexts .folders." + folder.get("contexts")).append @tmplFolder id: folder.id, title: folder.get("title")
+        dest$ = @$("#" + ctxMenu.parentId + " .ctxMenus")
+        @setFolderDroppable @$("#" + ctxMenu.parentId)
+    dest$.append @tmplMenuItem ctxMenu
   tmplContexts: _.template """
     <div class="contexts">
       <div class="droppable <%=contexts%>">
@@ -690,14 +833,17 @@ class CtxMenuManagerView extends ExplorerBaseView
     """
   tmplFolder: _.template """
     <div class="folder hasFolder" id="<%=id%>">
-      <span class="title" tabindex="0"><%=title%><div class="updown"></div><div class="emptyFolder"></div></span>
+      <span class="title" tabindex="0"><%=title%></span>
+      <div class="updown"></div>
+      <div class="emptyFolder"></div>
       <form class="editCaption"><input type="text"></form>
       <div class="ctxMenus"></div>
     </div>
     """
   tmplMenuItem: _.template """
-    <div class="ctxMenuItem" id="<%=id%>">
-      <span class="menuCaption" tabindex="0"><%=caption%><div class="updown"></div></span>
+    <div class="ctxMenuItem<%=route%>" id="<%=id%>">
+      <span class="menuCaption" tabindex="0" title="<%=shortcut%>"><%=caption%></span>
+      <div class="updown"></div>
       <form class="editCaption"><input type="text"></form>
     </div>
     """

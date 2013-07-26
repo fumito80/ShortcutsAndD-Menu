@@ -700,37 +700,38 @@ createCtxMenus = ->
     ctxMenuFolderSet = andy.local.ctxMenuFolderSet
     dfdMain = $.Deferred()
     chrome.contextMenus.removeAll ->
-      ctxMenus = []
+      targetCtxMenus = []
       keyConfigSet.forEach (keyConfig) ->
         if (ctxMenu = keyConfig.ctxMenu)
-          unless ctxMenu.parentId is "route"
-            existsFolder = false
-            for i in [0...ctxMenus.length]
-              if ctxMenus[i].id is ctxMenu.parentId
-                existsFolder = true
-            unless existsFolder
-              for i in [0...ctxMenuFolderSet.length]
-                if ctxMenuFolderSet[i].id is ctxMenu.parentId
-                  folder = ctxMenuFolderSet[i]
-                  ctxMenus.push
-                    id: folder.id
-                    order: ctxMenu.order || 999
-                    parentId: "route"
-                    type: "create"
-                    caption: folder.title
-                    contexts: folder.contexts
+          ctxMenu.id = keyConfig.id
+          ctxMenu.order = ctxMenu.order || 999
           if keyConfig.mode is "through"
-            actionType = "create pause"
+            ctxMenu.type = "create pause"
           else
-            actionType = "create"
-          ctxMenus.push
-            id: keyConfig.new
-            order: ctxMenu.order || 999
-            parentId: ctxMenu.parentId
-            type: actionType
-            caption: ctxMenu.caption
-            contexts: ctxMenu.contexts
-      ctxMenus.sort (a, b) -> a.order - b.order
+            ctxMenu.type = "create"
+          targetCtxMenus.push ctxMenu
+      targetCtxMenus.sort (a, b) -> a.order - b.order
+      ctxMenus = []
+      targetCtxMenus.forEach (ctxMenu) ->
+        unless ctxMenu.parentId is "route"
+          existsFolder = false
+          for i in [0...ctxMenus.length]
+            if ctxMenus[i].id is ctxMenu.parentId
+              existsFolder = true
+              break
+          unless existsFolder
+            for i in [0...ctxMenuFolderSet.length]
+              if ctxMenuFolderSet[i].id is ctxMenu.parentId
+                folder = ctxMenuFolderSet[i]
+                ctxMenus.push
+                  id: folder.id
+                  order: ctxMenu.order
+                  parentId: "route"
+                  type: "create"
+                  caption: folder.title
+                  contexts: folder.contexts
+                break
+        ctxMenus.push ctxMenu
       registerCtxMenu dfdMain, ctxMenus, 0
     dfdMain.promise()
 
