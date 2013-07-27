@@ -619,6 +619,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     container.contexts = @collection.get(container.parentId).get "contexts"
   onClickDone: ->
     newCtxMenu = []
+    @collection.reset()
     $.each @$(".ctxMenuItem"), (i, el) =>
       menu$ = $(el)
       message = id: el.id
@@ -636,9 +637,9 @@ class CtxMenuManagerView extends ExplorerBaseView
             title: @$("#" + message.parentId + " .title").text()
       newCtxMenu.push message
     @trigger "setCtxMenus", newCtxMenu
-    @trigger "getCtxMenues", container = {}
-    (_.difference @collection.pluck("id"), _.pluck(container.ctxMenus, "parentId")).forEach (id) =>
-      @collection.remove @collection.get(id)
+    #@trigger "getCtxMenues", container = {}
+    #(_.difference @collection.pluck("id"), _.pluck(container.ctxMenus, "parentId")).forEach (id) =>
+    #  @collection.remove @collection.get(id)
     (dfd = $.Deferred()).promise()
     @trigger "remakeCtxMenu", dfd: dfd
     dfd.done =>

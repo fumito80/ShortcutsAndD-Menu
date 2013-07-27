@@ -56,6 +56,11 @@ body {
 #tiptip_holder {
   z-index: 9;
 }
+.tooltipClass {
+  background-color: Ivory;
+  border: 7px solid rgb(122, 122, 160);
+  border-radius: 5px; 
+}
 .addKeyConfig, .ctxmgr {
   margin: 5px;
   margin-right: 20px;
@@ -123,7 +128,7 @@ tbody .data:hover {
   white-space: nowrap;
   font: 1.2em 'Arial';
   outline: 0;
-  padding: 4px;
+  padding: 3px 4px;
   display: inline-block;
   border-radius: 3px;
   box-shadow: none;
@@ -316,7 +321,7 @@ thead th i.icon-arrow-right {
 }
 button.cog.small {
   position: absolute;
-  top: 11px;
+  top: 8px;
   right: 6px;  
   left: auto;
   padding: 2px 5px;
@@ -863,4 +868,48 @@ button.cog.selecting {
 }
 .onEntry {
   color: orange;
+}
+/* child command */
+.child th:first-child div {
+  display: none;
+}
+#sortarea {
+  display: none;
+}
+.parent th:first-child {
+  position: relative;
+  vertical-align: top;
+}
+.parent th:first-child {
+  background-image: -webkit-canvas(groupbar);
+  background-repeat: no-repeat;
+  background-position-x: 98%;
+  background-position-y: 7px;
+}
+.paddingImg {
+  position: absolute;
+  background-color: #FFF;
+  width: 20px;
+  height: 7px;
+  right: 0;
+  bottom: 0;
+}
+.hover .paddingImg {
+  background-color: rgb(245,245,255);
+}
+tbody .data:hover .paddingImg {
+  background: rgb(245,245,255);
+}
+.keyConfigSetView tbody .parent th, .keyConfigSetView tbody .parent td {
+  padding-bottom: 0;
+}
+.keyConfigSetView tbody .child:not(.last) th, .keyConfigSetView tbody .child:not(.last) td {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.keyConfigSetView tbody .child.last th, .keyConfigSetView tbody .child.last td{
+  padding-top: 0;
+}
+.hover th:first-child {
+  background-color: rgb(245,245,255);
 }

@@ -33,17 +33,22 @@ escape = (html) ->
 modifierKeys  = ["Ctrl", "Alt", "Shift", "Win", "MouseL", "MouseR", "MouseM"]
 modifierInits = ["c"   , "a"  , "s"    , "w"]
 
-decodeKbdEvent = (value) ->
-  modifiers = parseInt(value.substring(0, 2), 16)
-  scanCode = value.substring(2)
+decodeKbdEvent = (kbdCode) ->
+  modifiers = parseInt(kbdCode.substring(0, 2), 16)
+  scanCode = kbdCode.substring(2)
   if keyIdentifier = keys[scanCode]
     keyCombo = []
-    #for i in [0...modifierKeys.length]
-    #  keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+    ###
+    for i in [0...modifierKeys.length]
+      keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+    ###
     keyCombo.push modifierKeys[0] if modifiers & 1
     keyCombo.push modifierKeys[2] if modifiers & 4
     keyCombo.push modifierKeys[1] if modifiers & 2
     keyCombo.push modifierKeys[3] if modifiers & 8
+    keyCombo.push modifierKeys[4] if modifiers & 16
+    keyCombo.push modifierKeys[5] if modifiers & 32
+    keyCombo.push modifierKeys[6] if modifiers & 64
     if modifiers & 4
       keyCombo.push keyIdentifier[1] || keyIdentifier[0]
     else
@@ -122,6 +127,7 @@ KeyConfigView = Backbone.View.extend
     "click div.mode"       : "onClickMode"
     "click .selectMode div": "onChangeMode"
     "click div.edit"       : "onClickEdit"
+    "click div.addCommand" : "onClickAddCommand"
     "click div.copySC"     : "onClickCopySC"
     "click div.ctxmenu"    : "onClickCtxMenu"
     "click div.pause"      : "onClickPause"
@@ -136,6 +142,8 @@ KeyConfigView = Backbone.View.extend
     "blur  .selectMode"    : "onBlurSelectMode"
     "blur  .selectCog"     : "onBlurSelectCog"
     "blur  input.memo"     : "onBlurInputMemo"
+    "mouseover"            : "onMouseOverChild"
+    "mouseout"             : "onMouseOutChild"
   
   initialize: (options) ->
     @optionKeys = _.keys modeDisp
@@ -146,19 +154,28 @@ KeyConfigView = Backbone.View.extend
       "setFocus":        @onClickInput
       "remove":          @onRemove
       "setUnselectable": @onSetUnselectable
+      "setRowspan":      @onSetRowspan
+      "updatePosition" : @onUpdatePosition
       "triggerEventCtxMenuSelected": @onTriggerCtxMenuSelected
       @
     @model.collection.on
       "kbdEvent":    @onKbdEvent
       "changeKbd":   @onChangeKbd
-      "updateOrder": @onUpdateOrder
+      "updateOrderByEl": @onUpdateOrderByEl
+      "mouseoverchild" : @onMouseOverChild
+      "mouseoutchild" : @onMouseOutChild
       @
   
   render: (kbdtype) ->
     @setElement @template options: modeDisp
     mode = @model.get("mode")
-    unless @setKbdValue @$(".new"), @model.id
+    if /^C-/.test @model.id
+      @$el.addClass("child").find("th:first-child").remove()
+    else if !@setKbdValue(@$(".new"), @model.id)
       @state = "invalid"
+    else if (models = @model.collection.where(parentId: @model.id)).length > 0
+      @$el.addClass("parent")
+      @$("th:first-child").attr "rowspan", models.length + 1
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
     @onChangeMode null, mode
@@ -184,6 +201,9 @@ KeyConfigView = Backbone.View.extend
     @trigger "resizeInput"
   
   onRemove: ->
+    if parentId = @model.get "parentId"
+      @model.collection.trigger "mouseoutchild", parentId
+    @model.collection.off null, null, @ 
     @model.off null, null, @
     @off null, null, null
     @remove()
@@ -204,6 +224,9 @@ KeyConfigView = Backbone.View.extend
         id: @model.id
         caption: @getDescription() || shortcut
         shortcut: shortcut
+  
+  onSetRowspan: (count) ->
+    @$el.find("th:first-child").attr "rowspan", count
   
   # Collection Events
   onKbdEvent: (value) ->
@@ -229,9 +252,12 @@ KeyConfigView = Backbone.View.extend
     @setKbdValue @$(".origin"), @model.get("origin")
     @setDesc()
   
-  onUpdateOrder: ->
-    @model.set "ordernum", @$el.parent().children().index(@$el)
-  
+  onUpdateOrderByEl: ->
+    @model.set "order", @$el.parent().children().index(@$el)
+
+  onUpdatePosition: ->
+    @$el.parent()[0].insertBefore @el, (@$el.parent().children().eq(@model.get("order")).get(0) || null)
+
   # DOM Events
   onKeydownOrigin: (event) ->
     if keynames = keyIdentifiers[@kbdtype][event.originalEvent.keyIdentifier]
@@ -368,6 +394,31 @@ KeyConfigView = Backbone.View.extend
           @onSubmitMemo()
         event.stopPropagation()
   
+  onClickAddCommand: ->
+    if /^C-/.test(parentId = @model.get("new"))
+      parentId = @model.get "parentId"
+    #  order = @model.order + 0.5
+    #else
+    #  order = 1
+    lastFocused = @el
+    @model.collection.add
+      "new": "C-" + getUuid()
+      "origin": parentId
+      "parentId": parentId
+      #"childOrder": order
+  
+  onMouseOverChild: (event, id) ->
+    if id is @model.id
+      @$el.addClass "hover"
+    if event && (parentId = @model.get "parentId")
+      @model.collection.trigger "mouseoverchild", null, parentId
+  
+  onMouseOutChild: (event, id) ->
+    if id is @model.id
+      @$el.removeClass "hover"
+    if event && (parentId = @model.get "parentId")
+      @model.collection.trigger "mouseoutchild", null, parentId
+  
   onClickPause: ->
     @model.set("lastMode", @model.get("mode"))
     @onChangeMode(null, "through")
@@ -457,7 +508,7 @@ KeyConfigView = Backbone.View.extend
                 sectDesc: scHelpSect[key]
                 sectKey:  key
                 scHelp:   content
-              ).find(".sectInit").tooltip {position: {my: "left+10 top-60"}}
+              ).find(".sectInit").tooltip position: {my: "left+10 top-60"}, tooltipClass: "tooltipClass"
     if tdDesc.html() is ""
       tdDesc.append @tmplMemo memo: @model.get("memo")
       editOption = iconName: "icon-pencil", command: "Edit description"
@@ -476,7 +527,7 @@ KeyConfigView = Backbone.View.extend
     <button class="cog small"><i class="icon-caret-down"></i></button>
     <div class="selectCog" tabIndex="0">
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
-      <div class="addKey"><i class="icon-plus"></i> Add KeyEvent</div>
+      <div class="addCommand"><i class="icon-plus"></i> Add command</div>
       <div class="ctxmenu"><i class="icon-reorder"></i> Create context menu...</div>
       <div class="copySC"><i class="icon-paper-clip"></i> Copy script</div>
       <span class="seprater 1st"><hr style="margin:3px 1px" noshade></span>
@@ -513,6 +564,7 @@ KeyConfigView = Backbone.View.extend
     <tr class="data">
       <th>
         <div class="new" tabIndex="0"></div>
+        <div class="paddingImg"></div>
       </th>
       <th>
         <i class="icon-arrow-right"></i>
@@ -546,11 +598,19 @@ KeyConfigSetView = Backbone.View.extend
   
   initialize: (options) ->
     @collection.comparator = (model) ->
-      model.get("ordernum")
+      model.get "order"
     @collection.on
       add:      @onAddRender
       kbdEvent: @onKbdEvent
       @
+    ctx = document.getCSSCanvasContext("2d", "groupbar", 5, 5000);
+    ctx.strokeStyle = "#E6E6FA"
+    ctx.lineWidth = "5"
+    #ctx.lineCap = "round"
+    ctx.beginPath()
+    ctx.moveTo 3,0
+    ctx.lineTo 3, 5000
+    ctx.stroke()
   
   render: (keyConfigSet) ->
     @$el.append @template()
@@ -559,6 +619,7 @@ KeyConfigSetView = Backbone.View.extend
       .sortable
         delay: 300
         scroll: true
+        cancel: "tr.border,tr.child"
         cursor: "move"
         update: => @onUpdateSort()
         start: => @onStartSort()
@@ -583,9 +644,13 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "addCtxMenu"  , @onAddCtxMenu       , @
     divAddNew = @$("tr.addnew")[0] || null
     tbody = @$("tbody")[0]
+    if /^C-/.test(model.id) && lastFocused
+      divAddNew = lastFocused.nextSibling || null
+      @onStopSort()
     tbody.insertBefore keyConfigView.render(@model.get("kbdtype")).el, divAddNew
     tbody.insertBefore $(@tmplBorder)[0], divAddNew
-    if divAddNew
+    if divAddNew || /^C-/.test(model.id)
+      lastFocused = null
       @$("div.addnew").blur()
       @onUpdateSort()
     if keyConfigView.state is "invalid"
@@ -624,6 +689,7 @@ KeyConfigSetView = Backbone.View.extend
   onChildRemoveConfig: (model) ->
     @collection.remove model
     @onStopSort()
+    @onUpdateSort()
     windowOnResize()
     @onChildResizeInput()
   
@@ -672,7 +738,7 @@ KeyConfigSetView = Backbone.View.extend
     @$("tbody")
       .sortable("disable")
       .selectable
-        cancel: "tr:has(div.ctxmenu-icon),span"
+        cancel: "tr:has(div.ctxmenu-icon)"
         filter: "tr"
       .find("tr:has(div.mode[title='Disabled'])").addClass("unselectable").end()
       .find("tr:has(div.ctxmenu-icon)").addClass("unselectable").end()
@@ -722,22 +788,39 @@ KeyConfigSetView = Backbone.View.extend
     @model.set "kbdtype", newKbd
   
   onStartSort: ->
-    @$(".ui-sortable-placeholder").next("tr.border").remove()
+    @$("tr.child").hide()
+    @$(".ui-sortable-placeholder").nextAll("tr.border:first").remove()
+    @$(".parent th:first-child").removeAttr "rowspan"
   
   onStopSort: ->
-    $.each @$("tbody tr"), (i, tr) =>
-      if tr.className is "data"
-        unless $(tr).next("tr")[0]?.className is "border"
-          $(tr).after @tmplBorder
-      else
-        unless (target$ = $(tr).next("tr"))[0]?.className is "data"
-          target$.remove()
-    if (target$ = @$("tbody tr:first"))[0].className is "border"
-      target$.remove()
+    @$("tr.child").show()
+    @collection.models.forEach (model) =>
+      if (children = @collection.where(parentId: model.id).length) > 0
+        model.trigger "setRowspan", children + 1
   
   onUpdateSort: ->
-    @collection.trigger "updateOrder"
+    @$("tr.border").remove()
+    $("#sortarea").append @$("tr.data")
+    @collection.trigger "updateOrderByEl"
+    @collection.models.forEach (model) =>
+      if parentId = model.get "parentId"
+        model.set "order", 999
     @collection.sort()
+    @collection.models.forEach (model) =>
+      if parentId = model.get "parentId"
+        model.set "order", @collection.get(parentId).get("order")
+    @collection.sort()
+    $.each @collection.models, (i, model) =>
+      model.set "order", i
+      model.trigger "updatePosition"
+    $.each $("#sortarea tr"), (i, tr) =>
+      @$("tbody").append tr
+    @$("tr.last").removeClass "last"
+    $.each @$("tbody > tr"), (i, tr) =>
+      unless /child/.test tr.nextSibling?.className
+        (tr$ = $(tr)).after @tmplBorder
+        if /child/.test tr.className
+          tr$.addClass "last"
   
   # Object Method
   getSaveData: ->

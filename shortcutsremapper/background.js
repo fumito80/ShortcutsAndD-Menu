@@ -1173,7 +1173,7 @@
         keyConfigSet.forEach(function(keyConfig) {
           var ctxMenu;
           if ((ctxMenu = keyConfig.ctxMenu)) {
-            ctxMenu.id = keyConfig.id;
+            ctxMenu.id = keyConfig["new"];
             ctxMenu.order = ctxMenu.order || 999;
             if (keyConfig.mode === "through") {
               ctxMenu.type = "create pause";

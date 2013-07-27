@@ -703,7 +703,7 @@ createCtxMenus = ->
       targetCtxMenus = []
       keyConfigSet.forEach (keyConfig) ->
         if (ctxMenu = keyConfig.ctxMenu)
-          ctxMenu.id = keyConfig.id
+          ctxMenu.id = keyConfig.new
           ctxMenu.order = ctxMenu.order || 999
           if keyConfig.mode is "through"
             ctxMenu.type = "create pause"

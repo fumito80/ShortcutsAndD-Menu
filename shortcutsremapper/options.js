@@ -967,9 +967,10 @@
     };
 
     CtxMenuManagerView.prototype.onClickDone = function() {
-      var container, dfd, newCtxMenu,
+      var dfd, newCtxMenu,
         _this = this;
       newCtxMenu = [];
+      this.collection.reset();
       $.each(this.$(".ctxMenuItem"), function(i, el) {
         var contexts, menu$, message, _ref4;
         menu$ = $(el);
@@ -997,10 +998,6 @@
         return newCtxMenu.push(message);
       });
       this.trigger("setCtxMenus", newCtxMenu);
-      this.trigger("getCtxMenues", container = {});
-      (_.difference(this.collection.pluck("id"), _.pluck(container.ctxMenus, "parentId"))).forEach(function(id) {
-        return _this.collection.remove(_this.collection.get(id));
-      });
       (dfd = $.Deferred()).promise();
       this.trigger("remakeCtxMenu", {
         dfd: dfd
@@ -1339,12 +1336,17 @@
 
   modifierInits = ["c", "a", "s", "w"];
 
-  decodeKbdEvent = function(value) {
+  decodeKbdEvent = function(kbdCode) {
     var keyCombo, keyIdentifier, modifiers, scanCode;
-    modifiers = parseInt(value.substring(0, 2), 16);
-    scanCode = value.substring(2);
+    modifiers = parseInt(kbdCode.substring(0, 2), 16);
+    scanCode = kbdCode.substring(2);
     if (keyIdentifier = keys[scanCode]) {
       keyCombo = [];
+      /*
+      for i in [0...modifierKeys.length]
+        keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+      */
+
       if (modifiers & 1) {
         keyCombo.push(modifierKeys[0]);
       }
@@ -1356,6 +1358,15 @@
       }
       if (modifiers & 8) {
         keyCombo.push(modifierKeys[3]);
+      }
+      if (modifiers & 16) {
+        keyCombo.push(modifierKeys[4]);
+      }
+      if (modifiers & 32) {
+        keyCombo.push(modifierKeys[5]);
+      }
+      if (modifiers & 64) {
+        keyCombo.push(modifierKeys[6]);
       }
       if (modifiers & 4) {
         keyCombo.push(keyIdentifier[1] || keyIdentifier[0]);
@@ -1448,6 +1459,7 @@
       "click div.mode": "onClickMode",
       "click .selectMode div": "onChangeMode",
       "click div.edit": "onClickEdit",
+      "click div.addCommand": "onClickAddCommand",
       "click div.copySC": "onClickCopySC",
       "click div.ctxmenu": "onClickCtxMenu",
       "click div.pause": "onClickPause",
@@ -1461,7 +1473,9 @@
       "submit  .memo": "onSubmitMemo",
       "blur  .selectMode": "onBlurSelectMode",
       "blur  .selectCog": "onBlurSelectCog",
-      "blur  input.memo": "onBlurInputMemo"
+      "blur  input.memo": "onBlurInputMemo",
+      "mouseover": "onMouseOverChild",
+      "mouseout": "onMouseOutChild"
     },
     initialize: function(options) {
       this.optionKeys = _.keys(modeDisp);
@@ -1472,22 +1486,33 @@
         "setFocus": this.onClickInput,
         "remove": this.onRemove,
         "setUnselectable": this.onSetUnselectable,
+        "setRowspan": this.onSetRowspan,
+        "updatePosition": this.onUpdatePosition,
         "triggerEventCtxMenuSelected": this.onTriggerCtxMenuSelected
       }, this);
       return this.model.collection.on({
         "kbdEvent": this.onKbdEvent,
         "changeKbd": this.onChangeKbd,
-        "updateOrder": this.onUpdateOrder
+        "updateOrderByEl": this.onUpdateOrderByEl,
+        "mouseoverchild": this.onMouseOverChild,
+        "mouseoutchild": this.onMouseOutChild
       }, this);
     },
     render: function(kbdtype) {
-      var mode;
+      var mode, models;
       this.setElement(this.template({
         options: modeDisp
       }));
       mode = this.model.get("mode");
-      if (!this.setKbdValue(this.$(".new"), this.model.id)) {
+      if (/^C-/.test(this.model.id)) {
+        this.$el.addClass("child").find("th:first-child").remove();
+      } else if (!this.setKbdValue(this.$(".new"), this.model.id)) {
         this.state = "invalid";
+      } else if ((models = this.model.collection.where({
+        parentId: this.model.id
+      })).length > 0) {
+        this.$el.addClass("parent");
+        this.$("th:first-child").attr("rowspan", models.length + 1);
       }
       this.setKbdValue(this.$(".origin"), this.model.get("origin"));
       this.kbdtype = kbdtype;
@@ -1518,6 +1543,11 @@
       return this.trigger("resizeInput");
     },
     onRemove: function() {
+      var parentId;
+      if (parentId = this.model.get("parentId")) {
+        this.model.collection.trigger("mouseoutchild", parentId);
+      }
+      this.model.collection.off(null, null, this);
       this.model.off(null, null, this);
       this.off(null, null, null);
       return this.remove();
@@ -1542,6 +1572,9 @@
           shortcut: shortcut
         });
       }
+    },
+    onSetRowspan: function(count) {
+      return this.$el.find("th:first-child").attr("rowspan", count);
     },
     onKbdEvent: function(value) {
       var input$, scanCode;
@@ -1573,8 +1606,11 @@
       this.setKbdValue(this.$(".origin"), this.model.get("origin"));
       return this.setDesc();
     },
-    onUpdateOrder: function() {
-      return this.model.set("ordernum", this.$el.parent().children().index(this.$el));
+    onUpdateOrderByEl: function() {
+      return this.model.set("order", this.$el.parent().children().index(this.$el));
+    },
+    onUpdatePosition: function() {
+      return this.$el.parent()[0].insertBefore(this.el, this.$el.parent().children().eq(this.model.get("order")).get(0) || null);
     },
     onKeydownOrigin: function(event) {
       var i, keyname, keynames, scCode, scanCode, _i, _ref4;
@@ -1741,6 +1777,36 @@
           return event.stopPropagation();
       }
     },
+    onClickAddCommand: function() {
+      var parentId;
+      if (/^C-/.test(parentId = this.model.get("new"))) {
+        parentId = this.model.get("parentId");
+      }
+      lastFocused = this.el;
+      return this.model.collection.add({
+        "new": "C-" + getUuid(),
+        "origin": parentId,
+        "parentId": parentId
+      });
+    },
+    onMouseOverChild: function(event, id) {
+      var parentId;
+      if (id === this.model.id) {
+        this.$el.addClass("hover");
+      }
+      if (event && (parentId = this.model.get("parentId"))) {
+        return this.model.collection.trigger("mouseoverchild", null, parentId);
+      }
+    },
+    onMouseOutChild: function(event, id) {
+      var parentId;
+      if (id === this.model.id) {
+        this.$el.removeClass("hover");
+      }
+      if (event && (parentId = this.model.get("parentId"))) {
+        return this.model.collection.trigger("mouseoutchild", null, parentId);
+      }
+    },
     onClickPause: function() {
       this.model.set("lastMode", this.model.get("mode"));
       return this.onChangeMode(null, "through");
@@ -1861,7 +1927,8 @@
               })).find(".sectInit").tooltip({
                 position: {
                   my: "left+10 top-60"
-                }
+                },
+                tooltipClass: "tooltipClass"
               });
             }
           }
@@ -1889,13 +1956,13 @@
       }
       return this.onChangeCtxmenu();
     },
-    tmplDesc: _.template("<button class=\"cog small\"><i class=\"icon-caret-down\"></i></button>\n<div class=\"selectCog\" tabIndex=\"0\">\n  <div class=\"edit\"><i class=\"<%=iconName%>\"></i> <%=command%></div>\n  <div class=\"addKey\"><i class=\"icon-plus\"></i> Add KeyEvent</div>\n  <div class=\"ctxmenu\"><i class=\"icon-reorder\"></i> Create context menu...</div>\n  <div class=\"copySC\"><i class=\"icon-paper-clip\"></i> Copy script</div>\n  <span class=\"seprater 1st\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"pause\"><i class=\"icon-pause\"></i> Pause</div>\n  <div class=\"resume\"><i class=\"icon-play\"></i> Resume</div>\n  <span class=\"seprater\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"delete\"><i class=\"icon-trash\"></i> Delete</div>\n</div>"),
+    tmplDesc: _.template("<button class=\"cog small\"><i class=\"icon-caret-down\"></i></button>\n<div class=\"selectCog\" tabIndex=\"0\">\n  <div class=\"edit\"><i class=\"<%=iconName%>\"></i> <%=command%></div>\n  <div class=\"addCommand\"><i class=\"icon-plus\"></i> Add command</div>\n  <div class=\"ctxmenu\"><i class=\"icon-reorder\"></i> Create context menu...</div>\n  <div class=\"copySC\"><i class=\"icon-paper-clip\"></i> Copy script</div>\n  <span class=\"seprater 1st\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"pause\"><i class=\"icon-pause\"></i> Pause</div>\n  <div class=\"resume\"><i class=\"icon-play\"></i> Resume</div>\n  <span class=\"seprater\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"delete\"><i class=\"icon-trash\"></i> Delete</div>\n</div>"),
     tmplMemo: _.template("<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
     tmplBookmark: _.template("<div class=\"bookmark\" title=\"<<%=openmode%>>\n<%=url%>\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);\"><%=title%></div>"),
     tmplCommand: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div><div class=\"command\"><%=desc%></div>"),
     tmplCommandCustom: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div>\n<div class=\"command\"><%=desc%>:</div><div class=\"commandCaption\" title=\"<%=content3row%>\"><%=caption%></div>"),
     tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"paddingImg\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -1907,13 +1974,21 @@
       "click": "onClickBlank"
     },
     initialize: function(options) {
+      var ctx;
       this.collection.comparator = function(model) {
-        return model.get("ordernum");
+        return model.get("order");
       };
-      return this.collection.on({
+      this.collection.on({
         add: this.onAddRender,
         kbdEvent: this.onKbdEvent
       }, this);
+      ctx = document.getCSSCanvasContext("2d", "groupbar", 5, 5000);
+      ctx.strokeStyle = "#E6E6FA";
+      ctx.lineWidth = "5";
+      ctx.beginPath();
+      ctx.moveTo(3, 0);
+      ctx.lineTo(3, 5000);
+      return ctx.stroke();
     },
     render: function(keyConfigSet) {
       var _this = this;
@@ -1922,6 +1997,7 @@
       this.$("tbody").sortable({
         delay: 300,
         scroll: true,
+        cancel: "tr.border,tr.child",
         cursor: "move",
         update: function() {
           return _this.onUpdateSort();
@@ -1955,9 +2031,14 @@
       keyConfigView.on("addCtxMenu", this.onAddCtxMenu, this);
       divAddNew = this.$("tr.addnew")[0] || null;
       tbody = this.$("tbody")[0];
+      if (/^C-/.test(model.id) && lastFocused) {
+        divAddNew = lastFocused.nextSibling || null;
+        this.onStopSort();
+      }
       tbody.insertBefore(keyConfigView.render(this.model.get("kbdtype")).el, divAddNew);
       tbody.insertBefore($(this.tmplBorder)[0], divAddNew);
-      if (divAddNew) {
+      if (divAddNew || /^C-/.test(model.id)) {
+        lastFocused = null;
         this.$("div.addnew").blur();
         this.onUpdateSort();
       }
@@ -2005,6 +2086,7 @@
     onChildRemoveConfig: function(model) {
       this.collection.remove(model);
       this.onStopSort();
+      this.onUpdateSort();
       windowOnResize();
       return this.onChildResizeInput();
     },
@@ -2068,7 +2150,7 @@
         return model.trigger("setUnselectable", (_ref4 = model.id, __indexOf.call(entried, _ref4) >= 0) ? true : false);
       });
       return this.$("tbody").sortable("disable").selectable({
-        cancel: "tr:has(div.ctxmenu-icon),span",
+        cancel: "tr:has(div.ctxmenu-icon)",
         filter: "tr"
       }).find("tr:has(div.mode[title='Disabled'])").addClass("unselectable").end().find("tr:has(div.ctxmenu-icon)").addClass("unselectable").end().find("div.mode,div.new,div.origin").addClass("unselectable");
     },
@@ -2121,30 +2203,58 @@
       return this.model.set("kbdtype", newKbd);
     },
     onStartSort: function() {
-      return this.$(".ui-sortable-placeholder").next("tr.border").remove();
+      this.$("tr.child").hide();
+      this.$(".ui-sortable-placeholder").nextAll("tr.border:first").remove();
+      return this.$(".parent th:first-child").removeAttr("rowspan");
     },
     onStopSort: function() {
-      var target$,
-        _this = this;
-      $.each(this.$("tbody tr"), function(i, tr) {
-        var target$, _ref4, _ref5;
-        if (tr.className === "data") {
-          if (((_ref4 = $(tr).next("tr")[0]) != null ? _ref4.className : void 0) !== "border") {
-            return $(tr).after(_this.tmplBorder);
-          }
-        } else {
-          if (((_ref5 = (target$ = $(tr).next("tr"))[0]) != null ? _ref5.className : void 0) !== "data") {
-            return target$.remove();
+      var _this = this;
+      this.$("tr.child").show();
+      return this.collection.models.forEach(function(model) {
+        var children;
+        if ((children = _this.collection.where({
+          parentId: model.id
+        }).length) > 0) {
+          return model.trigger("setRowspan", children + 1);
+        }
+      });
+    },
+    onUpdateSort: function() {
+      var _this = this;
+      this.$("tr.border").remove();
+      $("#sortarea").append(this.$("tr.data"));
+      this.collection.trigger("updateOrderByEl");
+      this.collection.models.forEach(function(model) {
+        var parentId;
+        if (parentId = model.get("parentId")) {
+          return model.set("order", 999);
+        }
+      });
+      this.collection.sort();
+      this.collection.models.forEach(function(model) {
+        var parentId;
+        if (parentId = model.get("parentId")) {
+          return model.set("order", _this.collection.get(parentId).get("order"));
+        }
+      });
+      this.collection.sort();
+      $.each(this.collection.models, function(i, model) {
+        model.set("order", i);
+        return model.trigger("updatePosition");
+      });
+      $.each($("#sortarea tr"), function(i, tr) {
+        return _this.$("tbody").append(tr);
+      });
+      this.$("tr.last").removeClass("last");
+      return $.each(this.$("tbody > tr"), function(i, tr) {
+        var tr$, _ref4;
+        if (!/child/.test((_ref4 = tr.nextSibling) != null ? _ref4.className : void 0)) {
+          (tr$ = $(tr)).after(_this.tmplBorder);
+          if (/child/.test(tr.className)) {
+            return tr$.addClass("last");
           }
         }
       });
-      if ((target$ = this.$("tbody tr:first"))[0].className === "border") {
-        return target$.remove();
-      }
-    },
-    onUpdateSort: function() {
-      this.collection.trigger("updateOrder");
-      return this.collection.sort();
     },
     getSaveData: function() {
       this.collection.remove(this.collection.findWhere({
