@@ -274,6 +274,7 @@ thead th i.icon-arrow-right {
 }
 .keyConfigSetView .tdOrigin {
   padding-right: 12px;
+  white-space: nowrap;
 }
 .keyConfigSetView tbody .desc {
   position: relative;
@@ -326,8 +327,9 @@ button.cog.small {
   left: auto;
   padding: 2px 5px;
   display: none;
+  border-radius: 1px;.sl
 }
-tbody .data:hover button.cog {
+.data:hover button.cog {
   display: inline-block;
 }
 button.cog.selecting {
@@ -336,7 +338,7 @@ button.cog.selecting {
 .selectCog {
   position: absolute;
   right: 6px;
-  top: 30px;
+  top: 27px;
   background: white;  
   padding: 2px 0;
 }
@@ -704,7 +706,7 @@ button.cog.selecting {
   color: white;
   background: #1E90FF;
 }
-.updown {
+.sortable {
   position: absolute;
   display: none;
   background-image: -webkit-canvas(updown);
@@ -714,7 +716,7 @@ button.cog.selecting {
   top: 0;
   left: -22px;
 }
-.title .updown {
+.title .sortable {
   left: -37px;
 }
 .ctxMenuManager .result_outer {
@@ -856,7 +858,7 @@ button.cog.selecting {
   margin-right: 3px;
   padding: 7px 10px;
 }
-.data.ui-selectee.ui-selected {
+.keyConfigSetView .data.ui-selected {
   background: #FCC;
 }
 .keyConfigSetView .data.ui-selectee.unselectable {
@@ -880,25 +882,21 @@ button.cog.selecting {
   position: relative;
   vertical-align: top;
 }
-.parent th:first-child {
-  background-image: -webkit-canvas(groupbar);
-  background-repeat: no-repeat;
-  background-position-x: 98%;
-  background-position-y: 7px;
-}
-.paddingImg {
+.grpbartop, .grpbarbtm {
   position: absolute;
-  background-color: #FFF;
-  width: 20px;
-  height: 7px;
+  width: 5px;
+  height: 50%;
   right: 0;
-  bottom: 0;
+  background-color: #E6E6FA;
 }
-.hover .paddingImg {
-  background-color: rgb(245,245,255);
+tr:not(.parent) .grpbartop, tr:not(.parent) .grpbarbtm {
+  display: none;
 }
-tbody .data:hover .paddingImg {
-  background: rgb(245,245,255);
+.parent .grpbartop {
+  top: 7px;
+}
+.parent .grpbarbtm {
+  bottom: 7px;
 }
 .keyConfigSetView tbody .parent th, .keyConfigSetView tbody .parent td {
   padding-bottom: 0;
@@ -912,4 +910,46 @@ tbody .data:hover .paddingImg {
 }
 .hover th:first-child {
   background-color: rgb(245,245,255);
+}
+.desc .updown {
+  display: none;
+  position: absolute;
+  right: 32px;
+  left: auto;
+  top: 8px;  
+}
+.desc .updown a {
+  padding: 3px 2px;
+}
+.desc .updown i {
+  font-size: 0.8em;
+}
+.data:hover .desc .updown {
+  display: inline-block;
+}
+.inputSleep {
+  display: none;
+  outline: 0;
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE;
+}
+.dispSleep {
+  background-color: #ff8;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.editSleep {
+  visibility: hidden;
+  cursor: pointer;
+  color: #999;
+}
+.editSleep:hover {
+  color: #000;
+}
+.formSleep:hover .editSleep {
+  visibility: inherit;
+}
+.msec {
+  font-size: 0.7em;
+  color: #999;
 }

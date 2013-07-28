@@ -19,8 +19,17 @@ PopupBaseView = Backbone.View.extend
       return false
     @options = options
     if @model = model
-      shortcut = decodeKbdEvent model.get("new")
-      @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+")
+      order = ""
+      if /^C/.test modelId = model.get("new")
+        shortcut = decodeKbdEvent parentId = model.get "parentId"
+        $.each model.collection.where(parentId: parentId), (i, model) ->
+          if model.id is modelId
+            order = "-#" + (i + 1)
+            false
+      else
+        shortcut = decodeKbdEvent modelId
+      @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+") + order
+      model.trigger "showPopup", true
     @render()
     @$el.show().draggable
       cursor: "move"
@@ -37,6 +46,7 @@ PopupBaseView = Backbone.View.extend
   hidePopup: ->
     $(".backscreen").hide()
     @$el.hide()
+    @model?.trigger "showPopup", false
   tmplHelp: _.template """
     <a href="helpview.html#<%=name%>" target="_blank" class="help" title="help">
       <i class="icon-question-sign" title="Help"></i>
@@ -374,10 +384,10 @@ tmplCtxMenus =
   image:     ["Return the image URL", "icon-picture"]
   all:       ["Return any of the above", "icon-asterisk"]
 
-getUuid = ->
+getUuid = (init) ->
   S4 = ->
     (((1+Math.random())*0x10000)|0).toString(16).substring(1)
-  [S4(), S4()].join("") + (new Date / 1000 | 0)
+  init + [S4(), S4()].join("").toUpperCase() + (new Date / 1000 | 0)
 
 class CtxMenuOptionsView extends EditableBaseView
   name: "ctxMenuOptions"
@@ -448,7 +458,7 @@ class CtxMenuOptionsView extends EditableBaseView
           parentName = @$(".selectParent option[value='#{parentId}']").text()
         unless @collection.findWhere(id: parentId, contexts: ctxType)
           @collection.add
-            id: parentId = getUuid()
+            id: parentId = getUuid("T")
             contexts: ctxType
             title: parentName
         @model.set("ctxMenu", caption: caption, parentId: parentId, order: @ctxMenu?.order)
@@ -637,9 +647,6 @@ class CtxMenuManagerView extends ExplorerBaseView
             title: @$("#" + message.parentId + " .title").text()
       newCtxMenu.push message
     @trigger "setCtxMenus", newCtxMenu
-    #@trigger "getCtxMenues", container = {}
-    #(_.difference @collection.pluck("id"), _.pluck(container.ctxMenus, "parentId")).forEach (id) =>
-    #  @collection.remove @collection.get(id)
     (dfd = $.Deferred()).promise()
     @trigger "remakeCtxMenu", dfd: dfd
     dfd.done =>
@@ -696,7 +703,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     unless (target$ = $(document.activeElement)).hasClass("contexts")
       return
     folders$ = target$.parents(".contexts").find ".folders"
-    (newFolder$ = $(@tmplFolder id: getUuid(), title: "").appendTo(folders$)).find(".title").focus()
+    (newFolder$ = $(@tmplFolder id: getUuid("T"), title: "").appendTo(folders$)).find(".title").focus()
     @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
     @$(".folders").sortable "refresh"
     @setFolderDroppable newFolder$
