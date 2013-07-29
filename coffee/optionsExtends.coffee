@@ -573,6 +573,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
     $.each @$(".editButtons button"), (i, el) =>
       @disableButton _.map(document.querySelectorAll(".editButtons button"), (el) -> el.className.match(/^(\w+)\s/)[1])
+    @$el.append @tmplHelp @
     @
   onShowPopup: (name, model, options) ->
     unless super(name, model, options)

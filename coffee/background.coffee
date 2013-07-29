@@ -124,19 +124,8 @@ execCtxMenu = (info) ->
   jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
   for i in [0...andy.local.keyConfigSet.length]
     if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
-      if keyConfig.batch || keyConfig.mode isnt "remap"
-        execShortcut $.Deferred(), ((dfd)->dfd.resolve()), null, keyConfig.new, 0
-      else
-        execShortcut $.Deferred(), ((dfd)->dfd.resolve()), null, keyConfig.origin, 0, "keydown"
-      #if keyConfig.mode is "remap"
-      #  keydownMode = "keydown"
-      #  transCode = transKbdEvent keyConfig.origin, andy.local.config.kbdtype
-      #else
-      #  keydownMode = ""
-      #  transCode = transKbdEvent keyConfig.new, andy.local.config.kbdtype
+      execBatchMode keyConfig.new
       break
-  #if transCode
-  #  execShortcut $.Deferred(), ((dfd)->dfd.resolve()), transCode, 0, keydownMode
 
 chrome.contextMenus.onClicked.addListener (info, tab) ->
   execCtxMenu info

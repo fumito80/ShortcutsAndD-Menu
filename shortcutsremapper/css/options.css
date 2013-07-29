@@ -361,6 +361,10 @@ button.cog.selecting {
 .keyConfigSetView .desc > div:last-child {
   overflow: auto;
 }
+.keyConfigSetView .desc div.memo {
+  color: #583521;
+  font-weight: bold;
+}
 .keyConfigSetView .desc form.memo {
   display: none;
 }
@@ -374,6 +378,7 @@ button.cog.selecting {
 .keyConfigSetView .desc div.commandCaption {
   overflow: auto;
   padding-left: 5px;
+  color: #583521;
   font-weight: bold;
 }
 .desc .bookmark, .bookmarkOptions .bookmark {
@@ -743,6 +748,7 @@ button.cog.selecting {
 }
 .ctxMenuManager span.contexts {
   cursor: default;
+  font-weight: bold;
 }
 .ctxMenuManager .menuCaption {
   cursor: pointer;
@@ -800,7 +806,7 @@ button.cog.selecting {
   margin: 0 -2x;
 }
 .ctxMenuManager span[tabIndex='0']:hover {
-  background-color: rgba(204, 204, 255, 0.4);
+  background-color: rgba(204, 204, 255, 0.3);
   border: 1px solid #99F;
 }
 .ctxMenuManager span[tabIndex='0']:focus {

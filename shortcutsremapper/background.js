@@ -187,15 +187,7 @@
     _results = [];
     for (i = _i = 0, _ref = andy.local.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       if ((keyConfig = andy.local.keyConfigSet[i])["new"] === info.menuItemId) {
-        if (keyConfig.batch || keyConfig.mode !== "remap") {
-          execShortcut($.Deferred(), (function(dfd) {
-            return dfd.resolve();
-          }), null, keyConfig["new"], 0);
-        } else {
-          execShortcut($.Deferred(), (function(dfd) {
-            return dfd.resolve();
-          }), null, keyConfig.origin, 0, "keydown");
-        }
+        execBatchMode(keyConfig["new"]);
         break;
       } else {
         _results.push(void 0);

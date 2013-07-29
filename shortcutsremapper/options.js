@@ -877,6 +877,7 @@
           return el.className.match(/^(\w+)\s/)[1];
         }));
       });
+      this.$el.append(this.tmplHelp(this));
       return this;
     };
 
@@ -2025,7 +2026,7 @@
             title: bookmark.title
           }));
           editOption = {
-            iconName: "icon-cog",
+            iconName: "icon-wrench",
             command: "Edit bookmark..."
           };
           break;
@@ -2050,7 +2051,7 @@
               caption: command.caption
             }));
             editOption = {
-              iconName: "icon-cog",
+              iconName: "icon-wrench",
               command: "Edit command..."
             };
           } else {
@@ -2127,7 +2128,7 @@
     tmplCommand: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div><div class=\"command\"><%=desc%></div>"),
     tmplCommandCustom: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div>\n<div class=\"command\"><%=desc%>:</div><div class=\"commandCaption\" title=\"<%=content3row%>\"><%=caption%></div>"),
     tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"grpbartop\"></div>\n    <div class=\"grpbarbtm\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"grpbartop\"></div>\n    <div class=\"grpbarbtm\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -2338,6 +2339,9 @@
       newItem$ = $(this.tmplAddNew({
         placeholder: this.placeholder
       }));
+      if (/child/.test(lastFocused != null ? lastFocused.className : void 0)) {
+        lastFocused = $(lastFocused).prevAll(".parent:first")[0];
+      }
       this.$("tbody")[0].insertBefore(newItem$[0], lastFocused);
       newItem$.find(".addnew").focus()[0].scrollIntoViewIfNeeded();
       this.$("tbody").sortable("disable");
@@ -2420,7 +2424,7 @@
     },
     tmplAddNew: _.template("<tr class=\"addnew\">\n  <th colspan=\"3\">\n    <div class=\"new addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </th>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
     tmplBorder: "<tr class=\"border\">\n  <td colspan=\"6\"><div class=\"border\"></div></td>\n  <td></td>\n</tr>",
-    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th class=\"ctxmenu\"></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Comment</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
+    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th class=\"ctxmenu\"></th>\n    <th>\n      <div class=\"th_inner desc\">Comment</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 
   marginBottom = 0;

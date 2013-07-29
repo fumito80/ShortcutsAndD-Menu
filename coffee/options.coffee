@@ -565,7 +565,7 @@ KeyConfigView = Backbone.View.extend
           openmode: bmOpenMode[bookmark.openmode]
           url: bookmark.url
           title: bookmark.title
-        editOption = iconName: "icon-cog", command: "Edit bookmark..."
+        editOption = iconName: "icon-wrench", command: "Edit bookmark..."
       when "command"
         desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
         if commandDisp[2]
@@ -583,7 +583,7 @@ KeyConfigView = Backbone.View.extend
             desc: desc
             content3row: content3row.join("\n")
             caption: command.caption
-          editOption = iconName: "icon-cog", command: "Edit command..."
+          editOption = iconName: "icon-wrench", command: "Edit command..."
         else
           tdDesc.append @tmplCommand desc: desc, ctg: commandDisp[0].substring(0,1).toUpperCase() + commandDisp[0].substring(1)
       when "remap", "disabled"
@@ -688,7 +688,6 @@ KeyConfigView = Backbone.View.extend
       <th class="tdOrigin">
         <div class="origin" tabIndex="-1"></div>
       </th>
-      <td class="ctxmenu"></td>
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
@@ -696,6 +695,7 @@ KeyConfigView = Backbone.View.extend
           <div class="<%=key%>"><i class="icon <%=option[1]%>"></i> <%=option[0]%></div>
           <% }}); %>
         </div>
+      <td class="ctxmenu"></td>
       <td class="desc"></td>
       <td class="blank">&nbsp;</td>
     </tr>
@@ -874,6 +874,8 @@ KeyConfigSetView = Backbone.View.extend
       $(event.currentTarget).tipTip defaultPosition: "left"
       return false
     newItem$ = $(@tmplAddNew placeholder: @placeholder)
+    if /child/.test lastFocused?.className
+      lastFocused = $(lastFocused).prevAll(".parent:first")[0]
     @$("tbody")[0].insertBefore newItem$[0], lastFocused
     newItem$.find(".addnew").focus()[0].scrollIntoViewIfNeeded()
     @$("tbody").sortable "disable"
@@ -960,10 +962,10 @@ KeyConfigSetView = Backbone.View.extend
         </th>
         <th></th>
         <th></th>
-        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner options">Mode</div>
         </th>
+        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner desc">Comment</div>
         </th>
