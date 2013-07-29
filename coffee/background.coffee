@@ -1,3 +1,4 @@
+defaultSleep = 100
 flexkbd = document.getElementById("flexkbd")
 
 tabStateNotifier =
@@ -16,9 +17,9 @@ tabStateNotifier =
     else
       @completes[tabId] = true
 
-execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) ->
+execShortcut = (dfd, doneCallback, transCode, scCode, sleepMSec, execMode, batchIndex) ->
   if transCode
-    scCode = ""
+    #scCode = ""
     modifiersCode = 0
     test = transCode.match(/\[(\w*?)\](.+)/)
     if (test)
@@ -46,35 +47,36 @@ execShortcut = (dfd, doneCallback, transCode, sleepMSec, execMode, batchIndex) -
         throw new Error "Modifier code is not included in '#{transCode}'."
       else
         scCode = "0" + modifiersCode.toString(16) + scanCode
-    
-    unless execMode
-      for i in [0...andy.local.keyConfigSet.length]
-        if (item = andy.local.keyConfigSet[i]).new is scCode
-          execMode = item.mode
-          break
-    switch execMode
-      when "command"
-        execCommand(scCode).done ->
-          doneCallback dfd, sleepMSec, batchIndex
-      when "bookmark"
-        preOpenBookmark(scCode).done (tabId) ->
-          if tabId
-            tabStateNotifier.register tabId, ->
-              doneCallback dfd, sleepMSec, batchIndex
-          else
+  else if !scCode
+    throw new Error "Command argument is not found."
+    return
+
+  unless execMode
+    for i in [0...andy.local.keyConfigSet.length]
+      if (item = andy.local.keyConfigSet[i]).new is scCode
+        execMode = item.mode
+        break
+  switch execMode
+    when "command"
+      execCommand(scCode).done ->
+        doneCallback dfd, sleepMSec, batchIndex
+    when "bookmark"
+      preOpenBookmark(scCode).done (tabId) ->
+        if tabId
+          tabStateNotifier.register tabId, ->
             doneCallback dfd, sleepMSec, batchIndex
-      when "keydown"
-        setTimeout((->
-          flexkbd.CallShortcut scCode, 8
+        else
           doneCallback dfd, sleepMSec, batchIndex
-        ), 0)
-      else
-        setTimeout((->
-          flexkbd.CallShortcut scCode, 4
-          doneCallback dfd, sleepMSec, batchIndex
-        ), 0)
-  else
-    throw new Error "Command argument is not found."  
+    when "keydown"
+      setTimeout((->
+        flexkbd.CallShortcut scCode, 8
+        doneCallback dfd, sleepMSec, batchIndex
+      ), 0)
+    else
+      setTimeout((->
+        flexkbd.CallShortcut scCode, 4
+        doneCallback dfd, sleepMSec, batchIndex
+      ), 0)
 
 execBatch = (dfdCaller, request, sendResponse) ->
   doneCallback = (dfd, sleepMSec, batchIndex) ->
@@ -86,7 +88,7 @@ execBatch = (dfdCaller, request, sendResponse) ->
       dfd = $.Deferred()
       try
         if isNaN(command = commands[batchIndex])
-          execShortcut dfd, doneCallback, command, 0, null, batchIndex
+          execShortcut dfd, doneCallback, command, null, 0, null, batchIndex
         else
           sleepMSec = Math.round command
           if (-1 < sleepMSec < 60000)
@@ -122,15 +124,19 @@ execCtxMenu = (info) ->
   jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
   for i in [0...andy.local.keyConfigSet.length]
     if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
-      if keyConfig.mode is "remap"
-        keydownMode = "keydown"
-        transCode = transKbdEvent keyConfig.origin, andy.local.config.kbdtype
+      if keyConfig.batch || keyConfig.mode isnt "remap"
+        execShortcut $.Deferred(), ((dfd)->dfd.resolve()), null, keyConfig.new, 0
       else
-        keydownMode = ""
-        transCode = transKbdEvent keyConfig.new, andy.local.config.kbdtype
+        execShortcut $.Deferred(), ((dfd)->dfd.resolve()), null, keyConfig.origin, 0, "keydown"
+      #if keyConfig.mode is "remap"
+      #  keydownMode = "keydown"
+      #  transCode = transKbdEvent keyConfig.origin, andy.local.config.kbdtype
+      #else
+      #  keydownMode = ""
+      #  transCode = transKbdEvent keyConfig.new, andy.local.config.kbdtype
       break
-  if transCode
-    execShortcut $.Deferred(), ((dfd)->dfd.resolve()), transCode, 0, keydownMode
+  #if transCode
+  #  execShortcut $.Deferred(), ((dfd)->dfd.resolve()), transCode, 0, keydownMode
 
 chrome.contextMenus.onClicked.addListener (info, tab) ->
   execCtxMenu info
@@ -148,15 +154,15 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
       if dfd.state() is "pending"
         sendResponse msg: "Command has been killed in a time-out."
         dfd.resolve()
-    ), 60000)
+    ), 61000)
     try
       switch request.action
         when "batch"
           execBatch dfd, request, sendResponse
         when "callShortcut"
-          execShortcut dfd, doneCallback, request.value1, request.value2
+          execShortcut dfd, doneCallback, request.value1, null, request.value2
         when "keydown"
-          execShortcut dfd, doneCallback, request.value1, request.value2, "keydown"
+          execShortcut dfd, doneCallback, request.value1, null, request.value2, "keydown"
         when "sleep"
           setTimeout((->
             flexkbd.Sleep request.value1
@@ -251,6 +257,45 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
     else
       tabStateNotifier.callComplete tabId
   
+execBatchMode = (scCode) ->
+  doneCallback = (dfd, sleepMSec, batchIndex) ->
+    flexkbd.Sleep sleepMSec if sleepMSec > 0
+    dfd.resolve(batchIndex + 1)
+  keyConfigs = []
+  andy.local.keyConfigSet.forEach (keyConfig) ->
+    if keyConfig.new is scCode || keyConfig.parentId is scCode
+      keyConfigs.push keyConfig
+  # execute
+  (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
+  for i in [0...keyConfigs.length]
+    dfdBatchQueue = dfdBatchQueue.then (batchIndex) ->
+      dfd = $.Deferred()
+      setTimeout((->
+        if dfd.state() is "pending"
+          dfd.reject()
+          console.log "Command has been killed in a time-out."
+      ), 61000)
+      try
+        keyConfig = keyConfigs[batchIndex]
+        switch keyConfig.mode
+          when "remap"
+            execShortcut dfd, doneCallback, null, keyConfig.origin, defaultSleep, "keydown", batchIndex
+          when "sleep"
+            setTimeout((->
+              flexkbd.Sleep ~~keyConfig.sleep
+              doneCallback dfd, 0, batchIndex
+            ), 0)
+          when "comment"
+            setTimeout((->
+              doneCallback dfd, 0, batchIndex
+            ), 0)
+          else
+            execShortcut dfd, doneCallback, null, keyConfig.new, defaultSleep, keyConfig.mode, batchIndex
+      catch e
+        dfd.reject()
+        console.log e.message
+      dfd.promise()
+  dfdKicker.resolve(0)
 
 notifications = {}
 notifications.state = "closed"
@@ -574,7 +619,9 @@ setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
     keyConfigSet.forEach (item) ->
-      if (item.new)
+      if item.batch && item.new
+        sendData.push [item.new, item.origin, "batch"].join(";")
+      else if !/^C/.test item.new
         sendData.push [item.new, item.origin, item.mode].join(";")
     flexkbd.SetKeyConfig sendData.join("|")
 
@@ -631,6 +678,8 @@ window.pluginEvent = (action, value) ->
       preOpenBookmark value
     when "command"
       execCommand value
+    when "batch"
+      execBatchMode value
 
 scHelp = {}
 scHelpSect = {}

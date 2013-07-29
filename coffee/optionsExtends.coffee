@@ -510,7 +510,7 @@ class CtxMenuGetterView extends PopupBaseView
   #  Add entries to the <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contexts%></strong> context menu <%=folder%><br>you can select the functions of the keyboard shortcut.
   #  """
   tmplMessage: _.template """
-    Add entries to the context menu <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contextName%></strong><%=folder%>, <br>from the functions that you selected.
+    Add entries to the context menu for <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contextName%></strong><%=folder%><br>from the functions that you selected.
     """
 
 class CtxMenuManagerView extends ExplorerBaseView

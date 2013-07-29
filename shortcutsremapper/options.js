@@ -795,7 +795,7 @@
       return this.trigger("addCtxMenus", true);
     };
 
-    CtxMenuGetterView.prototype.tmplMessage = _.template("Add entries to the context menu <span class=\"ctxmenu-icon\"><i class=\"<%=icon%>\"></i></span><strong><%=contextName%></strong><%=folder%>, <br>from the functions that you selected.");
+    CtxMenuGetterView.prototype.tmplMessage = _.template("Add entries to the context menu for <span class=\"ctxmenu-icon\"><i class=\"<%=icon%>\"></i></span><strong><%=contextName%></strong><%=folder%><br>from the functions that you selected.");
 
     return CtxMenuGetterView;
 
@@ -1481,7 +1481,7 @@
       "click .edit": "onClickEdit",
       "click .addCommand": "onClickAddCommand",
       "click .copySC": "onClickCopySC",
-      "click .ctxmenu": "onClickCtxMenu",
+      "click div.ctxmenu": "onClickCtxMenu",
       "click .pause": "onClickPause",
       "click .resume": "onClickResume",
       "click .delete": "onClickDelete",
@@ -1606,10 +1606,12 @@
         parentId: this.model.id
       })).length > 0) {
         this.$el.addClass("parent");
-        return this.$("th:first-child").attr("rowspan", models.length + 1);
+        this.$("th:first-child").attr("rowspan", models.length + 1);
+        return this.model.set("batch", true);
       } else {
         this.$el.removeClass("parent");
-        return this.$("th:first-child").removeAttr("rowspan");
+        this.$("th:first-child").removeAttr("rowspan");
+        return this.model.unset("batch");
       }
     },
     onShowPopup: function(selected) {
@@ -1692,8 +1694,16 @@
       }
     },
     onClickCopySC: function(event) {
-      var body, command, desc, keyCombo, method, scCode, text;
-      if (this.model.get("mode") === "remap") {
+      var body, children, command, desc, keyCombo, method, mode, scCode, text;
+      if ((mode = this.model.get("mode")) === "through") {
+        mode = this.model.get("lastMode");
+      }
+      if ((children = this.model.collection.where({
+        parentId: this.model.id
+      })).length > 0) {
+        mode = "batch";
+      }
+      if (mode === "remap") {
         method = "keydown";
         scCode = this.model.get("origin");
         desc = this.$(".desc").find(".content,.memo").text();
@@ -1804,9 +1814,8 @@
       return this.$("button.cog").removeClass("selecting");
     },
     onClickEdit: function(event) {
-      var editing, input$, memo, mode, pause;
+      var editing, input$, memo, mode;
       if ((mode = this.model.get("mode")) === "through") {
-        pause = true;
         mode = this.model.get("lastMode");
       }
       switch (mode) {
@@ -2118,7 +2127,7 @@
     tmplCommand: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div><div class=\"command\"><%=desc%></div>"),
     tmplCommandCustom: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div>\n<div class=\"command\"><%=desc%>:</div><div class=\"commandCaption\" title=\"<%=content3row%>\"><%=caption%></div>"),
     tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
-    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"grpbartop\"></div>\n    <div class=\"grpbarbtm\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"grpbartop\"></div>\n    <div class=\"grpbarbtm\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
   });
 
   KeyConfigSetView = Backbone.View.extend({
@@ -2411,7 +2420,7 @@
     },
     tmplAddNew: _.template("<tr class=\"addnew\">\n  <th colspan=\"3\">\n    <div class=\"new addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </th>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
     tmplBorder: "<tr class=\"border\">\n  <td colspan=\"6\"><div class=\"border\"></div></td>\n  <td></td>\n</tr>",
-    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th class=\"ctxmenu\"></th>\n    <th>\n      <div class=\"th_inner desc\">Comment</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
+    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th class=\"ctxmenu\"></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th>\n      <div class=\"th_inner desc\">Comment</div>\n    </th>\n    <th><div class=\"th_inner blank\">&nbsp;</div></th>\n  </tr>\n</thead>\n<tbody></tbody>")
   });
 
   marginBottom = 0;

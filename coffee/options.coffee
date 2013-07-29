@@ -132,7 +132,7 @@ KeyConfigView = Backbone.View.extend
     "click .edit"          : "onClickEdit"
     "click .addCommand"    : "onClickAddCommand"
     "click .copySC"        : "onClickCopySC"
-    "click .ctxmenu"       : "onClickCtxMenu"
+    "click div.ctxmenu"    : "onClickCtxMenu"
     "click .pause"         : "onClickPause"
     "click .resume"        : "onClickResume"
     "click .delete"        : "onClickDelete"
@@ -242,9 +242,11 @@ KeyConfigView = Backbone.View.extend
     if (models = @model.collection.where(parentId: @model.id)).length > 0
       @$el.addClass("parent")
       @$("th:first-child").attr "rowspan", models.length + 1
+      @model.set "batch", true
     else
       @$el.removeClass("parent")
       @$("th:first-child").removeAttr "rowspan"
+      @model.unset "batch"
   
   onShowPopup: (selected) ->
     if selected
@@ -309,7 +311,11 @@ KeyConfigView = Backbone.View.extend
         @trigger "resizeInput"
   
   onClickCopySC: (event) ->
-    if @model.get("mode") is "remap"
+    if (mode = @model.get("mode")) is "through"
+      mode = @model.get "lastMode"
+    if (children = @model.collection.where parentId: @model.id).length > 0
+      mode = "batch"
+    if mode is "remap"
       method = "keydown"
       scCode = @model.get("origin")
       desc = @$(".desc").find(".content,.memo").text()
@@ -403,9 +409,8 @@ KeyConfigView = Backbone.View.extend
     @$("button.cog").removeClass("selecting")
   
   onClickEdit: (event) ->
-    if (mode = @model.get("mode")) is "through"
-      pause = true
-      mode = @model.get("lastMode")
+    if (mode = @model.get "mode") is "through"
+      mode = @model.get "lastMode"
     switch mode
       when "bookmark"
         @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
@@ -548,7 +553,7 @@ KeyConfigView = Backbone.View.extend
     editOption = iconName: "", command: ""
     if (mode = @model.get("mode")) is "through"
       pause = true
-      mode = @model.get("lastMode")
+      mode = @model.get "lastMode"
     switch mode
       when "sleep"
         unless sleep = @model.get("sleep")
@@ -683,6 +688,7 @@ KeyConfigView = Backbone.View.extend
       <th class="tdOrigin">
         <div class="origin" tabIndex="-1"></div>
       </th>
+      <td class="ctxmenu"></td>
       <td class="options">
         <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>
         <div class="selectMode" tabIndex="0">
@@ -690,7 +696,6 @@ KeyConfigView = Backbone.View.extend
           <div class="<%=key%>"><i class="icon <%=option[1]%>"></i> <%=option[0]%></div>
           <% }}); %>
         </div>
-      <td class="ctxmenu"></td>
       <td class="desc"></td>
       <td class="blank">&nbsp;</td>
     </tr>
@@ -955,10 +960,10 @@ KeyConfigSetView = Backbone.View.extend
         </th>
         <th></th>
         <th></th>
+        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner options">Mode</div>
         </th>
-        <th class="ctxmenu"></th>
         <th>
           <div class="th_inner desc">Comment</div>
         </th>
