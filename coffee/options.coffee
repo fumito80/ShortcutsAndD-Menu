@@ -181,14 +181,14 @@ KeyConfigView = Backbone.View.extend
     if /^C/.test @model.id
       @$el
         .addClass("child").find("th:first-child").remove().end()
-        .find(".disabled").remove().end()
+        .find(".disabled").hide()
     else if !@setKbdValue(@$(".new"), @model.id)
       @state = "invalid"
     else
-      @$el.find(".sleep").remove().end()
+      @$el.find(".sleep").hide()
       @onSetRowspan()
     unless @$el.hasClass("parent") || @$el.hasClass("child")
-      @$el.find(".comment").remove().end()
+      @$el.find(".comment").hide()
     @setKbdValue @$(".origin"), @model.get("origin")
     @kbdtype = kbdtype
     @onChangeMode null, mode
@@ -240,13 +240,15 @@ KeyConfigView = Backbone.View.extend
   
   onSetRowspan: ->
     if (models = @model.collection.where(parentId: @model.id)).length > 0
-      @$el.addClass("parent")
+      @$el.addClass("parent").find(".selectMode .comment").show()
       @$("th:first-child").attr "rowspan", models.length + 1
       @model.set "batch", true
     else
       @$el.removeClass("parent")
       @$("th:first-child").removeAttr "rowspan"
       @model.unset "batch"
+      unless @$el.hasClass "child"
+        @$(".selectMode .comment").hide()
   
   onShowPopup: (selected) ->
     if selected
@@ -450,9 +452,13 @@ KeyConfigView = Backbone.View.extend
   onClickPause: ->
     @model.set("lastMode", @model.get("mode"))
     @onChangeMode(null, "through")
+    if ctxMenu = @model.get "ctxMenu"
+      andy.updateCtxMenu @model.id, ctxMenu, true
   
   onClickResume: ->
     @onChangeMode(null, @model.get("lastMode"))
+    if ctxMenu = @model.get "ctxMenu"
+      andy.updateCtxMenu @model.id, ctxMenu, false
   
   onClickDelete: ->
     if parentId = @model.get "parentId"

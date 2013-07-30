@@ -121,7 +121,7 @@ transKbdEvent = (value, kbdtype) ->
 
 jsCtxData = ""
 execCtxMenu = (info) ->
-  jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
+  jsCtxData = "scd.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
   for i in [0...andy.local.keyConfigSet.length]
     if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
       execBatchMode keyConfig.new
@@ -179,7 +179,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.promise()
   true
 
-jsUtilObj = """var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
+jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -608,7 +608,7 @@ setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
     keyConfigSet.forEach (item) ->
-      if item.batch && item.new
+      if item.batch && item.new && item.mode isnt "through"
         sendData.push [item.new, item.origin, "batch"].join(";")
       else if !/^C/.test item.new
         sendData.push [item.new, item.origin, item.mode].join(";")
@@ -616,6 +616,18 @@ setConfigPlugin = (keyConfigSet) ->
 
 window.andy =
   local: null
+  setLocal: ->
+    @local = JSON.parse(localStorage.flexkbd || null) || {}
+    unless @local.config
+      @local.config = {kbdtype: "JP"}
+    unless @local.ctxMenuFolderSet
+      @local.ctxMenuFolderSet = []
+    $.Deferred().resolve()
+  saveConfig: (saveData) ->
+    localStorage.flexkbd = JSON.stringify(saveData)
+    @local = saveData
+    setConfigPlugin @local.keyConfigSet
+  ###
   setLocal: ->
     dfd = $.Deferred()
     chrome.storage.local.get null, (items) =>
@@ -630,6 +642,14 @@ window.andy =
     chrome.storage.local.set saveData, =>
       @local = saveData
       setConfigPlugin @local.keyConfigSet
+  ###
+  updateCtxMenu: (id, ctxMenu, pause) ->
+    ctxMenu.id = id
+    if pause
+      ctxMenu.type = "update pause"
+    else
+      ctxMenu.type = "update"
+    registerCtxMenu $.Deferred(), [ctxMenu], 0
   remakeCtxMenu: (saveData) ->
     dfd = $.Deferred()
     chrome.storage.local.set saveData, =>

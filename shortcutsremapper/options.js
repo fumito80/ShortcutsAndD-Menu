@@ -1532,15 +1532,15 @@
       }));
       mode = this.model.get("mode");
       if (/^C/.test(this.model.id)) {
-        this.$el.addClass("child").find("th:first-child").remove().end().find(".disabled").remove().end();
+        this.$el.addClass("child").find("th:first-child").remove().end().find(".disabled").hide();
       } else if (!this.setKbdValue(this.$(".new"), this.model.id)) {
         this.state = "invalid";
       } else {
-        this.$el.find(".sleep").remove().end();
+        this.$el.find(".sleep").hide();
         this.onSetRowspan();
       }
       if (!(this.$el.hasClass("parent") || this.$el.hasClass("child"))) {
-        this.$el.find(".comment").remove().end();
+        this.$el.find(".comment").hide();
       }
       this.setKbdValue(this.$(".origin"), this.model.get("origin"));
       this.kbdtype = kbdtype;
@@ -1606,13 +1606,16 @@
       if ((models = this.model.collection.where({
         parentId: this.model.id
       })).length > 0) {
-        this.$el.addClass("parent");
+        this.$el.addClass("parent").find(".selectMode .comment").show();
         this.$("th:first-child").attr("rowspan", models.length + 1);
         return this.model.set("batch", true);
       } else {
         this.$el.removeClass("parent");
         this.$("th:first-child").removeAttr("rowspan");
-        return this.model.unset("batch");
+        this.model.unset("batch");
+        if (!this.$el.hasClass("child")) {
+          return this.$(".selectMode .comment").hide();
+        }
       }
     },
     onShowPopup: function(selected) {
@@ -1867,11 +1870,19 @@
       }
     },
     onClickPause: function() {
+      var ctxMenu;
       this.model.set("lastMode", this.model.get("mode"));
-      return this.onChangeMode(null, "through");
+      this.onChangeMode(null, "through");
+      if (ctxMenu = this.model.get("ctxMenu")) {
+        return andy.updateCtxMenu(this.model.id, ctxMenu, true);
+      }
     },
     onClickResume: function() {
-      return this.onChangeMode(null, this.model.get("lastMode"));
+      var ctxMenu;
+      this.onChangeMode(null, this.model.get("lastMode"));
+      if (ctxMenu = this.model.get("ctxMenu")) {
+        return andy.updateCtxMenu(this.model.id, ctxMenu, false);
+      }
     },
     onClickDelete: function() {
       var children, collection, desc, msg, parentId, shortcut,

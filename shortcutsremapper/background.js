@@ -183,7 +183,7 @@
 
   execCtxMenu = function(info) {
     var i, keyConfig, _i, _ref, _results;
-    jsCtxData = "tsc.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';";
+    jsCtxData = "scd.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';";
     _results = [];
     for (i = _i = 0, _ref = andy.local.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
       if ((keyConfig = andy.local.keyConfigSet[i])["new"] === info.menuItemId) {
@@ -277,7 +277,7 @@
     return true;
   });
 
-  jsUtilObj = "var e,t,tsc;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)===\"done\"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),tsc={batch:function(n){return n instanceof Array?(new t).sendMessage(\"batch\",n):new e(\"Argument is not Array.\")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"callShortcut\",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"keydown\",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+\" is not a number.\");n=Math.round(n);if(n<0||n>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}else n=100;return(new t).sendMessage(\"sleep\",n)},clipbd:function(e){return(new t).sendMessage(\"setClipboard\",e)},getClipbd:function(){return(new t).sendMessage(\"getClipboard\")}};";
+  jsUtilObj = "var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)===\"done\"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage(\"batch\",n):new e(\"Argument is not Array.\")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"callShortcut\",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"keydown\",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+\" is not a number.\");n=Math.round(n);if(n<0||n>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}else n=100;return(new t).sendMessage(\"sleep\",n)},clipbd:function(e){return(new t).sendMessage(\"setClipboard\",e)},getClipbd:function(){return(new t).sendMessage(\"getClipboard\")}};";
 
   sendMessage = function(message) {
     return chrome.tabs.query({
@@ -1023,7 +1023,7 @@
     sendData = [];
     if (keyConfigSet) {
       keyConfigSet.forEach(function(item) {
-        if (item.batch && item["new"]) {
+        if (item.batch && item["new"] && item.mode !== "through") {
           return sendData.push([item["new"], item.origin, "batch"].join(";"));
         } else if (!/^C/.test(item["new"])) {
           return sendData.push([item["new"], item.origin, item.mode].join(";"));
@@ -1036,29 +1036,47 @@
   window.andy = {
     local: null,
     setLocal: function() {
-      var dfd,
-        _this = this;
-      dfd = $.Deferred();
-      chrome.storage.local.get(null, function(items) {
-        if (!items.config) {
-          items.config = {
-            kbdtype: "JP"
-          };
-        }
-        if (!items.ctxMenuFolderSet) {
-          items.ctxMenuFolderSet = [];
-        }
-        _this.local = items;
-        return dfd.resolve();
-      });
-      return dfd.promise();
+      this.local = JSON.parse(localStorage.flexkbd || null) || {};
+      if (!this.local.config) {
+        this.local.config = {
+          kbdtype: "JP"
+        };
+      }
+      if (!this.local.ctxMenuFolderSet) {
+        this.local.ctxMenuFolderSet = [];
+      }
+      return $.Deferred().resolve();
     },
     saveConfig: function(saveData) {
-      var _this = this;
-      return chrome.storage.local.set(saveData, function() {
-        _this.local = saveData;
-        return setConfigPlugin(_this.local.keyConfigSet);
-      });
+      localStorage.flexkbd = JSON.stringify(saveData);
+      this.local = saveData;
+      return setConfigPlugin(this.local.keyConfigSet);
+    },
+    /*
+    setLocal: ->
+      dfd = $.Deferred()
+      chrome.storage.local.get null, (items) =>
+        unless items.config
+          items.config = {kbdtype: "JP"}
+        unless items.ctxMenuFolderSet
+          items.ctxMenuFolderSet = []
+        @local = items
+        dfd.resolve()
+      dfd.promise()
+    saveConfig: (saveData) ->
+      chrome.storage.local.set saveData, =>
+        @local = saveData
+        setConfigPlugin @local.keyConfigSet
+    */
+
+    updateCtxMenu: function(id, ctxMenu, pause) {
+      ctxMenu.id = id;
+      if (pause) {
+        ctxMenu.type = "update pause";
+      } else {
+        ctxMenu.type = "update";
+      }
+      return registerCtxMenu($.Deferred(), [ctxMenu], 0);
     },
     remakeCtxMenu: function(saveData) {
       var dfd,

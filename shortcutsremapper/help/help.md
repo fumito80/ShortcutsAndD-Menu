@@ -102,9 +102,9 @@
 > > 
 > >    <i class="icon-ban-circle"></i>**Disabled** .................. ショートカットキーを無効にして使用不可にします。  
 > > 
-> >    <i class="icon-eye-close"></i>**Sleep** ......................... バッチ実行登録時に選択できます。  次の機能を呼び出すまでの時間（間隔）を調整します。 
+> >    <i class="icon-eye-close"></i>**Sleep** ......................... バッチ実行モード時に選択できます。  次の機能を呼び出すまでの時間（間隔）を調整します。 
 > > 
-> >    <i class="icon-comment-alt"></i>**Comment** ................ バッチ実行登録時に選択できます。 何も実行されません。 バッチのタイトルやメモ替わりに使用します。  
+> >    <i class="icon-comment-alt"></i>**Comment** ................ バッチ実行モード時に選択できます。 何も実行されません。 バッチのタイトルやメモ替わりに使用します。  
 > 
 >    なお、Modeを変更すると、拡張コマンドやブックマークに設定していたオプションは消去されるので、ご注意ください。
 
@@ -120,8 +120,8 @@
 > - **ブックマークの編集**  
 >    「Edit Bookmark」を選択します。 ブックマークのときに選択できます。
 > - **Commentの編集（メモ機能）**  
->    「Edit comment」を選択します。 Remap/Disabled/Commentモード時に、Commentが空欄のときに選択できます。  
->    メモ的な用途で利用します。
+>    「Edit comment」を選択します。 Remap/Disabled/Commentモード時に  
+>    Commentが空欄のときに（Commentモード時は常時）選択できます。 メモ的な用途で利用します。  
 > - **コンテキストメニューへの登録**  
 >    「Create/Edit context menu」を選択します。 [コンテキストメニュー登録・編集](#ctxMenuOptions)ダイアログが開きます。
 > - **バッチ実行の追加キーイベントの登録**  
@@ -291,11 +291,28 @@
 
 <a name="batch"></a>
 ######  バッチ実行機能
-> 一度のショートカットキーで、複数のショートカットキー機能や拡張コマンド、ブックマークを順次呼び出すことができます。  
+> 一つのショートカットキーで、複数のショートカットキー機能や拡張コマンド、ブックマーク機能を呼び出すことができます。  
 >
-> 各行の右端に表示されるアイコンボタン[<i class="icon-caret-down"></i>]クリック時のメニュー「**Add command**」をクリックして、呼び出す機能を追加していきます。  
-> 一つ以上追加することで、自動的にバッチ実行モードになり、「Sleep」や「Comment」モードを選択できます。  
-
+> 各行の右端に表示されるメニューボタン[<i class="icon-caret-down"></i>]から、「**Add command**」を選択して  
+> 呼び出す機能をそのショートカットキーに追加していきます。
+> 
+> 一つ以上追加することで、そのショートカットキーは自動的にバッチ実行モードになります。
+>
+> - 機能を追加されたショートカットキーの機能は、親機能になり、「**Comment**」モードが選択できるようになります。  
+>   親機能の行を「Comment」モードにすることで、バッチ実行の見出しにするができます。  
+>
+>   追加した機能では、「**Sleep**」と「**Comment**」モードが選択できるようになります。  
+> - 追加した各機能は、追加した順に、上から順次呼び出されます。  
+> - 基本的に、一つの機能の呼び出しが終わってから、次の機能が呼び出されますが  
+>    呼び出しが終わっても、その呼び出された機能自体は完了していない場合があります。  
+>
+>    このような場合で、前の機能が完了してから次の機能を実行したい場合は  
+>    「**Sleep**」モードの行を追加して次の機能呼び出しのタイミングを調整してください。
+> - 「**Sleep**」モードの初期値は100ミリ秒(1/10秒)です。
+>
+>    設定できる範囲は、0から60000ミリ秒(1分)までです。 表示されている値の横のアイコン<i class="icon-pencil"></i>をクリックすると編集できます。  
+> - 追加した機能は、上下移動のアイコンボタンをクリックすることで、後から順番を変更することができます。  
+>    機能を追加されたショートカットキーの機能（親機能）は順番を変更することはできません。  
 
 <a name="notes"></a>
 ###### 備考・注意事項
@@ -318,7 +335,7 @@
 
 > **Methods**
 > 
-> ###### `tsc.send(string keycode[, optional integer sleepMillisecond])`  
+> ###### `scd.send(string keycode[, optional integer sleepMillisecond])`  
 > > 
 > > ショートカットキーを呼び出します。  
 > > リマップや拡張コマンド、ブックマークを割り当て済みのショートカットキーはそれらが呼び出されます。  
@@ -339,7 +356,7 @@
 > > 
 > > - _sleepMillisecond(integer default 100)_  
 > > 
-> >    メソッド実行後の、次のtscオブジェクトメソッドが実行されるまでの間隔を、ミリ秒単位で指定します。  
+> >    メソッド実行後の、次のscdオブジェクトメソッドが実行されるまでの間隔を、ミリ秒単位で指定します。  
 > >    値の範囲は、0-60000(60秒)までで、値を指定しない場合の規定値は100ミリ秒です。  
 > >    なお、通常のJavaScriptコマンドには影響しません。  
 > > 
@@ -347,11 +364,11 @@
 > > 
 > > 次のコードは、タブを左隣りに作成します。
 > > <pre>
-> > tsc.send('[ca]n'); /* Ctrl+Alt+n Create new tab を割り当てたショートカットキーを呼び出し */
-> > tsc.send('[ca]z'); /* Ctrl+Alt+z Move current tab left を割り当てたショートカットキーを呼び出し */
+> > scd.send('[ca]n'); /* Ctrl+Alt+n Create new tab を割り当てたショートカットキーを呼び出し */
+> > scd.send('[ca]z'); /* Ctrl+Alt+z Move current tab left を割り当てたショートカットキーを呼び出し */
 > > </pre>
 
-> ###### `tsc.keydown(string keycode[, optional integer sleepMillisecond])`  
+> ###### `scd.keydown(string keycode[, optional integer sleepMillisecond])`  
 > > 
 > > 指定したキーを押下します。 単独キーも指定できます。  
 > > ショートカットキーを指定した場合は、リマップ等割り当て済みのショートカットキーでもそれらは呼び出されず、単にキー押下が実行されます。
@@ -364,54 +381,54 @@
 > > Ctrl+Shift+W（Chrome標準のウィンドウを閉じるショートカットキー）に割り当てた場合を想定しています。
 > > <pre>
 > > if (confirm('ウィンドウを閉じますか？')) {
-> >   tsc.keydown('[cs]w'); /* sendメソッドでは自己参照になってしまう為、keydownメソッドを使用 */
+> >   scd.keydown('[cs]w'); /* sendメソッドでは自己参照になってしまう為、keydownメソッドを使用 */
 > > }
 > > </pre>
 > > 
 > > 次のコードは、ページのソースを開いてコピーするか保存するかして、開いたソースのページを閉じます。
 > > <pre>
-> > tsc.keydown('[c]u', 1000); /* Ctrl+u 現在のページのソースを開きます。実際のページが表示されるまでの猶予を1秒見ています。 */
-> > tsc.keydown('[c]a');       /* Ctrl+a */
-> > tsc.keydown('[c]c');       /* コピーする場合。Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
-> > tsc.keydown('[c]s', 1000); /* 保存する場合。Ctrl+s 現在のページを保存します。 */
-> > tsc.keydown('Enter');      /* Enterキー */
-> > tsc.keydown('[c]w');       /* Ctrl+w 現在のタブまたはポップアップを閉じます。 */
+> > scd.keydown('[c]u', 1000); /* Ctrl+u 現在のページのソースを開きます。実際のページが表示されるまでの猶予を1秒見ています。 */
+> > scd.keydown('[c]a');       /* Ctrl+a */
+> > scd.keydown('[c]c');       /* コピーする場合。Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
+> > scd.keydown('[c]s', 1000); /* 保存する場合。Ctrl+s 現在のページを保存します。 */
+> > scd.keydown('Enter');      /* Enterキー */
+> > scd.keydown('[c]w');       /* Ctrl+w 現在のタブまたはポップアップを閉じます。 */
 > > </pre>
 > > 
 > > 次のコードは、選択したテキストをページ内検索します。  
 > > また、何も選択しないで実行した場合は、クリップボードにあるテキストが検索されます。
 > > <pre>
-> > tsc.keydown('[c]c'); /* Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
-> > tsc.keydown('[c]f'); /* Ctrl+f 検索バーを開きます。 */
-> > tsc.keydown('[c]v'); /* Ctrl+v クリップボードからコンテンツを貼り付けます。 */
+> > scd.keydown('[c]c'); /* Ctrl+c ハイライト表示されたコンテンツをクリップボードにコピーします。 */
+> > scd.keydown('[c]f'); /* Ctrl+f 検索バーを開きます。 */
+> > scd.keydown('[c]v'); /* Ctrl+v クリップボードからコンテンツを貼り付けます。 */
 > > </pre>
 > > 
 > > 次のコードは、リンクになっていないURLを選択した場合にそのURLを開きます。（通常のテキストはGoogleでの検索）  
 > > また、何も選択しないで実行した場合は、クリップボードにあるテキストが検索されます。
 > > <pre>
-> > tsc.keydown('[c]c');
-> > tsc.send('[ca]n');    /* Ctrl+Alt+n Create a new tab を割り当てたショートカットキーを呼び出し */
-> > tsc.keydown('[c]v');
-> > tsc.keydown('Enter'); /* Enterキー */
+> > scd.keydown('[c]c');
+> > scd.send('[ca]n');    /* Ctrl+Alt+n Create a new tab を割り当てたショートカットキーを呼び出し */
+> > scd.keydown('[c]v');
+> > scd.keydown('Enter'); /* Enterキー */
 > > </pre>
 <!--
 > > 
 > > 次のコードは、ブックマークバーを開き、更にその他のブックマークフォルダを開きます。
 > > <pre>
-> > tsc.keydown('[cs]b');     /* Ctrl+Shift+b ブックマーク バーの表示/非表示を切り替えます。 */
-> > tsc.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
-> > tsc.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
-> > tsc.keydown('Left', 200); /* ←（左カーソルキー） */
-> > tsc.keydown('Down', 200); /* ↓（下カーソルキー） */
+> > scd.keydown('[cs]b');     /* Ctrl+Shift+b ブックマーク バーの表示/非表示を切り替えます。 */
+> > scd.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
+> > scd.keydown('F6', 200);   /* F6 キーボードからアクセス可能な次のペインにフォーカスが移動します。 */
+> > scd.keydown('Left', 200); /* ←（左カーソルキー） */
+> > scd.keydown('Down', 200); /* ↓（下カーソルキー） */
 > > </pre>
 -->
 
-> ###### `tsc.sleep(integer sleepMillisecond)`  
+> ###### `scd.sleep(integer sleepMillisecond)`  
 > > 
-> > 指定したミリ秒間スリープして、次のtscオブジェクトメソッドの実行開始を遅らせます。  
+> > 指定したミリ秒間スリープして、次のscdオブジェクトメソッドの実行開始を遅らせます。  
 > > なお、通常のJavaScriptコマンドには影響しません。
 
-> ###### `tsc.clipbd(string text)`  
+> ###### `scd.clipbd(string text)`  
 > > 
 > > 文字列をクリップボードに貼付けます。
 > >
@@ -426,26 +443,26 @@
 > > } else {
 > >   title = url;
 > > }
-> > tsc.clipbd('&lt;a href="' + url + '"&gt;' + title + '&lt;/a&gt;');
+> > scd.clipbd('&lt;a href="' + url + '"&gt;' + title + '&lt;/a&gt;');
 > > </pre>
 
-> ###### `tsc.send(...).done(function callback)`  
-> ###### `tsc.keydown(...).done(function callback)`
-> ###### `tsc.sleep(...).done(function callback)`
-> ###### `tsc.clipbd(...).done(function callback)`
+> ###### `scd.send(...).done(function callback)`  
+> ###### `scd.keydown(...).done(function callback)`
+> ###### `scd.sleep(...).done(function callback)`
+> ###### `scd.clipbd(...).done(function callback)`
 > >  
-> > 各tscオブジェクトメソッドの呼び出しを終了してから、登録したファンクションを実行します。  
+> > 各scdオブジェクトメソッドの呼び出しを終了してから、登録したファンクションを実行します。  
 > > スリープを指定していた場合は、スリープ時間経過後に実行されます。
 > > 
-> > tscオブジェクトメソッド間は自動的に同期されるため、このメソッドは必要ありません。
+> > scdオブジェクトメソッド間は自動的に同期されるため、このメソッドは必要ありません。
 > > 
 > > Code Exsample  
 > > 
 > > <pre>
-> > tsc.sleep(5000).done(function() { alert('5秒経過'); });
+> > scd.sleep(5000).done(function() { alert('5秒経過'); });
 > > </pre>
 
-> ###### `tsc.getClipbd().done(function callback(string text))`  
+> ###### `scd.getClipbd().done(function callback(string text))`  
 > >  
 > > クリップボードにあるテキストを取得します。
 > > 
@@ -454,12 +471,12 @@
 > > Code Exsample  
 > > 
 > > <pre>
-> > tsc.getClipbd().done(function(text) { alert(text); });
+> > scd.getClipbd().done(function(text) { alert(text); });
 > > </pre>
 
 > **Properties**
 > 
-> ###### `tsc.ctxData(string)`  
+> ###### `scd.ctxData(string)`  
 > > 
 > > コンテキストメニューからスクリプトが呼ばれた場合に、対象コンテキストの情報がセットされます。
 > > 

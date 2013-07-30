@@ -25,18 +25,15 @@ body {
   left: 37px;
   padding: 4px;
   border-radius: 1px;  
-  /* background: rgb(31, 98, 129); */
 }
 .header .title1 {
   font: 20px 'Michroma', Arial;
   color: #222222;
-  /* background: rgb(31, 98, 129); */
 }
 .header .amp {
   font: 20px 'Michroma', Arial;
   padding: 0 0 0 7px;
   color: #222222;
-  /* background: rgb(31, 98, 129); */
 }
 .header .title2 {
   font: 20px 'Michroma', Arial;
@@ -44,7 +41,6 @@ body {
   color: #1E90FF;
   margin: 0;
   border-radius: 1px;  
-  /* background: rgb(31, 98, 129); */
 }
 .header .h1 div {
   line-height: 1.0em;
