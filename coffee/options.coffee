@@ -329,7 +329,7 @@ KeyConfigView = Backbone.View.extend
     command = " " + command + ":" if command
     keyCombo = (decodeKbdEvent scCode).replace /\s/g, ""
     desc = " " + desc if desc
-    body = "tsc.#{method}('#{transKbdEvent(scCode)}');"
+    body = "scd.#{method}('#{transKbdEvent(scCode)}');"
     text = body + " /* " + keyCombo + command + desc + " */"
     chrome.runtime.sendMessage
       action: "setClipboard"
@@ -436,6 +436,8 @@ KeyConfigView = Backbone.View.extend
       "new": getUuid("C")
       "origin": parentId
       "parentId": parentId
+    if @$el.hasClass "parent"
+      @setDispMode @model.get "mode"
   
   onMouseOverChild: (event, id) ->
     if id is @model.id
@@ -541,6 +543,8 @@ KeyConfigView = Backbone.View.extend
         @$("th:first").css("padding", "16px 0").find("i").hide()
         @$("th .origin").hide()
       else if @$el.hasClass "parent"
+        @$("th:first").removeAttr("colspan")
+        @$("th:eq(1),th:eq(2)").show()
         @$("th:eq(1)").css("padding", "18px 0").find("i").hide()
         @$("th .origin").hide()
       else
@@ -602,7 +606,7 @@ KeyConfigView = Backbone.View.extend
         unless help = scHelp[keycombo]
           if /^CTRL\+[2-7]$/.test keycombo
             help = scHelp["CTRL+1"]
-        if help
+        if help　&& help[lang]
           for i in [0...help[lang].length]
             test = help[lang][i].match /(^\w+)\^(.+)/
             key = RegExp.$1
