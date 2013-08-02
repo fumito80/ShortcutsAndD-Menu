@@ -28,6 +28,5 @@
 　☑実行
 
 ロック
-notifications
-
 インポート・エクスポート/その他オプション
+notifications

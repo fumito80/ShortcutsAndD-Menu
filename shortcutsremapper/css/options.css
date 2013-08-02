@@ -4,11 +4,18 @@ body {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   font-size: 0.9em;
   overflow: hidden;
+  background-color: #F6F6F6;
 }
 .header {
+  position: fixed;
   width: 100%;
-  padding: 12px 25px 47px 0;
-  background-color: #FFF;
+  height: 47px;
+  top: 0;
+  left: 0;
+  padding: 3px 20px 3px 40px;
+  background: -webkit-gradient(linear, center bottom, center top, from(#000), to(#666));
+  box-shadow: 0 0 7px #666;
+  z-index: 1;
 }
 .footer {
   height: 50px;
@@ -20,23 +27,15 @@ body {
   background: -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.0)), to(rgba(255,255,255,1.0)));
 }
 .header .h1 {
-  position: fixed;
-  top: 8px;
-  left: 37px;
-  padding: 4px;
-  border-radius: 1px;  
+  font: 14px 'Michroma', Arial;
+  color: white;
 }
 .header .title1 {
-  font: 20px 'Michroma', Arial;
-  color: #222222;
 }
 .header .amp {
-  font: 20px 'Michroma', Arial;
   padding: 0 0 0 7px;
-  color: #222222;
 }
 .header .title2 {
-  font: 20px 'Michroma', Arial;
   font-weight: bold;
   color: #1E90FF;
   margin: 0;
@@ -67,6 +66,9 @@ body {
   margin: 8px;
   float: right;  
 }
+.kbdtype {
+  background-color: #F6F6F6;
+}
 .header a {
   display: inline-block;
 }
@@ -75,16 +77,16 @@ body {
 }
 .fixed-table-container {
   position: relative;
-  padding-top: 30px;
+  padding-top: 40px;
+  margin-top: 47px;
 }
 .header-background {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  background: #FFF; /* #243655 */
-  border-bottom: 1px solid #DDDDDD;
-  height: 30px;
+  border-bottom: 1px solid #BBBBBB;
+  height: 40px;
 }
 .fixed-table-container-inner {
   height: 100%;
@@ -97,13 +99,14 @@ body {
   font-weight: normal;
 }
 tbody .data:hover {
-  background: rgb(245,245,255);
+  background: lavender;
 }
 .th_inner {
   position: absolute;
   top: -1px;
-  line-height: 30px;
-  background: #FFFFFF;
+  height: 40px;
+  padding-top: 17px;
+  background-color: #F6F6F6;
 }
 .keyConfigSetView .th_inner.options {
   padding-left: 6px;
@@ -113,7 +116,7 @@ tbody .data:hover {
 }
 .th_inner.blank {
   top: 0;
-  background: #FFF;
+  background-color: #F6F6F6;
   padding: 0 12px;
   right: 0;
 }
@@ -158,7 +161,6 @@ tbody .data:hover {
   padding: 1px 3px;
   border: 1px solid lightblue;
   border-radius: 3px;
-  background: #ffffff;
   min-width: 24px;
   display: inline-block;
   text-align: center;
@@ -265,7 +267,7 @@ thead th i.icon-arrow-right {
   padding: 0;
 }
 .keyConfigSetView div.border {
-  border-top: 1px dotted #ddd;
+  border-top: 1px dotted #CCCCCC;
   padding: 0;
 }
 .keyConfigSetView .tdOrigin {
@@ -396,7 +398,7 @@ button.cog.selecting {
 }
 .keyConfigSetView .blank {
   border: hidden;
-  background: #FFF;
+  background: #F6F6F6;
   padding: 0 12px;
 }
 .custom-scroll-bar::-webkit-scrollbar {
@@ -433,7 +435,7 @@ button.cog.selecting {
   position: fixed;
   z-index: 7;
   padding: 10px;
-  background: #efefef;
+  background: #F6F6F6;
   box-shadow: 0 0 20px black;
   border-radius: 1px;
 }
@@ -628,7 +630,6 @@ button.cog.selecting {
   margin-right: 70px;
 }
 .commands .catname {
-  text-decoration: underline;
   font-weight: bold;
   color: #333333;
 }
@@ -888,8 +889,9 @@ button.cog.selecting {
   position: absolute;
   width: 5px;
   height: 50%;
-  right: 0;
-  background-color: #E6E6FA;
+  right: 2px;
+  background-color: #A5A5A5;
+  border-radius: 1px;
 }
 tr:not(.parent) .grpbartop, tr:not(.parent) .grpbarbtm {
   display: none;
@@ -911,7 +913,7 @@ tr:not(.parent) .grpbartop, tr:not(.parent) .grpbarbtm {
   padding-top: 0;
 }
 .hover th:first-child {
-  background-color: rgb(245,245,255);
+  background-color: lavender;
 }
 .desc .updown {
   display: none;

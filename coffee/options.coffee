@@ -629,7 +629,7 @@ KeyConfigView = Backbone.View.extend
     else
       tdDesc.find(".resume").remove()
     if @$el.hasClass "child"
-      tdDesc.find(".ctxmenu,.copySC,.resume,.pause,.1st").remove()
+      tdDesc.find(".ctxmenu,.copySC,.1st").remove()
       tdDesc.append @tmplUpDown
     @onChangeCtxmenu()
   
@@ -743,7 +743,7 @@ KeyConfigSetView = Backbone.View.extend
         stop: => @redrawTable()
     $(".fixed-table-container-inner").niceScroll
       #cursorcolor: "#1E90FF"
-      cursorwidth: 12
+      cursorwidth: 13
       cursorborderradius: 2
       smoothscroll: true
       cursoropacitymin: .3
