@@ -28,7 +28,7 @@ class Messenger
           setTimeout((-> callback resp.msg), 0)
     @
 
-tsc =
+scd =
   batch: (commands) ->
     if commands instanceof Array
       (new Messenger()).sendMessage "batch", commands
@@ -71,3 +71,7 @@ tsc =
 
   getClipbd: ->
     (new Messenger()).sendMessage "getClipboard"
+  
+  returnValue: true
+  cancel: ->
+    @returnValue = false

@@ -179,7 +179,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.promise()
   true
 
-jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")}};"""
+jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},returnValue:!0,cancel:function(){return this.returnValue=!1}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -269,12 +269,25 @@ execBatchMode = (scCode) ->
         switch keyConfig.mode
           when "remap"
             execShortcut dfd, doneCallback, null, keyConfig.origin, defaultSleep, "keydown", batchIndex
+          when "command"
+            execCommand(keyConfig.new).done (results) ->
+              cancel = false
+              if results
+                for i in [0...results?.length]
+                  unless results[i]
+                    cancel = true
+                    break
+              if cancel
+                #throw new Error "Command canceled"
+                dfd.reject()
+              else
+                doneCallback dfd, 0, batchIndex
           when "sleep"
             setTimeout((->
               flexkbd.Sleep ~~keyConfig.sleep
               doneCallback dfd, 0, batchIndex
             ), 0)
-          when "comment"
+          when "comment", "through"
             setTimeout((->
               doneCallback dfd, 0, batchIndex
             ), 0)
@@ -564,13 +577,13 @@ execCommand = (keyEvent) ->
         when "execJS"
           code = item.command.content
           if item.command.useUtilObj
-            code = jsUtilObj + jsCtxData + code
+            code = jsUtilObj + jsCtxData + code + ";scd.returnValue"
           getActiveTab().done (tab) ->
             chrome.tabs.executeScript tab.id,
               code: code
               allFrames: item.command.allFrames
               runAt: "document_end"
-              -> dfd.resolve()
+              (results) -> dfd.resolve(results)
         when "clearHistory"
           chrome.browsingData.removeHistory {}, -> dfd.resolve()
         when "clearHistoryS"
@@ -617,16 +630,24 @@ setConfigPlugin = (keyConfigSet) ->
 window.andy =
   local: null
   setLocal: ->
-    @local = JSON.parse(localStorage.flexkbd || null) || {}
-    unless @local.config
-      @local.config = {kbdtype: "JP"}
-    unless @local.ctxMenuFolderSet
-      @local.ctxMenuFolderSet = []
-    $.Deferred().resolve()
-  saveConfig: (saveData) ->
-    localStorage.flexkbd = JSON.stringify(saveData)
-    @local = saveData
-    setConfigPlugin @local.keyConfigSet
+    if localStorage.flexkbd
+      @local = JSON.parse(localStorage.flexkbd || null) || {}
+      unless @local.config
+        @local.config = {kbdtype: "JP"}
+      unless @local.ctxMenuFolderSet
+        @local.ctxMenuFolderSet = []
+      delete localStorage.flexkbd
+      $.Deferred().resolve()
+    else
+      dfd = $.Deferred()
+      chrome.storage.local.get null, (items) =>
+        unless items.config
+          items.config = {kbdtype: "JP"}
+        unless items.ctxMenuFolderSet
+          items.ctxMenuFolderSet = []
+        @local = items
+        dfd.resolve()
+      dfd.promise()
   ###
   setLocal: ->
     dfd = $.Deferred()
@@ -638,11 +659,11 @@ window.andy =
       @local = items
       dfd.resolve()
     dfd.promise()
+  ###
   saveConfig: (saveData) ->
     chrome.storage.local.set saveData, =>
       @local = saveData
       setConfigPlugin @local.keyConfigSet
-  ###
   updateCtxMenu: (id, ctxMenu, pause) ->
     ctxMenu.id = id
     if pause

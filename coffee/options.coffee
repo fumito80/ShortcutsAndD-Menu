@@ -5,6 +5,7 @@ keyCodes = {}
 scHelp = null
 scHelpSect = null
 keys = null
+loading = true
 
 WebFontConfig =
   google: families: ['Noto+Sans::latin']
@@ -37,6 +38,8 @@ modifierKeys  = ["Ctrl", "Alt", "Shift", "Win", "MouseL", "MouseR", "MouseM"]
 modifierInits = ["c"   , "a"  , "s"    , "w"]
 
 decodeKbdEvent = (kbdCode) ->
+  unless kbdCode
+    return null
   modifiers = parseInt(kbdCode.substring(0, 2), 16)
   scanCode = kbdCode.substring(2)
   if keyIdentifier = keys[scanCode]
@@ -275,6 +278,8 @@ KeyConfigView = Backbone.View.extend
       @model.set input$[0].className.match(/(new|origin)/)[0], value
       @setDesc()
       @trigger "resizeInput"
+      if input$.hasClass("new") && @model.has("ctxMenu")
+        @trigger "remakeCtxMenu", dfd: $.Deferred()
   
   onChangeKbd: (kbdtype) ->
     @kbdtype = kbdtype
@@ -492,16 +497,34 @@ KeyConfigView = Backbone.View.extend
       @$(".selectCog").blur()
   
   onClickUpDownChild: (event) ->
+    changeProperty = ->
+      childId = childModel.id
+      childModel.set "new", "temp"
+      childModel.unset "parentId"
+      parentModel.set "new", childId
+      parentModel.set "parentId", parentId
+      childModel.set "new", parentId
+      newParent$.removeClass("child").find(".disabled").show().end()
+        .prepend newChild$.find("th:first-child")
+      newChild$.removeClass("parent hover").addClass("child").find(".disabled").hide().end()
     order = -1
-    $.each (models = @model.collection.where(parentId: @model.get("parentId"))), (i, model) =>
+    parentId = @model.get("parentId") || @model.id
+    models = [parentModel = @model.collection.get(parentId)].concat @model.collection.where(parentId: parentId)
+    $.each models, (i, model) =>
       if model.id is @model.id
         order = i
         false
     if event.currentTarget.title is "up" && order > 0
-      @$el.parent()[0].insertBefore @el, @el.previousSibling
+      (newChild$ = @$el.prev()).before newParent$ = @$el
+      if order is 1
+        childModel = @model
+        changeProperty()
       @trigger "updateChildPos"
     else if event.currentTarget.title is "down" && models.length > (order + 1)
-      @$el.parent()[0].insertBefore @el, @el.nextSibling.nextSibling
+      (newChild$ = @$el).before (newParent$ = @$el.next())
+      if order is 0
+        childModel = models[1]
+        changeProperty()
       @trigger "updateChildPos"
   
   onClickEditSleep: ->
@@ -630,6 +653,7 @@ KeyConfigView = Backbone.View.extend
       tdDesc.find(".resume").remove()
     if @$el.hasClass "child"
       tdDesc.find(".ctxmenu,.copySC,.1st").remove()
+    if @$el.hasClass("child") || @$el.hasClass("parent")
       tdDesc.append @tmplUpDown
     @onChangeCtxmenu()
   
@@ -750,6 +774,8 @@ KeyConfigSetView = Backbone.View.extend
       cursoropacitymax: .7
       zindex: 999998
     @niceScroll = $(".fixed-table-container-inner").getNiceScroll()
+    loading = false
+    @redrawTable()
     @
   
   # Collection Events
@@ -760,6 +786,7 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "showPopup"   , @onShowPopup        , @
     keyConfigView.on "addCtxMenu"  , @onAddCtxMenu       , @
     keyConfigView.on "updateChildPos", @redrawTable      , @
+    keyConfigView.on "remakeCtxMenu", @onRemakeCtxMenu   , @
     divAddNew = @$("tr.addnew")[0] || null
     tbody = @$("tbody")[0]
     if /^C/.test(model.id) && lastFocused
@@ -768,7 +795,7 @@ KeyConfigSetView = Backbone.View.extend
     tbody.insertBefore $(@tmplBorder)[0], divAddNew
     if keyConfigView.state is "invalid"
       @onChildRemoveConfig model
-    if divAddNew || /^C/.test(model.id)
+    if divAddNew || /^C/.test(model.id) && !loading
       @$("div.addnew").blur()
       @redrawTable()
     if /^C/.test(model.id) && lastFocused
@@ -1051,6 +1078,7 @@ $ ->
   ctxMenuManagerView.on "leaveCtxMenuSelMode", headerView.onLeaveCtxMenuSelMode, headerView
   ctxMenuManagerView.on "triggerEventSelected", keyConfigSetView.onTriggerEventSelected, keyConfigSetView
   ctxMenuManagerView.on "setCtxMenus", keyConfigSetView.onSetCtxMenus, keyConfigSetView
+  
   ctxMenuFolderSet.reset saveData.ctxMenuFolderSet
   keyConfigSetView.render(saveData.keyConfigSet)
   
