@@ -1,4 +1,5 @@
-#### Shortcuts &D-Menu for GoogleChrome
+#### Shortcuts &D-Menu ヘルプ
+- Japanese version only
 
 ###### [使い方](#usage) ・ [注意事項](#notes) ・ [Utility Object Reference](#utilobj)
 > 

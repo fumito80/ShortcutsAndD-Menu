@@ -104,10 +104,12 @@ HeaderView = Backbone.View.extend
       @$(".scHelp")
         .text("ショートカットキー一覧")
         .attr "href", @scHelpUrl + "ja"
+      @$(".helpview").show()
     else
       @$(".scHelp")
         .text("Keyboard shortcuts")
         .attr "href", @scHelpUrl + "en"
+      @$(".helpview").hide()
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->
@@ -252,6 +254,7 @@ KeyConfigView = Backbone.View.extend
       @model.unset "batch"
       unless @$el.hasClass "child"
         @$(".selectMode .comment").hide()
+        @$("ul.updown").remove()
   
   onShowPopup: (selected) ->
     if selected
@@ -272,7 +275,7 @@ KeyConfigView = Backbone.View.extend
           child.set "parentId", value
       else # Origin
         scanCode = ~~value.substring(2)
-        if scanCode > 0x200 || scanCode is 0x15D
+        if scanCode >= 0x200 || scanCode is 0x15D
           return
       @setKbdValue input$, value
       @model.set input$[0].className.match(/(new|origin)/)[0], value
@@ -353,7 +356,7 @@ KeyConfigView = Backbone.View.extend
   
   onClickInputMemo: (event) ->
     event.stopPropagation()
-    event.preventDefault()
+    #event.preventDefault()
   
   onSubmitMemo: ->
     @$("form.memo").hide()
@@ -439,10 +442,12 @@ KeyConfigView = Backbone.View.extend
     lastFocused = @el
     @model.collection.add
       "new": getUuid("C")
-      "origin": parentId
+      "origin": if ~~parentId.substring(2) >= 0x200 then "0130" else parentId
       "parentId": parentId
     if @$el.hasClass "parent"
       @setDispMode @model.get "mode"
+      unless @$("ul.updown").length > 0
+        @$(".desc").append @tmplUpDown
   
   onMouseOverChild: (event, id) ->
     if id is @model.id
@@ -505,8 +510,11 @@ KeyConfigView = Backbone.View.extend
       parentModel.set "parentId", parentId
       childModel.set "new", parentId
       newParent$.removeClass("child").find(".disabled").show().end()
-        .prepend newChild$.find("th:first-child")
-      newChild$.removeClass("parent hover").addClass("child").find(".disabled").hide().end()
+        .prepend(newChild$.find("th:first-child"))
+        .find(".desc").find(".ctxmenu,.copySC").show()
+      newChild$
+        .removeClass("parent hover").addClass("child").find(".disabled").hide().end()
+        .find(".desc").find(".ctxmenu,.copySC").hide()
     order = -1
     parentId = @model.get("parentId") || @model.id
     models = [parentModel = @model.collection.get(parentId)].concat @model.collection.where(parentId: parentId)
@@ -644,15 +652,15 @@ KeyConfigView = Backbone.View.extend
       editOption = iconName: "icon-pencil", command: "Edit comment"
     tdDesc.append @tmplDesc editOption
     if mode is "disabled"
-      @$(".addKey,.copySC,.seprater.1st,div.ctxmenu").remove()
+      @$(".addKey,.copySC,.seprater.1st,div.ctxmenu").hide()
     if editOption.iconName is ""
-      tdDesc.find(".edit").remove()
+      tdDesc.find(".edit").hide()
     if pause
-      tdDesc.find(".pause").remove()
+      tdDesc.find(".pause").hide()
     else
-      tdDesc.find(".resume").remove()
+      tdDesc.find(".resume").hide()
     if @$el.hasClass "child"
-      tdDesc.find(".ctxmenu,.copySC,.1st").remove()
+      tdDesc.find(".ctxmenu,.copySC").hide()
     if @$el.hasClass("child") || @$el.hasClass("parent")
       tdDesc.append @tmplUpDown
     @onChangeCtxmenu()
@@ -701,8 +709,7 @@ KeyConfigView = Backbone.View.extend
   tmplCommand: _.template """<div class="ctgIcon <%=ctg%>"><%=ctg%></div><div class="command"><%=desc%></div>"""
 
   tmplCommandCustom: _.template """
-    <div class="ctgIcon <%=ctg%>"><%=ctg%></div>
-    <div class="command"><%=desc%>:</div><div class="commandCaption" title="<%=content3row%>"><%=caption%></div>
+    <div class="ctgIcon <%=ctg%>" title="<%=desc%>"><%=ctg%></div><div class="commandCaption" title="<%=content3row%>"><%=caption%></div>
     """
   
   tmplHelp: _.template """
@@ -761,7 +768,7 @@ KeyConfigSetView = Backbone.View.extend
       .sortable
         delay: 300
         scroll: true
-        cancel: "tr.border,tr.child"
+        cancel: "tr.border,tr.child,input"
         cursor: "move"
         start: => @onStartSort()
         stop: => @redrawTable()
@@ -818,13 +825,9 @@ KeyConfigSetView = Backbone.View.extend
       $("#tiptip_content").text("\"#{decodeKbdEvent(value)}\" already exists.")
       @$("div.addnew").tipTip()
       return
-    if ~~value.substring(2) > 0x200
-      originValue = "0130"
-    else
-      originValue = value
     @collection.add newitem = new KeyConfig
       new: value
-      origin: originValue
+      origin: if ~~value.substring(2) >= 0x200 then "0130" else value
     @$("tbody")
       .sortable("enable")
       .sortable("refresh")

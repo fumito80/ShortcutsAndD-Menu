@@ -1,4 +1,23 @@
-﻿☑コピースクリプトの使い分け
+﻿Note:
+This extension can not be installed on "Windows 8" from the Web Store.
+- The solution:
+1. After you download a CRX file from the URL "http://db.tt/E3beZyDp", please install it directly.
+2. Run chrome in compatibility mode for "Windows 7".
+   (Right click chrome.exe or shortcut > Properties > Compatibility > Run...)
+
+
+■Windows8へのインストール
+Windows8環境では、「このアプリケーションはこのパソコンではサポートされていません。インストールは無効になりました」という表示が出ます。
+お手数ですが、下記URLよりZIPファイルをダウンロード・解凍して、CRXファイルを直接インストールしてください。 インストール方法は同梱のReadme.txtを参照してください。
+
+ZIPファイルURL: http://db.tt/X3hacsiY
+
+また、ベクターでもCRXファイルを公開しています。
+http://www.vector.co.jp/soft/screen/winnt/util/se503549.html
+（但し、こちらではバージョンアップが遅れる場合があります）
+
+
+☑コピースクリプトの使い分け
 ☑メニュ ポーズ時の編集
 ☑メニュ Disabled時の内容
 ☑タブロード完了検知

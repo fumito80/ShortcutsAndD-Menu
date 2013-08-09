@@ -361,7 +361,6 @@ button.cog.selecting {
 }
 .keyConfigSetView .desc div.memo {
   color: #583521;
-  font-weight: bold;
 }
 .keyConfigSetView .desc form.memo {
   display: none;
@@ -375,9 +374,7 @@ button.cog.selecting {
 }
 .keyConfigSetView .desc div.commandCaption {
   overflow: auto;
-  padding-left: 5px;
   color: #583521;
-  font-weight: bold;
 }
 .desc .bookmark, .bookmarkOptions .bookmark {
   -webkit-padding-start: 20px;

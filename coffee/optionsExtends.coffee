@@ -659,7 +659,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     #  @disableButton _.map(document.querySelectorAll(".editButtons button"), (el) -> el.className.match(/^(\w+)\s/)[1])
   onClickClickable: (event) ->
     event.stopPropagation()
-    event.preventDefault()
+    #event.preventDefault()
   onClickNew: (event) ->
     unless /contexts|title/.test (target$ = $(document.activeElement)).get(0)?.className
       return
