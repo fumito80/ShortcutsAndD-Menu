@@ -102,14 +102,14 @@ HeaderView = Backbone.View.extend
   setScHelp: (kbdtype) ->
     if kbdtype is "JP"
       @$(".scHelp")
-        .text("ショートカットキー一覧")
+        .text("Keyboard shortcuts")
         .attr "href", @scHelpUrl + "ja"
-      @$(".helpview").show()
+      #@$(".helpview").show()
     else
       @$(".scHelp")
         .text("Keyboard shortcuts")
         .attr "href", @scHelpUrl + "en"
-      @$(".helpview").hide()
+      #@$(".helpview").hide()
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->
@@ -211,7 +211,7 @@ KeyConfigView = Backbone.View.extend
       unless ctxMenu.parentId is "route"
         @model.collection.trigger "getCtxMenuContexts", container = parentId: ctxMenu.parentId
         ctxMenu.contexts = container.contexts
-      @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\nTitle: #{ctxMenu.caption}"><i class="#{tmplCtxMenus[ctxMenu.contexts][1]}"></i></div>"""
+      @$("td.ctxmenu").html """<div class="ctxmenu-icon" title="Context menu for #{ctxMenu.contexts}\n Title: #{ctxMenu.caption}"><i class="#{tmplCtxMenus[ctxMenu.contexts][1]}"></i></div>"""
       @$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu..."
     else if @model.get("mode") isnt "disabled" && !@$el.hasClass("child")
       @$("td.ctxmenu").empty()
@@ -511,6 +511,7 @@ KeyConfigView = Backbone.View.extend
       childModel.set "new", parentId
       newParent$.removeClass("child").find(".disabled").show().end()
         .prepend(newChild$.find("th:first-child"))
+        .find("td.ctxmenu").append(newChild$.find("div.ctxmenu-icon")).end()
         .find(".desc").find(".ctxmenu,.copySC").show()
       newChild$
         .removeClass("parent hover").addClass("child").find(".disabled").hide().end()

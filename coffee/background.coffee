@@ -1,5 +1,25 @@
 defaultSleep = 100
+gCurrentTabId = null
+userData = {}
 flexkbd = document.getElementById("flexkbd")
+
+notifIcons =
+  "info" : "info.png"
+  "warn" : "warn.png"
+  "err"  : "err.png"
+  "chk"  : "chk.png"
+  "fav"  : "fav.png"
+  "star" : "infostar.png"
+  "clip" : "clip.png"
+  "close": "close.png"
+  "user" : "user.png"
+  "users": "users.png"
+  "help" : "help.png"
+  "flag" : "flag.png"
+  "none" : "none.png"
+  "cancel"  : "cancel.png"
+  "comment" : "comment.png"
+  "comments": "comments.png"
 
 tabStateNotifier =
   callbacks: {}
@@ -16,6 +36,28 @@ tabStateNotifier =
       callback()
     else
       @completes[tabId] = true
+
+modifierInits = ["c", "a", "s", "w"]
+transKbdEvent = (value, kbdtype) ->
+  keys = andy.getKeyCodes()[kbdtype].keys
+  modifiers = parseInt(value.substring(0, 2), 16)
+  keyCombo = []
+  for i in [0...modifierInits.length]
+    keyCombo.push modifierInits[i] if modifiers & Math.pow(2, i)
+  scanCode = value.substring(2)
+  keyIdenfiers = keys[scanCode]
+  "[" + keyCombo.join("") + "]" + keyIdenfiers[0]
+
+jsCtxData = ""
+execCtxMenu = (info) ->
+  jsCtxData = "scd.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
+  for i in [0...andy.local.keyConfigSet.length]
+    if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
+      execBatchMode keyConfig.new
+      break
+
+chrome.contextMenus.onClicked.addListener (info, tab) ->
+  execCtxMenu info
 
 execShortcut = (dfd, doneCallback, transCode, scCode, sleepMSec, execMode, batchIndex) ->
   if transCode
@@ -78,58 +120,6 @@ execShortcut = (dfd, doneCallback, transCode, scCode, sleepMSec, execMode, batch
         doneCallback dfd, sleepMSec, batchIndex
       ), 0)
 
-execBatch = (dfdCaller, request, sendResponse) ->
-  doneCallback = (dfd, sleepMSec, batchIndex) ->
-    dfd.resolve(batchIndex + 1)
-  (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
-  commands = request.value1
-  for i in [0...commands.length]
-    dfdBatchQueue = dfdBatchQueue.then (batchIndex) ->
-      dfd = $.Deferred()
-      try
-        if isNaN(command = commands[batchIndex])
-          execShortcut dfd, doneCallback, command, null, 0, null, batchIndex
-        else
-          sleepMSec = Math.round command
-          if (-1 < sleepMSec < 60000)
-            setTimeout((->
-              flexkbd.Sleep sleepMSec
-              dfd.resolve(batchIndex + 1)
-            ), 0)
-          else
-            throw new Error "Range of Sleep millisecond is up to 6000-0."
-      catch e
-        dfd.reject()
-        sendResponse msg: e.message
-        dfdCaller.resolve()
-      dfd.promise()
-  dfdBatchQueue = dfdBatchQueue.then ->
-    sendResponse msg: "done"
-    dfdCaller.resolve()
-  dfdKicker.resolve(0)
-
-modifierInits = ["c", "a", "s", "w"]
-transKbdEvent = (value, kbdtype) ->
-  keys = andy.getKeyCodes()[kbdtype].keys
-  modifiers = parseInt(value.substring(0, 2), 16)
-  keyCombo = []
-  for i in [0...modifierInits.length]
-    keyCombo.push modifierInits[i] if modifiers & Math.pow(2, i)
-  scanCode = value.substring(2)
-  keyIdenfiers = keys[scanCode]
-  "[" + keyCombo.join("") + "]" + keyIdenfiers[0]
-
-jsCtxData = ""
-execCtxMenu = (info) ->
-  jsCtxData = "scd.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';"
-  for i in [0...andy.local.keyConfigSet.length]
-    if (keyConfig = andy.local.keyConfigSet[i]).new is info.menuItemId
-      execBatchMode keyConfig.new
-      break
-
-chrome.contextMenus.onClicked.addListener (info, tab) ->
-  execCtxMenu info
-
 dfdCommandQueue = $.Deferred().resolve()
 
 chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
@@ -142,12 +132,10 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     setTimeout((->
       if dfd.state() is "pending"
         sendResponse msg: "Command has been killed in a time-out."
-        dfd.resolve()
+        dfd.reject()
     ), 61000)
     try
       switch request.action
-        when "batch"
-          execBatch dfd, request, sendResponse
         when "callShortcut"
           execShortcut dfd, doneCallback, request.value1, null, request.value2
         when "keydown"
@@ -156,6 +144,16 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
           setTimeout((->
             flexkbd.Sleep request.value1
             doneCallback dfd, 0
+          ), 0)
+        when "setData"
+          setTimeout((->
+            userData[request.value1] = request.value2
+            doneCallback dfd, 0
+          ), 0)
+        when "getData"
+          setTimeout((->
+            sendResponse msg: "done", data: userData[request.value1] || null
+            dfd.resolve()
           ), 0)
         when "setClipboard"
           setTimeout((->
@@ -170,8 +168,30 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
             catch e
               text = ""
               result = e.message
-            sendResponse msg: result, text: text
+            sendResponse msg: result, data: text
             dfd.resolve()
+          ), 0)
+        when "showNotification"
+          showNotification dfd, doneCallback, request.value1, request.value2, request.value3, request.value4
+        when "openUrl"
+          commandId = request.value4
+          if findStr = request.value3
+            findtab = true
+          params =
+            openmode: "newtab"
+            url: request.value1
+            noActivate: request.value2
+            findtab: findtab
+            findStr: findStr
+          preOpenBookmark(null, params).done (tabId) ->
+            if tabId && params.noActivate
+              gCurrentTabId = tabId
+              tabStateNotifier.callComplete commandId
+            doneCallback dfd, 0
+        when "clearActiveTab"
+          setTimeout((->
+            gCurrentTabId = null
+            doneCallback dfd, 0
           ), 0)
     catch e
       sendResponse msg: e.message
@@ -179,17 +199,30 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.promise()
   true
 
-jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r){var i=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=i.doneCallback)return setTimeout(function(){return t(e.text||e.msg)},0)}else if(t=i.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},clipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},returnValue:!0,cancel:function(){return this.returnValue=!1}};"""
+jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r){var i;return n&&(i=(new Date).getTime()),(new t).sendMessage("openUrl",e,n,r,i),this.returnValue.cid=i},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
     chrome.tabs.sendMessage tabs[0].id, message
 
-getActiveTab = ->
+getActiveTab = (execJS) ->
   dfd = $.Deferred()
-  chrome.windows.getCurrent null, (win) ->
-    chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
-      dfd.resolve tabs[0], win.id
+  #console.log(gCurrentTabId)
+  if gCurrentTabId && execJS
+    chrome.tabs.query {}, (tabs) ->
+      for i in [0...tabs.length]
+        if tabFound = tabs[i].id is gCurrentTabId
+          break
+      if tabFound
+        dfd.resolve id: gCurrentTabId
+      else
+        chrome.windows.getCurrent null, (win) ->
+          chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
+            dfd.resolve tabs[0], win.id
+  else
+    chrome.windows.getCurrent null, (win) ->
+      chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
+        dfd.resolve tabs[0], win.id
   dfd.promise()
 
 getWindowTabs = (options) ->
@@ -245,8 +278,9 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
       flexkbd.StartConfigMode()
     else
       tabStateNotifier.callComplete tabId
-  
+
 execBatchMode = (scCode) ->
+  gCurrentTabId = null
   doneCallback = (dfd, sleepMSec, batchIndex) ->
     flexkbd.Sleep sleepMSec if sleepMSec > 0
     dfd.resolve(batchIndex + 1)
@@ -271,17 +305,21 @@ execBatchMode = (scCode) ->
             execShortcut dfd, doneCallback, null, keyConfig.origin, defaultSleep, "keydown", batchIndex
           when "command"
             execCommand(keyConfig.new).done (results) ->
-              cancel = false
               if results
-                for i in [0...results?.length]
-                  unless results[i]
-                    cancel = true
+                for i in [0...results.length]
+                  if commandId = results[i]?.cid
+                    break
+                  else if cancel = results[i]?.cancel
                     break
               if cancel
                 #throw new Error "Command canceled"
                 dfd.reject()
               else
-                doneCallback dfd, 0, batchIndex
+                if commandId
+                  tabStateNotifier.register commandId, ->
+                    doneCallback dfd, 0, batchIndex
+                else
+                  doneCallback dfd, 0, batchIndex
           when "sleep"
             setTimeout((->
               flexkbd.Sleep ~~keyConfig.sleep
@@ -302,78 +340,35 @@ execBatchMode = (scCode) ->
 notifications = {}
 notifications.state = "closed"
 
-chrome.notifications.onButtonClicked.addListener (notifId, index) ->
-  if notifId is chrome.runtime.id
-    copyHist = JSON.parse(localStorage.copyHistory || null) || []
-    flexkbd.PasteText copyHist[index]
-    chrome.notifications.clear chrome.runtime.id, ->
-      notifications.state = "closed"
-  
-chrome.notifications.onClosed.addListener (notifId, byUser) ->
-  if notifId is chrome.runtime.id
-    notifications.state = "closed"
-
-#notification = null
-showNotification = ->
-  copyHist = JSON.parse(localStorage.copyHistory || null) || []
-  buttons = []
-  copyHist.forEach (item) ->
-    buttons.push title: item, message: "msg" if item
-  if notifications.state in ["opened", "created"]
-    chrome.notifications.clear chrome.runtime.id, ->
-      chrome.notifications.create chrome.runtime.id,
-        type: "list"
-        iconUrl: "images/key_bindings.png"
-        message: "Select text to paste"
-        eventTime: 60000
-        title: "Copy history"
-        items: buttons  
-        ->
-          notifications.state = "opened"
+createNotification = (dfd, doneCallback, title, message, icon, newNotif) ->
+  if newNotif
+    id = "s" + (new Date).getTime()
   else
-    chrome.notifications.create chrome.runtime.id,
-      type: "list"
-      iconUrl: "images/key_bindings.png"
-      message: "Select text to paste"
-      eventTime: 60000
-      title: "Copy history"
-      items: buttons
-      ->
-        notifications.state = "opened"
-
-showCopyHistory = (dfd, tabId) ->
-  #copyHist = JSON.parse(localStorage.copyHistory || null) || []
-  #chrome.tabs.sendMessage tabId,
-  #  action: "showCopyHistory"
-  #  history: copyHist
-  showNotification()
-  dfd.resolve()
-
-setClipboardWithHistory = (dfd, tabId) ->
-  setTimeout((->
-    if dfd.state() is "pending"
+    id = chrome.runtime.id
+  unless iconName = notifIcons[icon]
+    iconName = notifIcons.none
+  chrome.notifications.create id,
+    type: "basic"
+    iconUrl: "images/" + iconName
+    title: title
+    message: message
+    eventTime: 60000
+    ->
+      notifications.state = "opened"
       dfd.resolve()
-  ), 200)
-  chrome.tabs.sendMessage tabId, action: "copyText", (text) ->
-    unless text is ""
-      flexkbd.SetClipboard text
-      copyHist = JSON.parse(localStorage.copyHistory || null) || []
-      for i in [0...copyHist.length]
-        if copyHist[i] is text
-          copyHist.splice i, 1
-          break
-      copyHist.unshift text
-      if copyHist.length > 20
-        copyHist.pop()
-      localStorage.copyHistory = JSON.stringify copyHist
-      if notifications.state is "opened"
-        showNotification()
-    dfd.resolve()
+      #doneCallback dfd, 0
 
-openBookmark = (dfd, openmode, url) ->
+showNotification = (dfd, doneCallback, title, message, icon, newNotif) ->
+  if notifications.state is "opened" && !newNotif
+    chrome.notifications.clear chrome.runtime.id, ->
+      createNotification(dfd, doneCallback, title, message, icon, newNotif)
+  else
+    createNotification(dfd, doneCallback, title, message, icon, newNotif)
+
+openBookmark = (dfd, openmode, url, noActivate = false) ->
   switch openmode
     when "newtab"
-      chrome.tabs.create {url: url}, (tab) -> dfd.resolve(tab.id)
+      chrome.tabs.create {url: url, active: !noActivate}, (tab) -> dfd.resolve(tab.id)
     when "current"
       chrome.tabs.query {active: true}, (tabs) ->
         tabStateNotifier.reset(tabs[0].id)
@@ -385,11 +380,14 @@ openBookmark = (dfd, openmode, url) ->
     else #findonly
       dfd.resolve()
 
-preOpenBookmark = (keyEvent) ->
+preOpenBookmark = (keyEvent, params) ->
   dfd = $.Deferred()
-  andy.local.keyConfigSet.forEach (item) ->
-    if item.new is keyEvent
-      {openmode, url, findtab, findStr} = item.bookmark
+  for i in [0...andy.local.keyConfigSet.length]
+    item = andy.local.keyConfigSet[i]
+    if item.new is keyEvent || params
+      unless params
+        params = item.bookmark
+      {openmode, url, findtab, findStr, noActivate} = params
       if findtab || openmode is "findonly"
         getActiveTab().done (activeTab) ->
           getAllTabs().done (tabs) ->
@@ -406,13 +404,17 @@ preOpenBookmark = (keyEvent) ->
             found = false
             for i in [0...orderedTabs.length]
               unless (orderedTabs[i].title + orderedTabs[i].url).indexOf(findStr) is -1
-                chrome.tabs.update orderedTabs[i].id, {active: true}, -> dfd.resolve()
+                if noActivate
+                  dfd.resolve orderedTabs[i].id
+                else
+                  chrome.tabs.update orderedTabs[i].id, {active: true}, -> dfd.resolve()
                 found = true
                 break
             unless found
-              openBookmark(dfd, openmode, url)
+              openBookmark(dfd, openmode, url, noActivate)
       else
-        openBookmark(dfd, openmode, url)
+        openBookmark(dfd, openmode, url, noActivate)
+      break
   dfd.promise()
 
 removeCookie = (dfd, removeSpecs, index) ->
@@ -578,7 +580,7 @@ execCommand = (keyEvent) ->
           code = item.command.content
           if item.command.useUtilObj
             code = jsUtilObj + jsCtxData + code + ";scd.returnValue"
-          getActiveTab().done (tab) ->
+          getActiveTab(true).done (tab) ->
             chrome.tabs.executeScript tab.id,
               code: code
               allFrames: item.command.allFrames
@@ -707,7 +709,8 @@ window.pluginEvent = (action, value) ->
     when "bookmark"
       preOpenBookmark value
     when "command"
-      execCommand value
+      #execCommand value
+      execBatchMode value
     when "batch"
       execBatchMode value
 

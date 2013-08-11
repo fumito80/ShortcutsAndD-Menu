@@ -13,16 +13,17 @@ class Messenger
   fail: (callback) ->
     @failCallback = callback
     @
-  sendMessage: (action, value1, value2, value3) ->
+  sendMessage: (action, value1, value2, value3, value4) ->
     chrome.runtime.sendMessage
       action: action
       value1: value1
       value2: value2
       value3: value3
+      value4: value4
     , (resp) =>
       if resp?.msg is "done"
         if callback = @doneCallback
-          setTimeout((-> callback(resp.text || resp.msg)), 0)
+          setTimeout((-> callback(resp.data || resp.msg)), 0)
       else
         if callback = @failCallback
           setTimeout((-> callback resp.msg), 0)
@@ -66,12 +67,39 @@ scd =
       sleepMSec = 100
     (new Messenger()).sendMessage "sleep", sleepMSec
 
-  clipbd: (text) ->
+  setClipbd: (text) ->
     (new Messenger()).sendMessage "setClipboard", text
 
   getClipbd: ->
     (new Messenger()).sendMessage "getClipboard"
   
-  returnValue: true
+  showNotify: (title = "", message = "", icon = "none", newNotif = false) ->
+    (new Messenger()).sendMessage "showNotification", title, message, icon, newNotif
+  
+  returnValue: {}
   cancel: ->
-    @returnValue = false
+    @returnValue.cancel = true
+  
+  openUrl: (url, noActivate, findTitleOrUrl) ->
+    if noActivate
+      cid = (new Date).getTime()
+    (new Messenger()).sendMessage "openUrl", url, noActivate, findTitleOrUrl, cid
+    @returnValue.cid = cid
+  
+  clearCurrentTab: ->
+    (new Messenger()).sendMessage "clearCurrentTab"
+  
+  getSelection: ->
+    selection = ""
+    if (elActive = document.activeElement)
+      if elActive.nodeName in ["TEXTAREA", "INPUT"]
+        selection = elActive.value.substring(elActive.selectionStart, elActive.selectionEnd)
+      else
+        if (range = window.getSelection()).type is "Range"
+          selection = range.getRangeAt(0).toString()
+
+  setData: (name, value) ->
+    (new Messenger()).sendMessage "setData", name, value
+
+  getData: (name) ->
+    (new Messenger()).sendMessage "getData", name

@@ -14,18 +14,12 @@
 
 > **ショートカットキーへのキーマッピング（再割り当て）機能**
 >
-> > ショートカットキーに、ほぼすべてのキー入力をマッピング（再割り当て）できます。
+> > ショートカットキーに、ほぼすべてのキー入力を割り当てられます。
 > >
 > > ショートカットキー to ショートカットキーも可能なので、Chrome標準のショートカットキー機能のキーアサインを  
 > > 別のショートカットキーに割り当てることができます。  
 > >
 > > また、トリガーに、ショートカットキーではなく、マウスイベントやコンテキストメニューを割り当てることもできます。  
-
-> **ブックマークの割り当て・サーチ機能**
-> 
-> > ショートカットキーにブックマークを割り当てられます。
-> >
-> > 既に開いている場合は、タブを検索してアクティブにできます。
 
 > **拡張コマンド機能**
 >
@@ -37,11 +31,17 @@
 > > 4. CSS挿入  
 > > 5. JavaScript実行  
 > > 
-> > JavaScript実行機能では、ユーティリティオブジェクトを利用して、キー入力を操作することができます。  
+> > JavaScript実行機能では、ユーティリティオブジェクトを利用して、キー入力やクリップボード、通知ウィンドウ等を操作することができます。  
+
+> **ブックマークの割り当て・サーチ機能**
+> 
+> > ショートカットキーにブックマークを割り当てられます。
+> >
+> > 既に開いている場合は、タブを検索してアクティブにできます。
 
 > **キーボードマクロ・バッチ実行機能**
 > 
-> > キー入力や拡張コマンド、JavaScript等、上記の全機能の組み合わせを登録でき、一度のショートカットキーで呼び出すことができます。  
+> > キー入力や拡張コマンド等の機能を組み合わせて、一度のショートカットキーで呼び出すことができます。  
 > >  
 
 > **コンテンツ（ページ）スクリプトレス**
@@ -318,6 +318,8 @@
 ###### 備考・注意事項
 > - オプションページの設定の保存は自動的に行われます。 特に保存ボタン等はありません。  
 >    （タブまたはウィンドウの切り替え時に保存が実行され、設定はすぐに反映されます）
+> - テキスト編集画面では、Ctrl+V（クリップボード貼り付け）などのショートカットキーが使用できますが  
+>    途中でタブを切り替えて戻った場合は使用できなくなります。 その場合は、一旦閉じてから再度編集してください。  
 > - オプションページは各行をドラッグして並び順を変更できます。  
 >    なお、行が多く、スクロールバーが表示されている状態のとき、ドラッグ中にスクロールされないときがありますが  
 >    そのときはタイトルや周りの余白をクリックしてから再度試みてください。  
@@ -335,7 +337,7 @@
 
 > **Methods**
 > 
-> ###### `scd.send(string keycode[, optional integer sleepMillisecond])`  
+> ###### `scd.send(string keycode [, optional integer sleepMillisecond])`  
 > > 
 > > ショートカットキーを呼び出します。  
 > > リマップや拡張コマンド、ブックマークを割り当て済みのショートカットキーはそれらが呼び出されます。  
@@ -368,7 +370,7 @@
 > > scd.send('[ca]z'); /* Ctrl+Alt+z Move current tab left を割り当てたショートカットキーを呼び出し */
 > > </pre>
 
-> ###### `scd.keydown(string keycode[, optional integer sleepMillisecond])`  
+> ###### `scd.keydown(string keycode [, optional integer sleepMillisecond])`  
 > > 
 > > 指定したキーを押下します。 単独キーも指定できます。  
 > > ショートカットキーを指定した場合は、リマップ等割り当て済みのショートカットキーでもそれらは呼び出されず、単にキー押下が実行されます。
@@ -428,7 +430,51 @@
 > > 指定したミリ秒間スリープして、次のscdオブジェクトメソッドの実行開始を遅らせます。  
 > > なお、通常のJavaScriptコマンドには影響しません。
 
-> ###### `scd.clipbd(string text)`  
+> ###### `scd.openUrl(url string [, optional noActivate boolean, optional findTitleOrUrl string])`  
+> > 
+> > 指定したURLのタブを新たに開きます。  
+> > オプションで、バックグラウンドで開いたり、最初にタブを検索して無ければ新たなタブで開くようにすることができます。  
+> > 
+> > なお、バッチ実行モード時は、このメソッド実行後は、バックグラウンドで開いたり検索された場合でも  
+> > 次以降の「Inject JavaScript」コマンドは、そのタブが対象になります。  
+> > 
+> > - _url(string)_  
+> > 
+> >    URLは、スキーム名(HTTP(S))から始まる完全なURLを指定します。 
+> > 
+> > - _noActivate(boolean)_  
+> > 
+> >    バックグラウンドで開く場合に、trueを指定します。 
+> >    
+> > - _findTitleOrUrl(string)_  
+> > 
+> >    検索するタブのタイトルまたはURLを指定します。 部分一致で検索されます。  
+> >    
+> >    [Code Exsample](#codeExsample1)
+
+> ###### `scd.showNotify(title string, message string [, optional icon string, optional newPopup boolean)`  
+> > 
+> > タイトル付きメッセージを、画面右下に表示されるデスクトップ通知ウィンドウに表示します。  
+> > オプションで、既定のアイコンを表示したり、ウィンドウの表示方法を指定できます。  
+> >
+> > - _title, message(string)_  
+> > 
+> >    ウィンドウのタイトル（太字表示）と本文を指定します。  
+> >    表示できる文字数は、おおよその目安で、タイトルが半角30文字程度×3行、本文が半角30文字程度×7行までです。
+> >
+> > - _icon(string)_  
+> > 
+> >    次の既定のアイコンの名前を指定します。  
+> >    アイコンを表示しない場合は、既定外の値やnullを指定します。
+> >    
+> >    <img src="../images/info.png">[info]<img src="../images/warn.png">[warn]<img src="../images/err.png">[err]<img src="../images/chk.png">[chk]<img src="../images/close.png">[close]<img src="../images/help.png">[help]<img src="../images/fav.png">[fav]  
+> >    <img src="../images/infostar.png">[star]<img src="../images/clip.png">[clip]<img src="../images/comment.png">[comment]<img src="../images/comments.png">[comments]<img src="../images/user.png">[user]<img src="../images/users.png">[users]
+> >
+> > - _newPopup(boolean)_  
+> > 
+> >    既定では、一つのウィンドウだけを更新しますが、常に新たなウィンドウを開く場合に、trueを指定します。
+
+> ###### `scd.setClipbd(string text)`  
 > > 
 > > 文字列をクリップボードに貼付けます。
 > >
@@ -443,13 +489,13 @@
 > > } else {
 > >   title = url;
 > > }
-> > scd.clipbd('&lt;a href="' + url + '"&gt;' + title + '&lt;/a&gt;');
+> > scd.setClipbd('&lt;a href="' + url + '"&gt;' + title + '&lt;/a&gt;');
 > > </pre>
 
 > ###### `scd.send(...).done(function callback)`  
 > ###### `scd.keydown(...).done(function callback)`
 > ###### `scd.sleep(...).done(function callback)`
-> ###### `scd.clipbd(...).done(function callback)`
+> ###### `scd.setClipbd(...).done(function callback)`
 > >  
 > > 各scdオブジェクトメソッドの呼び出しを終了してから、登録したファンクションを実行します。  
 > > スリープを指定していた場合は、スリープ時間経過後に実行されます。
@@ -474,6 +520,22 @@
 > > scd.getClipbd().done(function(text) { alert(text); });
 > > </pre>
 
+> ###### `scd.setData(string name, object value)`  
+> >  
+> > コマンド間の共有データを保存します。 保存したデータは本拡張がアンロードされるまで有効です。  
+> > 
+
+> ###### `scd.getData(string name).done(function callback(object value))`  
+> >  
+> > 保存した共有データを取得します。  
+> > 
+
+> ###### `scd.getSelection()`  
+> >  
+> > ページの選択中の文字列を返します。  
+> > window.getSelectionとの違いは、TEXTAREAとINPUTエレメントの選択文字列も返します。  
+> > 
+
 > ###### `scd.cancel()`  
 > >  
 > > バッチ実行モードのときに、後続のコマンドの実行をすべてキャンセルします。
@@ -487,3 +549,42 @@
 > > 
 > > このプロパティの値は、次のコンテキストメニュー呼び出しがあるまで変更されず、
 > > 他のスクリプトからも同じ値が参照できます。
+> > 
+
+<a name="codeExsample1"></a>
+> Code Exsample  
+> 
+> バッチ実行モードでのコードサンプルです。  
+> 選択中の英文テキストを、Google翻訳に渡して翻訳結果をデスクトップ通知ウィンドウに表示します。  
+> コンテキストメニューのSelectionに登録する場合を想定しています。  
+> 
+> Inject JavaScript① Google翻訳ページに英文テキストを渡してバックグラウンドで開きます。  
+> <pre>
+> scd.openUrl("http://translate.google.co.jp/#en/ja/" + encodeURIComponent(scd.ctxData), true);
+> </pre>
+> Inject JavaScript② 翻訳結果を通知ウィンドウに表示してGoogle翻訳ページは閉じます。  
+> <pre>
+> var elResult = document.getElementById("result_box"), timer;
+> if (elResult) {
+>   elResult.addEventListener("DOMSubtreeModified", function(event) {
+>     if (timer) {
+>       clearTimeout(timer);
+>     }
+>     timer = setTimeout(function() {
+>       var elSource = document.getElementById("source");
+>       scd.showNotify(elSource.value, event.srcElement.textContent, "info");
+>       window.close();
+>     }, 100);
+>   }, false);
+> }
+> </pre>
+<br>
+> ショートカットキーからも実行する場合は、上記のInject JavaScript① を次のコードに置き換えます。  
+> <pre>
+> var selection = scd.getSelection();
+> if (selection) {
+>   scd.openUrl("http://translate.google.co.jp/#en/ja/" + encodeURIComponent(selection), true);
+> } else {
+>   scd.cancel();
+> }
+> </pre>

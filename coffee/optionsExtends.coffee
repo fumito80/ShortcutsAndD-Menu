@@ -48,7 +48,7 @@ PopupBaseView = Backbone.View.extend
     @$el.hide()
     @model?.trigger "showPopup", false
   tmplHelp: _.template """
-    <a href="helpview.html#<%=name%>" target="_blank" class="help" title="help">
+    <a href="helpview.html#<%=name%>" target="helpview" class="help" title="help">
       <i class="icon-question-sign" title="Help"></i>
     </a>
     """
@@ -134,7 +134,7 @@ commandsDisp =
   insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS"]
   execJS:         ["custom", "Inject script", [
     {value:"allFrames",  caption:"All frames"}
-    {value:"useUtilObj", caption:"Use utility object"}
+    {value:"useUtilObj", caption:"""Use <a href="helpview.html#utilobj" target="helpview">utility object</a>"""}
   ], "JS"]
 
 catnames =

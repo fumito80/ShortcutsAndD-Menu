@@ -46,7 +46,22 @@ http://www.vector.co.jp/soft/screen/winnt/util/se503549.html
 　☑スクリプト
 　☑実行
 
-親コマンド上下移動
+☑親コマンド上下移動
+☑親コマンド移動時コンテキストメニューアイコンも移動
+
+☑Newコマンド
+　☑openUrl(url string[, optional noActivate boolean, optional findTitleOrUrl string])
+  ?? clearCurrentTab()
+  ☑showNotification(title string, message string[, optional newPopup boolean, optional icon string)
+  ☑clipbd -> setClipbd
+
+☑notifications
+ヘルプをオンライン化
+
+
+編集時のタブ切替え
+Use jQuery
+Use CoffeeScript
+
 ロック／ロールバック
 インポート・エクスポート/その他オプション
-notifications
