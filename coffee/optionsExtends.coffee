@@ -34,12 +34,13 @@ PopupBaseView = Backbone.View.extend
     @$el.show().draggable
       cursor: "move"
       delay: 200
-      cancel: "input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title"
+      cancel: "input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title,div.CodeMirror"
       stop: => @onStopDrag()
     @el.style.pixelLeft = Math.round((window.innerWidth  - @el.offsetWidth)  / 2)
     @el.style.pixelTop  = Math.round((window.innerHeight - @el.offsetHeight) / 2)
     @$(".caption").focus()
     $(".backscreen").show()
+    true
   onStopDrag: -> # Virtual
   onClickIconRemove: ->
     @hidePopup()
@@ -58,6 +59,7 @@ class EditableBaseView extends PopupBaseView
     unless super(name, model, options)
       return false
     startEdit()
+    true
   hidePopup: ->
     endEdit()
     super()
@@ -92,6 +94,7 @@ class ExplorerBaseView extends PopupBaseView
     unless super(name, model, options)
       return false
     @$(".result_outer").getNiceScroll().show()
+    true
   onStopDrag: ->
     @$(".result_outer").getNiceScroll().resize()
   hidePopup: ->
@@ -131,9 +134,11 @@ commandsDisp =
   pasteText:      ["custom", "Paste fixed text", [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
-  insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS"]
+  insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS", ""]
   execJS:         ["custom", "Inject script", [
-    {value:"allFrames",  caption:"All frames"}
+    {value:"allFrames" ,  caption:"All frames"}
+    {value:"coffee"    ,  caption:"CoffeeScript"}
+    {value:"jquery"    ,  caption:"jQuery"}
     {value:"useUtilObj", caption:"""Use <a href="helpview.html#utilobj" target="helpview">utility object</a>"""}
   ], "JS"]
 
@@ -144,33 +149,67 @@ catnames =
   clip: "Clipboard commands"
   custom: "Other"
 
-class CommandOptionsView extends EditableBaseView
+class CommandOptionsView extends ExplorerBaseView
   name: "commandOptions"
   el: ".commandOptions"
+  events: _.extend
+    "click input[value='coffee']": "onClickChkCoffee"
+    "click .tabs a"              : "onClickSwitchCoffee"
+    PopupBaseView.prototype.events
   constructor: (options) ->
+    @editor = CodeMirror.fromTextArea $(".content")[0],
+      mode: "text/javascript"
+      theme: "default"
+      tabSize: 2
+      indentUnit: 2
+      indentWithTabs: false
+      tabMode: "spaces"
+      enterMode: "keep"
+      electricChars: false
+      lineNumbers: true
+      firstLineNumber: 1
+      gutter: false
+      fixedGutter: false
+      matchBrackets: true
+    $(".CodeMirror-scroll").addClass "result_outer"
+    @editor.on "change", =>
+      @onStopDrag()
     super(options)
     commandsView.on "showPopup", @onShowPopup, @
+    @$(".content_outer").resizable
+      minWidth: 650
+      minHeight: 200
   render: ->
-    content$ = @$(".content").css("height", "auto")
-    if (commandName = @options.name) is "clearHistoryS"
-      content$.attr("rows", "1")
-    else
-      content$.attr("rows", "10")
-    @$(".command").html commandsDisp[commandName][1]
+    @$(".command").html commandsDisp[@options.name][1]
     @$(".caption").val(@options.caption)
-    content$.val(@options.content)
     commandOption = @$(".inputs").empty()
-    commandsDisp[commandName][2].forEach (option) =>
+    commandsDisp[@options.name][2].forEach (option) =>
       option.checked = ""
       if @options[option.value]
         option.checked = "checked"
       commandOption.append @tmplOptions option
     @$el.append @tmplHelp @
+    @onClickChkCoffee currentTarget: @$("input[value='coffee']")
   onShowPopup: (name, model, options) ->
+    if name is @name
+      @trigger "getEditerSize", container = {}
+      if container.width
+        @$(".content_outer").width(container.width).height(container.height)
+      else
+        @$(".content_outer").width(700)
     unless super(name, model, options)
       return
+    startEdit()
+    switch @options.name
+      when "insetCSS"
+        mode = "text/css"
+      else
+        mode = "text/javascript"
+    @editor.setOption "mode", mode
+    @editor.setValue @options.content || ""
     if @options.content
-      @$(".content").focus()[0].setSelectionRange(0, 0)
+      #@$(".content").focus()[0].setSelectionRange(0, 0)
+      @editor.focus()
     else
       @$(".caption").focus()
   onSubmitForm: ->
@@ -193,6 +232,15 @@ class CommandOptionsView extends EditableBaseView
         .trigger "change:command"
       @hidePopup()
     false
+  onClickChkCoffee: (event) ->
+    if $(event.currentTarget).is(":checked")
+      @$(".tabs").show()
+    else
+      @$(".tabs").hide()
+  hidePopup: ->
+    @trigger "setEditerSize", @$(".content_outer").width(), @$(".content_outer").height()
+    endEdit()
+    super()
   tmplOptions: _.template """
     <label>
       <input type="checkbox" value="<%=value%>" <%=checked%>> <%=caption%>

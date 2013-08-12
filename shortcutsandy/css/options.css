@@ -479,8 +479,10 @@ button.cog.selecting {
   margin-right: 60px;
 }
 .popup .inputs {
+  /*
   padding: 10px;
   line-height: 1.8em;
+  */
 }
 .popup fieldset {
   margin-top: 20px;
@@ -632,12 +634,17 @@ button.cog.selecting {
 }
 .caption {
   width: 400px;
-  margin-top: 5px;
+  margin-top: 15px;
 }
 .commandOptions .content {
-  width: 600px;
-  height: auto;
+  width: 100%;
+  height: 100%;
   margin-top: 5px;
+  resize: none;
+}
+.commandOptions .content_outer {
+  display: inline-block;
+  padding-top: 5px;
 }
 .commandOptions .otherinput input[type='text'] {
   width: 600px;
@@ -650,6 +657,46 @@ button.cog.selecting {
 }
 .commandOptions .inputs label {
   padding-left: 15px;
+  font-size: 0.9em;
+}
+.commandOptions .ui-resizable-se {
+  right: -10px;
+  bottom: -10px;
+}
+.commandOptions ul.tabs {
+  display: none;
+  margin-top: -27px;
+  border-bottom: 0;
+  float: right;
+  width: auto;
+}
+.commandOptions .CodeMirror.cm-s-default {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #999;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-shadow: inset 0px 1px 6px #ccc;
+  transition: box-shadow 0.5s, border 0.5s, background 0.5s;
+}
+.commandOptions .cm-s-default.CodeMirror-focused {
+  box-shadow: 0 0 7px #CCC;
+  /*
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE;
+  */
+}
+.commandOptions .CodeMirror.cm-s-default pre {
+  box-shadow: none;
+}
+.commandOptions .result_outer {
+  margin-right: 2px;
+}
+.commandOptions .CodeMirror-hscrollbar {
+  overflow-x: hidden;
+}
+.commandOptions .CodeMirror-vscrollbar {
+  overflow-y: hidden;
 }
 .commandParams input[type='text'] {
   width: 450px;

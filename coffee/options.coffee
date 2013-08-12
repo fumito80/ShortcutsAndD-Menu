@@ -906,6 +906,16 @@ KeyConfigSetView = Backbone.View.extend
       @$("tr").removeClass("ui-selected unselectable")
       @redrawTable()
 
+  onGetEditerSize: (container) ->
+    if editerSize = @model.get "editerSize"
+      container.width = editerSize.width
+      container.height = editerSize.height
+  
+  onSetEditerSize: (width, height) ->
+    @model.set "editerSize",
+      width:  width
+      height: height
+  
   # DOM Events
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
@@ -1082,6 +1092,8 @@ $ ->
   ctxMenuManagerView.on "leaveCtxMenuSelMode", headerView.onLeaveCtxMenuSelMode, headerView
   ctxMenuManagerView.on "triggerEventSelected", keyConfigSetView.onTriggerEventSelected, keyConfigSetView
   ctxMenuManagerView.on "setCtxMenus", keyConfigSetView.onSetCtxMenus, keyConfigSetView
+  commandOptionsView.on "getEditerSize", keyConfigSetView.onGetEditerSize, keyConfigSetView
+  commandOptionsView.on "setEditerSize", keyConfigSetView.onSetEditerSize, keyConfigSetView
   
   ctxMenuFolderSet.reset saveData.ctxMenuFolderSet
   keyConfigSetView.render(saveData.keyConfigSet)

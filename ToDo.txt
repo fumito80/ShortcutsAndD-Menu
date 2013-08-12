@@ -56,12 +56,13 @@ http://www.vector.co.jp/soft/screen/winnt/util/se503549.html
   ☑clipbd -> setClipbd
 
 ☑notifications
-ヘルプをオンライン化
 
-
-編集時のタブ切替え
-Use jQuery
+☑編集ウィンドウのサイズ保存
+☑Use jQuery
+☑Code Mirror
 Use CoffeeScript
 
-ロック／ロールバック
 インポート・エクスポート/その他オプション
+ヘルプをオンライン化
+編集時のタブ切替え
+ロック／ロールバック

@@ -452,6 +452,13 @@ closeTabs = (dfd, fnWhere) ->
       else
         dfd.resolve()
 
+execJS = (dfd, tabId, code, allFrames) ->
+  chrome.tabs.executeScript tabId,
+    code: code
+    allFrames: allFrames
+    runAt: "document_end"
+    (results) -> dfd.resolve(results)
+
 execCommand = (keyEvent) ->
   dfd = $.Deferred()
   pos = 0
@@ -581,11 +588,18 @@ execCommand = (keyEvent) ->
           if item.command.useUtilObj
             code = jsUtilObj + jsCtxData + code + ";scd.returnValue"
           getActiveTab(true).done (tab) ->
-            chrome.tabs.executeScript tab.id,
-              code: code
-              allFrames: item.command.allFrames
-              runAt: "document_end"
-              (results) -> dfd.resolve(results)
+            if item.command.jquery
+              chrome.tabs.sendMessage tab.id, action: "askJQuery", (resp) ->
+                if resp is "hello"
+                  execJS dfd, tab.id, code, item.command.allFrames
+                else
+                  chrome.tabs.executeScript tab.id,
+                    file: "lib/jquery.min.js"
+                    allFrames: item.command.allFrames
+                    (resp) ->
+                      execJS dfd, tab.id, code, item.command.allFrames
+            else
+              execJS dfd, tab.id, code, item.command.allFrames
         when "clearHistory"
           chrome.browsingData.removeHistory {}, -> dfd.resolve()
         when "clearHistoryS"
