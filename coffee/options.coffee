@@ -86,6 +86,7 @@ HeaderView = Backbone.View.extend
       selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
     selectKbd$.val kbdtype
     @setScHelp kbdtype
+    @$(".addKeyConfig,.ctxmgr,.kbdtype,.scHelp,.helpview,.header a").show()
   # DOM Events
   onClickAddKeyConfig: (event) ->
     @trigger "clickAddKeyConfig", (event)
@@ -101,15 +102,13 @@ HeaderView = Backbone.View.extend
       .attr "href", @scHelpUrl + "ja"
   setScHelp: (kbdtype) ->
     if kbdtype is "JP"
-      @$(".scHelp")
-        .text("Keyboard shortcuts")
-        .attr "href", @scHelpUrl + "ja"
-      #@$(".helpview").show()
+      lang = "ja"
     else
-      @$(".scHelp")
-        .text("Keyboard shortcuts")
-        .attr "href", @scHelpUrl + "en"
-      #@$(".helpview").hide()
+      lang = "en"
+    @$(".scHelp")
+      .text("Keyboard shortcuts")
+      .attr "href", @scHelpUrl + lang
+    #@$(".helpview").show()
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->
@@ -169,7 +168,8 @@ KeyConfigView = Backbone.View.extend
       "setUnselectable": @onSetUnselectable
       "setRowspan":      @onSetRowspan
       "updatePosition" : @onUpdatePosition
-      "showPopup":       @onShowPopup
+      "setSelected":     @onSetSelected
+      "getDescription":  @onGetDescription
       "triggerEventCtxMenuSelected": @onTriggerCtxMenuSelected
       @
     @model.collection.on
@@ -256,11 +256,14 @@ KeyConfigView = Backbone.View.extend
         @$(".selectMode .comment").hide()
         @$("ul.updown").remove()
   
-  onShowPopup: (selected) ->
+  onSetSelected: (selected) ->
     if selected
       @$el.addClass "ui-selected"
     else
       @$el.removeClass "ui-selected"
+  
+  onGetDescription: (container) ->
+    container.desc = @getDescription()
   
   # Collection Events
   onKbdEvent: (value) ->
@@ -352,7 +355,7 @@ KeyConfigView = Backbone.View.extend
     $.trim(desc)
   
   onClickCtxMenu: ->
-    @trigger "showPopup", "ctxMenuOptions", @model, desc: @getDescription()
+    @trigger "showPopup", "ctxMenuOptions", @model.id #, desc: @getDescription()
   
   onClickInputMemo: (event) ->
     event.stopPropagation()
@@ -380,7 +383,7 @@ KeyConfigView = Backbone.View.extend
       mode = event.currentTarget.className
       @$(".selectMode").hide()
       if mode in ["bookmark", "command"]
-        @trigger "showPopup", mode, @model, @model.get(mode)
+        @trigger "showPopup", mode, @model.id #, @model.get(mode)
         return
     @model.set "mode", mode
     @setDispMode mode
@@ -423,9 +426,9 @@ KeyConfigView = Backbone.View.extend
       mode = @model.get "lastMode"
     switch mode
       when "bookmark"
-        @trigger "showPopup", "bookmarkOptions", @model, @model.get("bookmark")  
+        @trigger "showPopup", "bookmarkOptions", @model.id #, @model.get("bookmark")  
       when "command"
-        @trigger "showPopup", "commandOptions", @model, @model.get("command")
+        @trigger "showPopup", "commandOptions", @model.id #, @model.get("command")
       else #when "remap", "through", "disabled"
         (memo = @$("div.memo")).toggle()
         editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
@@ -475,7 +478,7 @@ KeyConfigView = Backbone.View.extend
   onClickDelete: ->
     if parentId = @model.get "parentId"
       shortcut = ""
-      desc = "'" + @getDescription() + "'"
+      desc = "\"" + @getDescription() + "\""
       switch @model.get("mode")
         when "remap"
           shortcut = decodeKbdEvent(@model.get "origin") + "\n\n "
@@ -490,7 +493,7 @@ KeyConfigView = Backbone.View.extend
       else
         msg = "Are you sure you want to delete this shortcut?"
       shortcut = decodeKbdEvent @model.id
-      msg = msg +  "\n\n #{shortcut}\n\n '#{@getDescription()}'"
+      msg = msg +  "\n\n #{shortcut}\n\n \"#{@getDescription()}\""
     if confirm msg
       children.forEach (child) =>
         @trigger "removeConfig", child
@@ -607,13 +610,13 @@ KeyConfigView = Backbone.View.extend
           openmode: bmOpenMode[bookmark.openmode]
           url: bookmark.url
           title: bookmark.title
-        editOption = iconName: "icon-wrench", command: "Edit bookmark..."
+        editOption = iconName: "icon-pencil", command: "Edit bookmark..."
       when "command"
         desc = (commandDisp = commandsDisp[@model.get("command").name])[1]
         if commandDisp[2]
           content3row = []
           command = @model.get("command")
-          lines = command.content.split("\n")
+          lines = command.content?.split("\n") || []
           for i in [0...lines.length]
             if i > 2
               content3row[i-1] += " ..."
@@ -625,7 +628,7 @@ KeyConfigView = Backbone.View.extend
             desc: desc
             content3row: content3row.join("\n")
             caption: command.caption
-          editOption = iconName: "icon-wrench", command: "Edit command..."
+          editOption = iconName: "icon-pencil", command: "Edit command..."
         else
           tdDesc.append @tmplCommand desc: desc, ctg: commandDisp[0].substring(0,1).toUpperCase() + commandDisp[0].substring(1)
       when "remap", "disabled"
@@ -847,8 +850,8 @@ KeyConfigSetView = Backbone.View.extend
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
-  onShowPopup: (name, model, options) ->
-    @trigger "showPopup", name, model, options
+  onShowPopup: (name, id, model, options) ->
+    @trigger "showPopup", name, id #model, options
   
   onRemakeCtxMenu: (container) ->
     andy.remakeCtxMenu(@getSaveData()).done ->
@@ -1026,6 +1029,25 @@ KeyConfigSetView = Backbone.View.extend
     <tbody></tbody>
     """
 
+Router = Backbone.Router.extend
+  initialize: (options) ->
+    {@collection} = options
+  routes:
+    "popup/:name(/:id)(/:option1)(/:option2)": "showPopup"
+    "(:any)": "onNavigateRootPage"
+  showPopup: (name, id, option1, option2) ->
+    if id
+      model = @collection.get id
+    @trigger "showPopup", name, model, option1, option2
+  onNavigateRootPage: ->
+    @navigate "/"
+    @trigger "hidePopup"
+  onNavigatePopup: (name, id) ->
+    params = ""
+    Array.prototype.slice.call(arguments, 1).forEach (param) ->
+      params += "/" + param if param
+    @navigate "popup/#{name}#{params}", {trigger: true}
+
 #document.addEventListener "contextmenu",
 #  (event) ->
 #    event.preventDefault()
@@ -1046,9 +1068,11 @@ windowOnResize = ->
 
 startEdit = ->
   andy.startEdit()
-
+  return
+  
 endEdit = ->
   andy.endEdit()
+  return
 
 andy = chrome.extension.getBackgroundPage().andy
 
@@ -1059,11 +1083,14 @@ $ ->
   scHelpSect = andy.getScHelpSect()
   saveData = andy.local
   
+  keyConfigSet = new KeyConfigSet()
+  router = new Router
+    collection: keyConfigSet
+  
   headerView = new HeaderView
     model: new Config(saveData.config)
   headerView.render()
   
-  keyConfigSet = new KeyConfigSet()
   keyConfigSetView = new KeyConfigSetView
     model: new Config(saveData.config)
     collection: keyConfigSet
@@ -1078,9 +1105,11 @@ $ ->
   ctxMenuManagerView = new CtxMenuManagerView
     collection: ctxMenuFolderSet
   
+  headerView.on       "showPopup", router.onNavigatePopup, router
+  keyConfigSetView.on "showPopup", router.onNavigatePopup, router
+  
   headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
-  #ctxMenuOptionsView.on "getCtxMenuParents", keyConfigSetView.onGetCtxMenuParents, keyConfigSetView
   ctxMenuOptionsView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
   ctxMenuOptionsView.on "remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView
   ctxMenuManagerView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
@@ -1113,6 +1142,6 @@ $ ->
     .on "click", ->
       lastFocused = null
   
-  #$(".beta").text("\u03B2")
-
   windowOnResize()
+  
+  Backbone.history.start pushState: false

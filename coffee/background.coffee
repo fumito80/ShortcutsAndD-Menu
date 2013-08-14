@@ -1,6 +1,7 @@
 defaultSleep = 100
 gCurrentTabId = null
 userData = {}
+jsTransCodes = {}
 flexkbd = document.getElementById("flexkbd")
 
 notifIcons =
@@ -252,7 +253,7 @@ getAllTabs2 = ->
 optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
   chrome.tabs.get activeInfo.tabId, (tab) ->
-    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
       flexkbd.StartConfigMode()
       optionsTabId = activeInfo.tabId
     else
@@ -268,13 +269,13 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
     optionsTabId = null
   else
     getActiveTab().done (tab) ->
-      if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+      if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
         flexkbd.StartConfigMode()
         optionsTabId = tab.id
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if changeInfo.status is "complete"
-    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
       flexkbd.StartConfigMode()
     else
       tabStateNotifier.callComplete tabId
@@ -584,7 +585,10 @@ execCommand = (keyEvent) ->
               allFrames: item.command.allFrames
               -> dfd.resolve()
         when "execJS"
-          code = item.command.content
+          if item.command.coffee
+            code = jsTransCodes[item.new]
+          else
+            code = item.command.content
           if item.command.useUtilObj
             code = jsUtilObj + jsCtxData + code + ";scd.returnValue"
           getActiveTab(true).done (tab) ->
@@ -707,9 +711,18 @@ window.andy =
     scHelpSect
   startEdit: ->
     flexkbd.EndConfigMode()
+    return
   endEdit: ->
     flexkbd.StartConfigMode()
+    return
   getCtxMenus: ->
+  coffee2JS: (id, coffee) ->
+    try
+      jsTransCodes[id] = CoffeeScript.compile coffee, bare: "on"
+      success: true
+    catch e
+      jsTransCodes[id] = ""
+      success: false, err: e.message
 
 window.pluginEvent = (action, value) ->
   #console.log action + ": " + value
@@ -836,6 +849,9 @@ $ ->
     if keyConfigSet = andy.local.keyConfigSet
       setConfigPlugin keyConfigSet
       createCtxMenus()
+      for i in [0...keyConfigSet.length]
+        if (item = keyConfigSet[i]).mode is "command" && item.command.name is "execJS" && item.command.coffee
+          andy.coffee2JS item.new, item.command.content
   
   getHelp = (lang) ->
     $.get(scHelpPageUrl + lang).done (responseText) ->

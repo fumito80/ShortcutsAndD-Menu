@@ -60,9 +60,11 @@ http://www.vector.co.jp/soft/screen/winnt/util/se503549.html
 ☑編集ウィンドウのサイズ保存
 ☑Use jQuery
 ☑Code Mirror
-Use CoffeeScript
+☑編集時のタブ切替え
+☑ルーティング
+☑Use CoffeeScript
 
 インポート・エクスポート/その他オプション
+　エディタ フォントサイズ、バックグラウンドカラー、タブサイズ
 ヘルプをオンライン化
-編集時のタブ切替え
 ロック／ロールバック

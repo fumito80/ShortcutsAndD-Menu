@@ -191,8 +191,21 @@
 >    チェック時は、ページのすべてのフレームに、CSSやJavaScriptが適用されます。  
 >    未チェック時はトップフレームにのみ適用されます。
 > - Inject scriptのオプション
+>    - **CoffeeScript**  
+>    チェック時に、CoffeeScriptでコードを記述できます。  
+>  
+>        チェックすると「**CoffeeS**」と「**To JS**」というタブが出現します。  
+>    「**To JS**」タブをクリックすると、事前にJavaScriptへの変換結果が確認できます。 変換結果の表示だけですので編集はできません。  
+>    「**CoffeeS**」タブは、元のソースコードを表示します。（JavaScriptからの変換結果ではありません）  
+>  
+>        このチェックを外すと、現在表示されているコードがそのまま残ります。 JavaScriptへの変換結果を表示させたまま  
+>    チェックを外すと、元のCoffeeScriptのコードは失われますので、ご注意ください。  
+>    - **jQuery**  
+>    チェック時に、jQueryを利用できます。  
+>  
+>        現在のjQueryのバージョンは、2.0.3です。  
 >    - **Use utility object**  
->    チェック時に、JavaScriptからショートカットキーを操作できるObjectが利用できます。  
+>    チェック時に、JavaScriptからショートカットキーやクリップボードなどを操作できるObjectが利用できます。  
 >    詳細は[Utility Object Reference](#utilobj)を参照してください。
 >
 
@@ -221,7 +234,7 @@
 > コンテキストメニューを登録すると、コンテキストメニュー（ページを右クリックしたときに表示されるメニュー）から  
 > ショートカットキーに割り当てた機能を呼び出すことができます。
 > 
-> また、拡張コマンドのInject scriptで利用できる、UtilityObjectのctxDataプロパティの値にコンテキストの情報がセットされ  
+> また、拡張コマンドのInject scriptで利用できる、UtilityObjectのctxDataプロパティの値に対象コンテキストの情報がセットされ  
 > JavaScriptコードから参照することができます。
 > </pre>
 >
@@ -231,7 +244,7 @@
 >    コンテキストメニューに表示される文字列を指定します。  
 >
 >    テキスト選択(Selection)のコンテキストメニューの場合、文字列中の「%s」の箇所が、選択中のテキストに置き換わります。  
->    アルファベットの頭文字か&+アルファベットが、キーショートカットになります。 '&'を表示したい場合は、'&&'と2つ続けて記述します。
+>    アルファベットの頭文字か、&+アルファベットが、キーショートカットになります。 '&'を表示したい場合は、'&&'と2つ続けて記述します。
 >
 > - **Target Context**  
 >    コンテキストメニューのメニュー項目は、右クリックする対象（コンテキスト）により異なります。  
@@ -465,7 +478,7 @@
 > > - _icon(string)_  
 > > 
 > >    次の既定のアイコンの名前を指定します。  
-> >    アイコンを表示しない場合は、既定外の値やnullを指定します。
+> >    アイコンを表示させない場合は、既定外の値やnullを指定します。
 > >    
 > >    <img src="../images/info.png">[info]<img src="../images/warn.png">[warn]<img src="../images/err.png">[err]<img src="../images/chk.png">[chk]<img src="../images/close.png">[close]<img src="../images/help.png">[help]<img src="../images/fav.png">[fav]  
 > >    <img src="../images/infostar.png">[star]<img src="../images/clip.png">[clip]<img src="../images/comment.png">[comment]<img src="../images/comments.png">[comments]<img src="../images/user.png">[user]<img src="../images/users.png">[users]
@@ -560,31 +573,24 @@
 > 
 > Inject JavaScript① Google翻訳ページに英文テキストを渡してバックグラウンドで開きます。  
 > <pre>
-> scd.openUrl("http://translate.google.co.jp/#en/ja/" + encodeURIComponent(scd.ctxData), true);
+> scd.openUrl('http://translate.google.co.jp/#en/ja/' + encodeURIComponent(scd.ctxData), true);
 > </pre>
-> Inject JavaScript② 翻訳結果を通知ウィンドウに表示してGoogle翻訳ページは閉じます。  
+> Inject JavaScript② 翻訳結果を通知ウィンドウに表示してGoogle翻訳ページは閉じます。（CoffeeScriptとjQueryを併用した場合）
 > <pre>
-> var elResult = document.getElementById("result_box"), timer;
-> if (elResult) {
->   elResult.addEventListener("DOMSubtreeModified", function(event) {
->     if (timer) {
->       clearTimeout(timer);
->     }
->     timer = setTimeout(function() {
->       var elSource = document.getElementById("source");
->       scd.showNotify(elSource.value, event.srcElement.textContent, "info");
->       window.close();
->     }, 100);
->   }, false);
-> }
+> timer = null
+> $('#result_box').on 'DOMSubtreeModified', (event) ->
+>   if timer
+>     clearTimeout timer
+>   timer = setTimeout((->
+>     scd.showNotify $('#source').val(), event.currentTarget.textContent, 'info'
+>     window.close()
+>   ), 100)
 > </pre>
 <br>
-> ショートカットキーからも実行する場合は、上記のInject JavaScript① を次のコードに置き換えます。  
+> ショートカットキーからも実行する場合は、上記のInject JavaScript① を次のコードに置き換えます。（CoffeeScript）  
 > <pre>
-> var selection = scd.getSelection();
-> if (selection) {
->   scd.openUrl("http://translate.google.co.jp/#en/ja/" + encodeURIComponent(selection), true);
-> } else {
->   scd.cancel();
-> }
+> if selection = scd.getSelection()
+>   scd.openUrl 'http://translate.google.co.jp/#en/ja/' + encodeURIComponent(selection), true
+> else
+>   scd.cancel()
 > </pre>

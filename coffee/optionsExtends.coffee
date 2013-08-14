@@ -1,3 +1,4 @@
+router = null
 headerView = null
 keyConfigSetView = null
 commandsView = null
@@ -8,17 +9,21 @@ ctxMenuManagerView = null
 
 PopupBaseView = Backbone.View.extend
   initialize: (options) ->
-    keyConfigSetView.on "showPopup", @onShowPopup, @
+    router.on "showPopup", @onShowPopup, @
+    router.on "hidePopup", @onHidePopup, @
+    router.listenTo @, "showPopup", router.onNavigatePopup
+    router.listenTo @, "hidePopup", router.onNavigateRootPage
   events:
     "submit form"        : "onSubmitForm"
     "click  .icon-remove": "onClickIconRemove"
   render: -> # Virtual
   onSubmitForm: -> # Virtual
-  onShowPopup: (name, model, options) ->
+  onShowPopup: (name, model) ->
     unless name is @name
       return false
-    @options = options
     if @model = model
+      if @optionsName
+        @options = model.get @optionsName
       order = ""
       if /^C/.test modelId = model.get("new")
         shortcut = decodeKbdEvent parentId = model.get "parentId"
@@ -29,7 +34,7 @@ PopupBaseView = Backbone.View.extend
       else
         shortcut = decodeKbdEvent modelId
       @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+") + order
-      model.trigger "showPopup", true
+      model.trigger "setSelected", true
     @render()
     @$el.show().draggable
       cursor: "move"
@@ -37,17 +42,21 @@ PopupBaseView = Backbone.View.extend
       cancel: "input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title,div.CodeMirror"
       stop: => @onStopDrag()
     @el.style.pixelLeft = Math.round((window.innerWidth  - @el.offsetWidth)  / 2)
-    @el.style.pixelTop  = Math.round((window.innerHeight - @el.offsetHeight) / 2)
+    @el.style.pixelTop  = Math.max 0, Math.round((window.innerHeight - @el.offsetHeight) / 2)
     @$(".caption").focus()
     $(".backscreen").show()
     true
   onStopDrag: -> # Virtual
   onClickIconRemove: ->
     @hidePopup()
+  onHidePopup: ->
+    if @$el.is(":visible")
+      $(".backscreen").hide()
+      @$el.hide()
+      @model?.trigger "setSelected", false
   hidePopup: ->
-    $(".backscreen").hide()
-    @$el.hide()
-    @model?.trigger "showPopup", false
+    #router.showRootPage()
+    @trigger "hidePopup"
   tmplHelp: _.template """
     <a href="helpview.html#<%=name%>" target="helpview" class="help" title="help">
       <i class="icon-question-sign" title="Help"></i>
@@ -55,14 +64,15 @@ PopupBaseView = Backbone.View.extend
     """
 
 class EditableBaseView extends PopupBaseView
-  onShowPopup: (name, model, options) ->
-    unless super(name, model, options)
+  onShowPopup: (name, model) ->
+    unless super(name, model)
       return false
     startEdit()
     true
-  hidePopup: ->
-    endEdit()
-    super()
+  onHidePopup: ->
+    if @$el.is(":visible")
+      endEdit()
+      super()
 
 class ExplorerBaseView extends PopupBaseView
   events: _.extend
@@ -90,16 +100,17 @@ class ExplorerBaseView extends PopupBaseView
       cursoropacitymin: .1
       cursoropacitymax: .6
     @elResult$ = @$(".result")
-  onShowPopup: (name, model, options) ->
-    unless super(name, model, options)
+  onShowPopup: (name, model) ->
+    unless super(name, model)
       return false
     @$(".result_outer").getNiceScroll().show()
     true
   onStopDrag: ->
     @$(".result_outer").getNiceScroll().resize()
-  hidePopup: ->
-    @$(".result_outer").getNiceScroll().hide()
-    super()
+  onHidePopup: ->
+    if @$el.is(":visible")
+      @$(".result_outer").getNiceScroll().hide()
+      super()
   onClickExpandAll: ->
     if @$(".expandAll").is(":checked")
       @$(".folder,.contexts").addClass("opened expanded")
@@ -152,12 +163,13 @@ catnames =
 class CommandOptionsView extends ExplorerBaseView
   name: "commandOptions"
   el: ".commandOptions"
+  optionsName: "command"
   events: _.extend
     "click input[value='coffee']": "onClickChkCoffee"
     "click .tabs a"              : "onClickSwitchCoffee"
     PopupBaseView.prototype.events
   constructor: (options) ->
-    @editor = CodeMirror.fromTextArea $(".content")[0],
+    @editer = CodeMirror.fromTextArea $(".content")[0],
       mode: "text/javascript"
       theme: "default"
       tabSize: 2
@@ -172,14 +184,20 @@ class CommandOptionsView extends ExplorerBaseView
       fixedGutter: false
       matchBrackets: true
     $(".CodeMirror-scroll").addClass "result_outer"
-    @editor.on "change", =>
+    @editer.on "change", =>
       @onStopDrag()
     super(options)
-    commandsView.on "showPopup", @onShowPopup, @
     @$(".content_outer").resizable
       minWidth: 650
-      minHeight: 200
+      minHeight: 100
   render: ->
+    if @commandName
+      @options = name: @commandName
+    @trigger "getEditerSize", container = {}
+    if container.width
+      @$(".content_outer").width(container.width).height(container.height)
+    else
+      @$(".content_outer").width(700)
     @$(".command").html commandsDisp[@options.name][1]
     @$(".caption").val(@options.caption)
     commandOption = @$(".inputs").empty()
@@ -190,28 +208,27 @@ class CommandOptionsView extends ExplorerBaseView
       commandOption.append @tmplOptions option
     @$el.append @tmplHelp @
     @onClickChkCoffee currentTarget: @$("input[value='coffee']")
-  onShowPopup: (name, model, options) ->
-    if name is @name
-      @trigger "getEditerSize", container = {}
-      if container.width
-        @$(".content_outer").width(container.width).height(container.height)
-      else
-        @$(".content_outer").width(700)
-    unless super(name, model, options)
+    @editer.setOption "readOnly", false
+  onShowPopup: (name, model, commandName) ->
+    @commandName = commandName
+    unless super(name, model)
       return
-    startEdit()
-    switch @options.name
-      when "insetCSS"
-        mode = "text/css"
+    if @options.name is "pasteText"
+      @cmMode = "plain"
+    else if @options.name is "insertCSS"
+      @cmMode = "css"
+    else # execJS
+      if @options.coffee
+        @cmMode = "x-coffeescript"
       else
-        mode = "text/javascript"
-    @editor.setOption "mode", mode
-    @editor.setValue @options.content || ""
+        @cmMode = "javascript"
+    @editer.setOption "mode", "text/" + @cmMode
+    @editer.setValue @options.content || ""
     if @options.content
-      #@$(".content").focus()[0].setSelectionRange(0, 0)
-      @editor.focus()
+      @editer.focus()
     else
       @$(".caption").focus()
+    setTimeout (-> startEdit()), 100
   onSubmitForm: ->
     unless (content = @$(".content").val()) is ""
       options = {}
@@ -220,6 +237,12 @@ class CommandOptionsView extends ExplorerBaseView
         return
       unless caption = @$(".caption").val()
         caption = content.split("\n")[0]
+      if @options.name is "execJS" && options.coffee
+        content = if @$(".tabs li:has(a.x-coffeescript)").hasClass("current") then content else @coffee
+        result = andy.coffee2JS @model.id, content
+        unless result.success
+          unless confirm "A compilation error has occurred, but do you continue?\n\n  " + result.err
+            return false
       @model
         .set
           "command":
@@ -235,8 +258,30 @@ class CommandOptionsView extends ExplorerBaseView
   onClickChkCoffee: (event) ->
     if $(event.currentTarget).is(":checked")
       @$(".tabs").show()
+      @cmMode = "x-coffeescript"
+      @$(".tabs li").removeClass "current"
+      @$(".tabs li:has(a[class='#{@cmMode}'])").addClass "current"
     else
       @$(".tabs").hide()
+      @cmMode = "javascript"
+      @editer.setOption "readOnly", false
+    @editer.setOption "mode", "text/" + @cmMode
+  onClickSwitchCoffee: (event) ->
+    unless (className = event.currentTarget.className) is @cmMode
+      if readOnly = (className is "javascript")
+        try
+          value = CoffeeScript.compile (@coffee = @editer.getValue()), bare: "on"
+        catch e
+          alert "A compilation error has occurred.\n\n  " + e.message
+          return
+      else
+        value = @coffee
+      @editer.setValue ""
+      @editer.setOption "mode", "text/" + (@cmMode = className)
+      @editer.setValue value
+      @editer.setOption "readOnly", readOnly
+      @$(".tabs li").removeClass "current"
+      @$(".tabs li:has(a[class='#{@cmMode}'])").addClass "current"
   hidePopup: ->
     @trigger "setEditerSize", @$(".content_outer").width(), @$(".content_outer").height()
     endEdit()
@@ -250,6 +295,7 @@ class CommandOptionsView extends ExplorerBaseView
 class CommandsView extends PopupBaseView
   name: "command"
   el: ".commands"
+  optionsName: "command"
   render: ->
     target$ = @$(".commandRadios")
     target$.empty()
@@ -265,16 +311,16 @@ class CommandsView extends PopupBaseView
           key: key
           value: commandsDisp[key][1]
     @
-  onShowPopup: (name, model, options) ->
+  onShowPopup: (name, model) ->
     unless super(name, model)
       return
-    @$(".radioCommand").val [options.name] if options
+    @$(".radioCommand").val [@options.name] if @options
     @$el.append @tmplHelp @
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
       @hidePopup()
       if commandsDisp[command][2]
-        @trigger "showPopup", "commandOptions", @model, name: command
+        @trigger "showPopup", "commandOptions", @model.id, command
       else
         @model
           .set({"command": name: command}, {silent: true})
@@ -292,15 +338,14 @@ class CommandsView extends PopupBaseView
 class BookmarkOptionsView extends EditableBaseView
   name: "bookmarkOptions"
   el:   ".bookmarkOptions"
+  optionsName: "bookmark"
   events: _.extend
     "click input[value='findtab']": "onClickFindTab"
     "change input[name='openmode']:radio": "onChangeOpenmode"
     PopupBaseView.prototype.events
-  constructor: (options) ->
-    super(options)
-    bookmarksView.on "showPopup", @onShowPopup, @
   render: ->
-    super()
+    if @newSite
+      @options = @newSite
     @$(".bookmark")
       .css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/#{@options.url}) 1x)")
       .text @options.title
@@ -310,6 +355,16 @@ class BookmarkOptionsView extends EditableBaseView
     (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @options.findtab) is undefined then true else findtab
     @onClickFindTab currentTarget: elFindtab
     @$el.append @tmplHelp @
+  onShowPopup: (name, model, bmId) ->
+    if @name is name
+      @newSite = null
+      if bmId
+        chrome.bookmarks.get bmId, (treeNode) =>
+          treeNode.forEach (node) =>
+            @newSite = node
+            super(name, model)
+      else
+        super(name, model)
   onSubmitForm: ->
     options = {}
     $.each @$("form input[type='checkbox']"), (i, option) =>
@@ -407,11 +462,7 @@ class BookmarksView extends ExplorerBaseView
     event.stopPropagation()
   onClickBookmark: (event) ->
     @hidePopup()
-    target = $(event.currentTarget)
-    @trigger "showPopup", "bookmarkOptions", @model,
-      title: target.text()
-      url:   target.attr("title")
-      bmId:  target.attr("data-id")
+    @trigger "showPopup", "bookmarkOptions", @model.id, $(event.currentTarget).attr("data-id")
     false
   tmplFolder: _.template """
     <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
@@ -451,7 +502,11 @@ class CtxMenuOptionsView extends EditableBaseView
     if @ctxMenu = @model.get "ctxMenu"
       unless @ctxMenu.parentId is "route"
         @ctxMenu.contexts = @collection.get(@ctxMenu.parentId).get "contexts"
-    @$(".caption").val @ctxMenu?.caption || @options.desc
+      desc = @ctxMenu.caption
+    else
+      @model.trigger "getDescription", container = {}
+      desc = container.desc
+    @$(".caption").val desc
     @$el.append @tmplHelp @
     @$("input[value='#{((contexts = @ctxMenu?.contexts) || 'page')}']")[0].checked = true
     if @ctxMenu
@@ -461,7 +516,6 @@ class CtxMenuOptionsView extends EditableBaseView
     lastParentId = (selectParent$ = @$(".selectParent")).val()
     ctxType = @$("input[name='ctxType']:checked").attr("value")
     selectParent$.html @tmplParentMenu
-    #models = @collection.where contexts: ctxType
     @collection.models.forEach (model) ->
       selectParent$.append """<option value="#{model.id}">#{model.get("title")}</option>"""
     if parentId = @ctxMenu?.parentId
@@ -517,8 +571,6 @@ class CtxMenuOptionsView extends EditableBaseView
     @trigger "remakeCtxMenu", dfd: dfd
     dfd.done =>
       @hidePopup()
-      #if @$("input[value='chkShowManager']").is(":checked")
-      #  @trigger "showPopup", "ctxMenuManager", @model
     false
   tmplParentMenu: """
     <option value="route">None(Root)</option>
@@ -546,7 +598,7 @@ class CtxMenuGetterView extends PopupBaseView
     @$(".message").html @tmplMessage message
     @$el.show(200)
     @
-  hidePopup: ->
+  onHidePopup: ->
     @$el.hide(200)
   onClickAdd: ->
     @$el.hide(200)
@@ -554,9 +606,6 @@ class CtxMenuGetterView extends PopupBaseView
   onClickCancel: ->
     @$el.hide(200)
     @trigger "addCtxMenus", true
-  #tmplMessage: _.template """
-  #  Add entries to the <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contexts%></strong> context menu <%=folder%><br>you can select the functions of the keyboard shortcut.
-  #  """
   tmplMessage: _.template """
     Add entries to the context menu for <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contextName%></strong><%=folder%><br>from the functions that you selected.
     """
@@ -582,8 +631,6 @@ class CtxMenuManagerView extends ExplorerBaseView
     super(options)
     @ctxMenuGetterView = new CtxMenuGetterView {}
     @ctxMenuGetterView.on "addCtxMenus", @onAddCtxMenus, @
-    ctxMenuOptionsView.on "showPopup", @onShowPopup, @
-    headerView.on "showPopup", @onShowPopup, @
     keyConfigSetView.on "addCtxMenu", @onAddCtxMenu, @
     ctx = document.getCSSCanvasContext("2d", "empty", 18, 18);
     ctx.strokeStyle = "#CC0000"
@@ -627,9 +674,10 @@ class CtxMenuManagerView extends ExplorerBaseView
     unless super(name, model, options)
       return false
     startEdit()
-  hidePopup: ->
-    endEdit()
-    super()
+  onHidePopup: ->
+    if @$el.is(":visible")
+      endEdit()
+      super()
   onSubmitForm: ->
     false
   setSortable: (selector, handle, fnDoneUpdate) ->
