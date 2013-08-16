@@ -80,10 +80,19 @@ scd =
   cancel: ->
     @returnValue.cancel = true
   
-  openUrl: (url, noActivate, findTitleOrUrl) ->
+  openUrl: (url, noActivate, findTitleOrUrl, position) ->
     if noActivate
       cid = (new Date).getTime()
-    (new Messenger()).sendMessage "openUrl", url, noActivate, findTitleOrUrl, cid
+    if findTitleOrUrl
+      findtab = true
+    params = 
+      url: url
+      noActivate: noActivate
+      findStr: findTitleOrUrl
+      findtab: findtab
+      openmode: position
+      commandId: cid
+    (new Messenger()).sendMessage "openUrl", params
     @returnValue.cid = cid
   
   clearCurrentTab: ->

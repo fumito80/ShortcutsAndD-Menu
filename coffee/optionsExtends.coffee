@@ -63,17 +63,6 @@ PopupBaseView = Backbone.View.extend
     </a>
     """
 
-class EditableBaseView extends PopupBaseView
-  onShowPopup: (name, model) ->
-    unless super(name, model)
-      return false
-    startEdit()
-    true
-  onHidePopup: ->
-    if @$el.is(":visible")
-      endEdit()
-      super()
-
 class ExplorerBaseView extends PopupBaseView
   events: _.extend
     "click .expand-icon": "onClickExpandIcon"
@@ -172,12 +161,10 @@ class CommandOptionsView extends ExplorerBaseView
     @editer = CodeMirror.fromTextArea $(".content")[0],
       mode: "text/javascript"
       theme: "default"
-      tabSize: 2
-      indentUnit: 2
-      indentWithTabs: false
-      tabMode: "spaces"
-      enterMode: "keep"
-      electricChars: false
+      tabSize: 4
+      indentUnit: 4
+      indentWithTabs: true
+      #electricChars: true
       lineNumbers: true
       firstLineNumber: 1
       gutter: false
@@ -186,6 +173,7 @@ class CommandOptionsView extends ExplorerBaseView
     $(".CodeMirror-scroll").addClass "result_outer"
     @editer.on "change", =>
       @onStopDrag()
+    @editer.lineAtHeight 18
     super(options)
     @$(".content_outer").resizable
       minWidth: 650
@@ -207,8 +195,8 @@ class CommandOptionsView extends ExplorerBaseView
         option.checked = "checked"
       commandOption.append @tmplOptions option
     @$el.append @tmplHelp @
-    @onClickChkCoffee currentTarget: @$("input[value='coffee']")
     @editer.setOption "readOnly", false
+    @onClickChkCoffee currentTarget: @$("input[value='coffee']")
   onShowPopup: (name, model, commandName) ->
     @commandName = commandName
     unless super(name, model)
@@ -224,11 +212,13 @@ class CommandOptionsView extends ExplorerBaseView
         @cmMode = "javascript"
     @editer.setOption "mode", "text/" + @cmMode
     @editer.setValue @options.content || ""
+    @editer.clearHistory()
+    if history = andy.getUndoData @model.id
+      @editer.setHistory history
     if @options.content
       @editer.focus()
     else
       @$(".caption").focus()
-    setTimeout (-> startEdit()), 100
   onSubmitForm: ->
     unless (content = @$(".content").val()) is ""
       options = {}
@@ -243,6 +233,9 @@ class CommandOptionsView extends ExplorerBaseView
         unless result.success
           unless confirm "A compilation error has occurred, but do you continue?\n\n  " + result.err
             return false
+      if @options.name isnt "execJS" || @$(".tabs li:has(a.x-coffeescript)").hasClass("current")
+        @undoData = @editer.getHistory()
+      andy.setUndoData @model.id, @undoData
       @model
         .set
           "command":
@@ -256,7 +249,7 @@ class CommandOptionsView extends ExplorerBaseView
       @hidePopup()
     false
   onClickChkCoffee: (event) ->
-    if $(event.currentTarget).is(":checked")
+    if $(event.currentTarget).is(":checked") && @options.name is "execJS"
       @$(".tabs").show()
       @cmMode = "x-coffeescript"
       @$(".tabs li").removeClass "current"
@@ -265,12 +258,15 @@ class CommandOptionsView extends ExplorerBaseView
       @$(".tabs").hide()
       @cmMode = "javascript"
       @editer.setOption "readOnly", false
+      if @$(".tabs li:has(a.javascript)").hasClass("current")
+        @editer.clearHistory()
     @editer.setOption "mode", "text/" + @cmMode
   onClickSwitchCoffee: (event) ->
     unless (className = event.currentTarget.className) is @cmMode
       if readOnly = (className is "javascript")
         try
           value = CoffeeScript.compile (@coffee = @editer.getValue()), bare: "on"
+          @undoData = @editer.getHistory()
         catch e
           alert "A compilation error has occurred.\n\n  " + e.message
           return
@@ -280,11 +276,13 @@ class CommandOptionsView extends ExplorerBaseView
       @editer.setOption "mode", "text/" + (@cmMode = className)
       @editer.setValue value
       @editer.setOption "readOnly", readOnly
+      if @cmMode is "x-coffeescript"
+        @editer.clearHistory()
+        @editer.setHistory @undoData
       @$(".tabs li").removeClass "current"
       @$(".tabs li:has(a[class='#{@cmMode}'])").addClass "current"
   hidePopup: ->
     @trigger "setEditerSize", @$(".content_outer").width(), @$(".content_outer").height()
-    endEdit()
     super()
   tmplOptions: _.template """
     <label>
@@ -335,7 +333,7 @@ class CommandsView extends PopupBaseView
     </div>
     """
 
-class BookmarkOptionsView extends EditableBaseView
+class BookmarkOptionsView extends PopupBaseView
   name: "bookmarkOptions"
   el:   ".bookmarkOptions"
   optionsName: "bookmark"
@@ -351,9 +349,14 @@ class BookmarkOptionsView extends EditableBaseView
       .text @options.title
     @$(".url").text @options.url
     @$(".findStr").val @options.findStr || @options.url
-    @$("input[value='#{(@options.openmode || 'current')}']")[0].checked = true
+    @$("input[value='#{(@options.openmode || 'current')}']").get(0)?.checked = true
+    @$(".tabpos").val "last"
+    if @options.openmode in ["left", "right", "first", "last"]
+      @$("input[value='newtab']")[0].checked = true
+      @$(".tabpos").val @options.openmode
     (elFindtab = @$("input[value='findtab']")[0]).checked = if (findtab = @options.findtab) is undefined then true else findtab
     @onClickFindTab currentTarget: elFindtab
+    @$("input[value='noActivate']")[0].checked = @options.noActivate
     @$el.append @tmplHelp @
   onShowPopup: (name, model, bmId) ->
     if @name is name
@@ -366,13 +369,15 @@ class BookmarkOptionsView extends EditableBaseView
       else
         super(name, model)
   onSubmitForm: ->
-    options = {}
+    options =
+      findtab:  @$("input[value='findtab']").is(":checked")
+      openmode: @$("input[name='openmode']:checked").attr("value")
+      findStr:  @$(".findStr").val()      
     $.each @$("form input[type='checkbox']"), (i, option) =>
       options[option.value] = option.checked
       return
-    options.findtab = @$("input[value='findtab']").is(":checked")
-    options.openmode = @$("input[name='openmode']:checked").attr("value")
-    options.findStr = @$(".findStr").val()
+    if options.openmode is "newtab"
+      options.openmode = @$(".tabpos").val()
     @model
       .set({"bookmark": _.extend @options, options}, {silent: true})
       .trigger "change:bookmark"
@@ -488,7 +493,7 @@ getUuid = (init) ->
     (((1+Math.random())*0x10000)|0).toString(16).substring(1)
   init + [S4(), S4()].join("").toUpperCase() + (new Date / 1000 | 0)
 
-class CtxMenuOptionsView extends EditableBaseView
+class CtxMenuOptionsView extends PopupBaseView
   name: "ctxMenuOptions"
   el: ".ctxMenuOptions"
   events: _.extend
@@ -670,14 +675,6 @@ class CtxMenuManagerView extends ExplorerBaseView
       @disableButton _.map(document.querySelectorAll(".editButtons button"), (el) -> el.className.match(/^(\w+)\s/)[1])
     @$el.append @tmplHelp @
     @
-  onShowPopup: (name, model, options) ->
-    unless super(name, model, options)
-      return false
-    startEdit()
-  onHidePopup: ->
-    if @$el.is(":visible")
-      endEdit()
-      super()
   onSubmitForm: ->
     false
   setSortable: (selector, handle, fnDoneUpdate) ->
@@ -781,7 +778,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     $(".backscreen").hide()
   onAddCtxMenu: (ctxMenu) ->
     @setContextMenuItem _.extend(ctxMenu, @activeFolder)
-    @$("#" + ctxMenu.id).hide().show(300)
+    @$("#" + ctxMenu.id).hide().show(300).effect("highlight", 2000)
     @setSortable ".ctxMenus", ".menuCaption", @onUpdateMenu
     @$(".folders").sortable "refresh"
   onAddCtxMenus: (cancel) ->

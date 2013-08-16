@@ -394,9 +394,14 @@ button.cog.selecting {
   padding-right: 8px;
 }
 .keyConfigSetView .blank {
-  border: hidden;
   background: #F6F6F6;
   padding: 0 12px;
+}
+.keyConfigSetView .ui-placeholder {
+  border: 1px solid #FF1E93;
+}
+.keyConfigSetView .ui-sortable-helper .blank {
+  background: rgba(0,0,0,0);
 }
 .custom-scroll-bar::-webkit-scrollbar {
   width: 10px;
@@ -481,6 +486,9 @@ button.cog.selecting {
 .popup .inputs {
   padding: 10px;
   line-height: 1.8em;
+}
+.popup .inputs hr {
+  margin: 5px 0;
 }
 .popup fieldset {
   margin-top: 20px;
@@ -606,6 +614,7 @@ button.cog.selecting {
 }
 .bookmarkOptions .labelFindStr {
   margin-left: 15px;
+  padding-bottom: 5px;
 }
 .commands {
   padding-bottom: 30px;
@@ -675,7 +684,7 @@ button.cog.selecting {
 .commandOptions .tabs a {
   cursor: pointer;
 }
-.commandOptions .CodeMirror.cm-s-default {
+.commandOptions .CodeMirror {
   width: 100%;
   height: 100%;
   border: 1px solid #999;

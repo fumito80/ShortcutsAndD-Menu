@@ -245,7 +245,7 @@ KeyConfigView = Backbone.View.extend
   
   onSetRowspan: ->
     if (models = @model.collection.where(parentId: @model.id)).length > 0
-      @$el.addClass("parent").find(".selectMode .comment").show()
+      @$el.addClass("parent").find(".selectMode .comment").show().end().find(".disabled").hide()
       @$("th:first-child").attr "rowspan", models.length + 1
       @model.set "batch", true
     else
@@ -253,7 +253,7 @@ KeyConfigView = Backbone.View.extend
       @$("th:first-child").removeAttr "rowspan"
       @model.unset "batch"
       unless @$el.hasClass "child"
-        @$(".selectMode .comment").hide()
+        @$(".selectMode .comment").hide().end().find(".disabled").show()
         @$("ul.updown").remove()
   
   onSetSelected: (selected) ->
@@ -355,7 +355,7 @@ KeyConfigView = Backbone.View.extend
     $.trim(desc)
   
   onClickCtxMenu: ->
-    @trigger "showPopup", "ctxMenuOptions", @model.id #, desc: @getDescription()
+    @trigger "showPopup", "ctxMenuOptions", @model.id
   
   onClickInputMemo: (event) ->
     event.stopPropagation()
@@ -383,7 +383,7 @@ KeyConfigView = Backbone.View.extend
       mode = event.currentTarget.className
       @$(".selectMode").hide()
       if mode in ["bookmark", "command"]
-        @trigger "showPopup", mode, @model.id #, @model.get(mode)
+        @trigger "showPopup", mode, @model.id
         return
     @model.set "mode", mode
     @setDispMode mode
@@ -426,9 +426,9 @@ KeyConfigView = Backbone.View.extend
       mode = @model.get "lastMode"
     switch mode
       when "bookmark"
-        @trigger "showPopup", "bookmarkOptions", @model.id #, @model.get("bookmark")  
+        @trigger "showPopup", "bookmarkOptions", @model.id
       when "command"
-        @trigger "showPopup", "commandOptions", @model.id #, @model.get("command")
+        @trigger "showPopup", "commandOptions", @model.id
       else #when "remap", "through", "disabled"
         (memo = @$("div.memo")).toggle()
         editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
@@ -505,7 +505,7 @@ KeyConfigView = Backbone.View.extend
       @$(".selectCog").blur()
   
   onClickUpDownChild: (event) ->
-    changeProperty = ->
+    changeParent = ->
       childId = childModel.id
       childModel.set "new", "temp"
       childModel.unset "parentId"
@@ -519,6 +519,10 @@ KeyConfigView = Backbone.View.extend
       newChild$
         .removeClass("parent hover").addClass("child").find(".disabled").hide().end()
         .find(".desc").find(".ctxmenu,.copySC").hide()
+      if childModel.get("mode") is "through"
+        newParent$.find(".new").addClass "through"
+      else
+        newParent$.find(".new").removeClass "through"
     order = -1
     parentId = @model.get("parentId") || @model.id
     models = [parentModel = @model.collection.get(parentId)].concat @model.collection.where(parentId: parentId)
@@ -530,13 +534,13 @@ KeyConfigView = Backbone.View.extend
       (newChild$ = @$el.prev()).before newParent$ = @$el
       if order is 1
         childModel = @model
-        changeProperty()
+        changeParent()
       @trigger "updateChildPos"
     else if event.currentTarget.title is "down" && models.length > (order + 1)
       (newChild$ = @$el).before (newParent$ = @$el.next())
       if order is 0
         childModel = models[1]
-        changeProperty()
+        changeParent()
       @trigger "updateChildPos"
   
   onClickEditSleep: ->
@@ -656,7 +660,7 @@ KeyConfigView = Backbone.View.extend
       editOption = iconName: "icon-pencil", command: "Edit comment"
     tdDesc.append @tmplDesc editOption
     if mode is "disabled"
-      @$(".addKey,.copySC,.seprater.1st,div.ctxmenu").hide()
+      @$(".addKey,.copySC,.seprater.1st,div.ctxmenu,.addCommand").hide()
     if editOption.iconName is ""
       tdDesc.find(".edit").hide()
     if pause
@@ -768,14 +772,19 @@ KeyConfigSetView = Backbone.View.extend
   render: (keyConfigSet) ->
     @$el.append @template()
     @collection.set keyConfigSet
-    @$("tbody")
-      .sortable
-        delay: 300
-        scroll: true
-        cancel: "tr.border,tr.child,input"
-        cursor: "move"
-        start: => @onStartSort()
-        stop: => @redrawTable()
+    @$("tbody").sortable
+      delay: 300
+      scroll: true
+      cancel: "tr.border,tr.child,input"
+      placeholder: "ui-placeholder"
+      forceHelperSize: true
+      forcePlaceholderSize: true
+      cursor: "move"
+      start: =>
+        @onStartSort()
+      stop: (event, ui) =>
+        @redrawTable()
+        ui.item.effect("highlight", 1500)[0].scrollIntoViewIfNeeded true
     $(".fixed-table-container-inner").niceScroll
       #cursorcolor: "#1E90FF"
       cursorwidth: 13
@@ -850,8 +859,8 @@ KeyConfigSetView = Backbone.View.extend
     @$(".th_inner").css("left", 0)
     setTimeout((=> @$(".th_inner").css("left", "")), 0)
   
-  onShowPopup: (name, id, model, options) ->
-    @trigger "showPopup", name, id #model, options
+  onShowPopup: (name, id) ->
+    @trigger "showPopup", name, id
   
   onRemakeCtxMenu: (container) ->
     andy.remakeCtxMenu(@getSaveData()).done ->
@@ -954,7 +963,7 @@ KeyConfigSetView = Backbone.View.extend
   
   onStartSort: ->
     @$("tr.child").hide()
-    @$(".ui-sortable-placeholder").nextAll("tr.border:first,tr.border:last").remove()
+    @$(".ui-placeholder").nextAll("tr.border:first,tr.border:last").remove()
     @$(".parent th:first-child").removeAttr "rowspan"
   
   # Object Method
@@ -1032,8 +1041,16 @@ KeyConfigSetView = Backbone.View.extend
 Router = Backbone.Router.extend
   initialize: (options) ->
     {@collection} = options
+    @popupType =
+      "bookmark": "popup"
+      "command" : "popup"
+      "bookmarkOptions": "editable"
+      "commandOptions" : "editable"
+      "ctxMenuOptions" : "editable"
+      "ctxMenuManager" : "editable"
   routes:
-    "popup/:name(/:id)(/:option1)(/:option2)": "showPopup"
+    "popup/:name(/:id)(/:option1)(/:option2)"   : "showPopup"
+    "editable/:name(/:id)(/:option1)(/:option2)": "showPopup"
     "(:any)": "onNavigateRootPage"
   showPopup: (name, id, option1, option2) ->
     if id
@@ -1046,7 +1063,7 @@ Router = Backbone.Router.extend
     params = ""
     Array.prototype.slice.call(arguments, 1).forEach (param) ->
       params += "/" + param if param
-    @navigate "popup/#{name}#{params}", {trigger: true}
+    @navigate @popupType[name] + "/" + name + params, {trigger: true}
 
 #document.addEventListener "contextmenu",
 #  (event) ->

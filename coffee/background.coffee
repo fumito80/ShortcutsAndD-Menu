@@ -1,6 +1,7 @@
 defaultSleep = 100
 gCurrentTabId = null
 userData = {}
+undoData = {}
 jsTransCodes = {}
 flexkbd = document.getElementById("flexkbd")
 
@@ -175,19 +176,11 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
         when "showNotification"
           showNotification dfd, doneCallback, request.value1, request.value2, request.value3, request.value4
         when "openUrl"
-          commandId = request.value4
-          if findStr = request.value3
-            findtab = true
-          params =
-            openmode: "newtab"
-            url: request.value1
-            noActivate: request.value2
-            findtab: findtab
-            findStr: findStr
+          params = request.value1
           preOpenBookmark(null, params).done (tabId) ->
             if tabId && params.noActivate
               gCurrentTabId = tabId
-              tabStateNotifier.callComplete commandId
+              tabStateNotifier.callComplete params.commandId
             doneCallback dfd, 0
         when "clearActiveTab"
           setTimeout((->
@@ -200,7 +193,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
     dfd.promise()
   true
 
-jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r){var i;return n&&(i=(new Date).getTime()),(new t).sendMessage("openUrl",e,n,r,i),this.returnValue.cid=i},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)}};"""
+jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage("openUrl",u),this.returnValue.cid=s},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -209,13 +202,13 @@ sendMessage = (message) ->
 getActiveTab = (execJS) ->
   dfd = $.Deferred()
   #console.log(gCurrentTabId)
-  if gCurrentTabId && execJS
+  if gCurrentTabId #&& execJS
     chrome.tabs.query {}, (tabs) ->
       for i in [0...tabs.length]
-        if tabFound = tabs[i].id is gCurrentTabId
+        if tabFound = (currentTab = tabs[i]).id is gCurrentTabId
           break
       if tabFound
-        dfd.resolve id: gCurrentTabId
+        dfd.resolve currentTab, currentTab.windowId
       else
         chrome.windows.getCurrent null, (win) ->
           chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
@@ -253,9 +246,10 @@ getAllTabs2 = ->
 optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
   chrome.tabs.get activeInfo.tabId, (tab) ->
-    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
-      flexkbd.StartConfigMode()
-      optionsTabId = activeInfo.tabId
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+      unless /editable/.test(tab.url)
+        flexkbd.StartConfigMode()
+        optionsTabId = activeInfo.tabId
     else
       if optionsTabId
         chrome.tabs.sendMessage optionsTabId,
@@ -269,14 +263,19 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
     optionsTabId = null
   else
     getActiveTab().done (tab) ->
-      if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
+      if tab?.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/editable/.test(tab?.url)
         flexkbd.StartConfigMode()
         optionsTabId = tab.id
 
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if changeInfo.status is "complete"
-    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0 && !/popup/.test(tab.url)
-      flexkbd.StartConfigMode()
+    if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
+      if /editable/.test(tab.url)
+        flexkbd.EndConfigMode()
+        optionsTabId = null
+      else
+        flexkbd.StartConfigMode()
+        optionsTabId = tab.id
     else
       tabStateNotifier.callComplete tabId
 
@@ -366,20 +365,33 @@ showNotification = (dfd, doneCallback, title, message, icon, newNotif) ->
   else
     createNotification(dfd, doneCallback, title, message, icon, newNotif)
 
-openBookmark = (dfd, openmode, url, noActivate = false) ->
-  switch openmode
-    when "newtab"
-      chrome.tabs.create {url: url, active: !noActivate}, (tab) -> dfd.resolve(tab.id)
+openBookmark = (dfd, openmode = "last", url, noActivate = false) ->
+  unless url
+    setTimeout (-> dfd.resolve()), 0
+    return
+  switch openmode.toLowerCase()
+    when "newtab", "left", "right", "first", "last"
+      getActiveTab().done (tab, windowId) ->
+        if openmode is "first"
+          newIndex = 0
+        else if openmode in ["last", "newtab"]
+          newIndex = 1000
+        else if openmode is "left"
+          newIndex = Math.max 0, tab.index
+        else if openmode is "right"
+          newIndex = tab.index + 1
+        chrome.tabs.create {url: url, index: newIndex, active: !noActivate}, (tab) -> dfd.resolve(tab.id)
     when "current"
-      chrome.tabs.query {active: true}, (tabs) ->
-        tabStateNotifier.reset(tabs[0].id)
-        chrome.tabs.update tabs[0].id, url: url, (tab) -> dfd.resolve(tab.id)
+      #chrome.tabs.query {active: true}, (tabs) ->
+      getActiveTab().done (tab, windowId) ->
+        tabStateNotifier.reset(tab.id)
+        chrome.tabs.update tab.id, url: url, active: !noActivate, (tab) -> dfd.resolve(tab.id)
     when "newwin"
-      chrome.windows.create url: url, (tab) -> dfd.resolve(tab.id)
+      chrome.windows.create url: url, focused: !noActivate, (win) -> dfd.resolve(win.tabs[0].id)
     when "incognito"
-      chrome.windows.create url: url, incognito: true, (tab) -> dfd.resolve(tab.id)
+      chrome.windows.create url: url, focused: !noActivate, incognito: true, (win) -> dfd.resolve(win?.tabs[0].id)
     else #findonly
-      dfd.resolve()
+      setTimeout (-> dfd.resolve()), 0
 
 preOpenBookmark = (keyEvent, params) ->
   dfd = $.Deferred()
@@ -716,6 +728,10 @@ window.andy =
     flexkbd.StartConfigMode()
     return
   getCtxMenus: ->
+  getUndoData: (id) ->
+    undoData[id]
+  setUndoData: (id, data) ->
+    undoData[id] = data
   coffee2JS: (id, coffee) ->
     try
       jsTransCodes[id] = CoffeeScript.compile coffee, bare: "on"

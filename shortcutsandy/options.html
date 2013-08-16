@@ -7,8 +7,8 @@
   <link href='css/tipTip.css' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Noto+Sans:400,700' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Michroma' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="lib/codemirror-3.13/lib/codemirror.css">
-  <link rel="stylesheet" href="lib/codemirror-3.13/theme/elegant.css">
+  <link rel="stylesheet" href="lib/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="lib/codemirror/theme/elegant.css">
   <title>Shortcuts &amp;D-Menu</title>
 </head>
 <body>
@@ -88,10 +88,21 @@
         <fieldset>
           <legend>Tab Open Mode</legend>
           <label><input type="radio" name="openmode" value="current" checked="checked"> Open in current tab</label><br>
-          <label><input type="radio" name="openmode" value="newtab"> Open in new tab</label><br>
+          <label><input type="radio" name="openmode" value="newtab"> Open in new tab - Tab position:
+          <select class="tabpos">
+            <option value="last">Last</option>
+            <option value="right">Right of the current</option>
+            <option value="left">Left of the current</option>
+            <option value="first">First</option>
+          </select>
+          </label><br>
           <label><input type="radio" name="openmode" value="newwin"> Open in new window</label><br>
           <label><input type="radio" name="openmode" value="incognito"> Open in incognito window</label><br>
-          <label><input type="radio" name="openmode" value="findonly"> Only to find the tab</label>
+          <label><input type="radio" name="openmode" value="findonly"> Only to find the tab</label><br>
+          <hr class="alt1">
+          <label>
+            <input type="checkbox" value="noActivate"> Open an inactive tab/window
+          </label>
         </fieldset>
         <label>
           <input type="checkbox" value="findtab" checked="checked"> Activate the tab if already open<br>
@@ -184,10 +195,10 @@
   <script src="lib/jquery.tipTip.js"></script>
   <!--<script src="indexedDB.js"></script>-->
   <script src="keyidentifiers.js"></script>
-  <script src="lib/codemirror-3.13/lib/codemirror.js"></script>
-  <script src="lib/codemirror-3.13/mode/css/css.js"></script>
-  <script src="lib/codemirror-3.13/mode/javascript/javascript.js"></script>
-  <script src="lib/codemirror-3.13/mode/coffeescript/coffeescript.js"></script>
+  <script src="lib/codemirror/lib/codemirror.js"></script>
+  <script src="lib/codemirror/mode/css/css.js"></script>
+  <script src="lib/codemirror/mode/javascript/javascript.js"></script>
+  <script src="lib/codemirror/mode/coffeescript/coffeescript.js"></script>
   <script src="lib/coffee-script.js"></script>
   <script src="options.js"></script>
 </body>

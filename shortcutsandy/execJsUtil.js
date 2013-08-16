@@ -142,12 +142,23 @@
     cancel: function() {
       return this.returnValue.cancel = true;
     },
-    openUrl: function(url, noActivate, findTitleOrUrl) {
-      var cid;
+    openUrl: function(url, noActivate, findTitleOrUrl, position) {
+      var cid, findtab, params;
       if (noActivate) {
         cid = (new Date).getTime();
       }
-      (new Messenger()).sendMessage("openUrl", url, noActivate, findTitleOrUrl, cid);
+      if (findTitleOrUrl) {
+        findtab = true;
+      }
+      params = {
+        url: url,
+        noActivate: noActivate,
+        findStr: findTitleOrUrl,
+        findtab: findtab,
+        openmode: position,
+        commandId: cid
+      };
+      (new Messenger()).sendMessage("openUrl", params);
       return this.returnValue.cid = cid;
     },
     clearCurrentTab: function() {
