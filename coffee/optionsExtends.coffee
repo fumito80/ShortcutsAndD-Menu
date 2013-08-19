@@ -145,6 +145,8 @@ class SettingsView extends PopupBaseView
     #unless @makeSyncData jsonstr, @saveData
     if (new Blob([jsonstr])).size >= 102400
       @$(".saveSync").attr "disabled", "disabled"
+    else
+      @$(".saveSync").removeAttr "disabled"
     @$(".tabs li:has(a.tabImp)").removeClass "current"
     @$(".tabs li:has(a.tabExp)").addClass "current"
     @$("div.tabImp").hide()

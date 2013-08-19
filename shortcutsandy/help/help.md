@@ -142,7 +142,7 @@
 >
 >    [Exportタブ]  
 >    - **Save Chrome sync**  
->    Chromeの同期機能を利用して、Googleのサーバ上のストレージに設定データを保存します。  
+>    Chromeの同期機能を利用して、Googleのオンラインストレージに設定データを保存します。  
 >    同期するChromeは、同じGoogleアカウントで使用する必要があります。  
 > 
 >      但し、次の制限に該当する場合は利用できませんので、コピー&ペーストでExport/Importしてください。  
@@ -156,8 +156,9 @@
 >    「Save Chrome sync」で保存した設定データをImport用のテキストエリアに読み込みます。  
 >    - **Paste**  
 >    クリップボードからImport用のテキストエリアに読み込みます。  
->    - **Load last settings**  
->    Import実行後に有効になります。 Import実行前の設定をImport用のテキストエリアに読み込みます。  
+>    - **Load prev settings**  
+>    Import実行後に有効になります。 Import実行後に、前回の設定に戻す場合に使用します。  
+>    （Import実行前の設定をImport用のテキストエリアに読み込みます）  
 >    オプションページを読み込み直すと無効になるのでご注意ください。  
 >    - **Import**  
 >    Importを実行します。  
