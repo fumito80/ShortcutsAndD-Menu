@@ -665,7 +665,7 @@ window.andy =
     if localStorage.flexkbd
       @local = JSON.parse(localStorage.flexkbd || null) || {}
       unless @local.config
-        @local.config = {kbdtype: "JP"}
+        @local.config = {kbdtype: "JP", lang: "ja"}
       unless @local.ctxMenuFolderSet
         @local.ctxMenuFolderSet = []
       delete localStorage.flexkbd
@@ -683,13 +683,15 @@ window.andy =
   ###
   setLocal: ->
     dfd = $.Deferred()
-    chrome.storage.local.get null, (items) =>
+    setTimeout((=>
+      items = {}
       unless items.config
         items.config = {kbdtype: "JP"}
       unless items.ctxMenuFolderSet
         items.ctxMenuFolderSet = []
       @local = items
       dfd.resolve()
+    ), 0)
     dfd.promise()
   ###
   saveConfig: (saveData) ->

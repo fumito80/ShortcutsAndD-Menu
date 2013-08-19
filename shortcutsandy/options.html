@@ -16,7 +16,7 @@
     <span class="h1">
       <span class="title1">Shortcuts</span><span class="amp">&amp;</span><span class="title2">D</span><span class="title1">-Menu</span><span class="beta"></span>
     </span>
-    <select class="kbdtype"></select>
+    <button class="settings"><i class="icon-wrench"></i> Settings</button>
     <a href="#" target="scHelp" class="scHelp"></a>
     <a href="helpview.html" target="helpview" class="helpview">Help</a>
     <button class="ctxmgr" title="Context menu manager"><i class="icon-reorder"></i> Ctx menu mgr</button>
@@ -36,6 +36,41 @@
     <div id="tiptip_content"></div>
   </div>
   <!-- <div class="footer"></div> -->
+  <div class="popup settingsView">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div class="panel1">Settings</span>
+        <button class="done blue"><i class="icon-ok"></i> Done</button>
+      </div>
+    </form>
+    <div class="inputs">
+      <label>Keyborad type<br>
+        <select class="kbdtype"></select>
+      </label><br>
+      <label>Language of keyboard shortcut help<br>
+        <select class="lang"></select>
+      </label><br>
+      <ul class="tabs">
+        <li class="current"><a class="tabExp">Export</a></li>
+        <li><a class="tabImp">Import</a></li>
+      </ul>
+      <div class="tabExp"> Settings data(JSON)<br>
+        <textarea class="export" readonly="readonly"></textarea>
+        <br>
+        <button class="saveSync small"><i class="icon-cloud-upload"></i> Save Chrome sync</button>
+        <button class="copyExp small"><i class="icon-copy"></i> Copy clipboard</button>
+      </div>
+      <div class="tabImp" style="display:none"> Settings data(JSON) <!--<button class="clear small">Clear</button>--><br>
+        <textarea class="import"></textarea>
+        <br>
+        <button class="loadSync small"><i class="icon-cloud-download"></i> Load Chrome sync</button>
+        <button class="paste small"><i class="icon-paste"></i> Paste</button>
+        <button class="impRestore small disabled" disabled="disabled"><i class="icon-undo"></i> Load last settings</button>
+        <button class="impReplace small orange"><i class="icon-download-alt"></i> Import</button>
+        <!--<button class="impMerge small"><i class="icon-plus"></i> Merge</button>-->
+      </div>
+    </div>
+  </div>
   <div class="popup bookmarks">
     <i class="icon-remove" title="Cancel"></i>
     <form>
@@ -142,10 +177,6 @@
             <select class="selectParent"></select>
           </div>
         </label><br>
-        <!--
-        <label class="chkShowManager">
-          <input type="checkbox" value="chkShowManager" checked> Show Context Menu Manager when done
-        </label>-->
       </div>
     </form>
   </div>
@@ -176,16 +207,6 @@
       </div>
     </div>
   </div>
-  <!--
-  <div class="trashBin">
-    <i class="icon-remove" title="Cancel"></i>
-    <div class="panel1">
-      <i class="icon-trash"></i>
-      <span>Trash bin</span>
-      <div class="buffer"></div>
-    </div>
-  </div>
-  -->
   <div class="backscreen"></div>
   <script src="lib/underscore-min.js"></script>
   <script src="lib/jquery.min.js"></script>

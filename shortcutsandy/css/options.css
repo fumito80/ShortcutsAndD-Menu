@@ -4,7 +4,7 @@ body {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   font-size: 0.9em;
   overflow: hidden;
-  background-color: #F6F6F6;
+  background-color: #FCFCFC;
 }
 .header {
   position: fixed;
@@ -54,20 +54,17 @@ body {
   border: 7px solid rgb(122, 122, 160);
   border-radius: 5px; 
 }
-.addKeyConfig, .ctxmgr {
+.addKeyConfig, .ctxmgr, button.settings {
   margin: 5px;
   margin-right: 10px;
   padding: 7px 10px;
   float: right;
   display: none;
 }
-.kbdtype, .scHelp, .helpview {
+.scHelp, .helpview {
   margin: 8px;
   float: right;  
   display: none;
-}
-.kbdtype {
-  background-color: #F6F6F6;
 }
 .header a {
   display: none;
@@ -106,7 +103,7 @@ tbody .data:hover {
   top: -1px;
   height: 40px;
   padding-top: 17px;
-  background-color: #F6F6F6;
+  background-color: #FCFCFC;
 }
 .keyConfigSetView .th_inner.options {
   padding-left: 6px;
@@ -116,7 +113,7 @@ tbody .data:hover {
 }
 .th_inner.blank {
   top: 0;
-  background-color: #F6F6F6;
+  background-color: #FCFCFC;
   padding: 0 12px;
   right: 0;
 }
@@ -394,7 +391,7 @@ button.cog.selecting {
   padding-right: 8px;
 }
 .keyConfigSetView .blank {
-  background: #F6F6F6;
+  background: #FCFCFC;
   padding: 0 12px;
 }
 .keyConfigSetView .ui-placeholder {
@@ -437,7 +434,7 @@ button.cog.selecting {
   position: fixed;
   z-index: 7;
   padding: 10px;
-  background: #F6F6F6;
+  background: #FCFCFC;
   box-shadow: 0 0 20px black;
   border-radius: 1px;
 }
@@ -751,6 +748,9 @@ button.cog.selecting {
   border: 1px solid #50B1FE;
 }
 /*** Context Menu Manger ***/
+.ctxMenuManager .panel1 {
+  padding-left: 10px;
+}
 .ctxMenuManager .result {
   padding: 15px;
   padding-bottom: 45px;
@@ -1014,4 +1014,47 @@ tr:not(.parent) .grpbartop, tr:not(.parent) .grpbarbtm {
 .msec {
   font-size: 0.7em;
   color: #999;
+}
+.settingsView .panel1 {
+  padding-left: 10px;
+}
+.settingsView label {
+  padding-top: 5px;
+}
+.settingsView textarea {
+  width: 600px;
+  height: 100px;
+  border-radius: 0;
+}
+.settingsView div.tabImp, .settingsView div.tabExp {
+  padding: 5px;
+  border: 1px solid #e5e5e5;
+  background: white;
+}
+.tabImp button, .tabExp button {
+  margin-left: 5px;
+  margin-top: 5px;
+}
+.settingsView .export {
+  background: #EEE;
+}
+.settingsView .export:focus {
+  border: 1px solid #ccc;
+  box-shadow: inset 0px 1px 6px #ccc;
+}
+.settingsView .tabs {
+  margin-top: 15px;
+  line-height: 1.0em;
+  float: none;
+}
+.settingsView .tabs a {
+  cursor: pointer;
+}
+.settingsView .impReplace {
+  margin-left: 15px;
+}
+.settingsView .clear {
+  padding: 3px;
+  border-radius: 0;
+  margin-top: -3px;
 }

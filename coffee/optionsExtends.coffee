@@ -1,10 +1,9 @@
+keyCodes = {}
+scHelp = null
+scHelpSect = null
+keys = null
 router = null
-headerView = null
 keyConfigSetView = null
-commandsView = null
-bookmarksView = null
-commandOptionsView = null
-ctxMenuOptionsView = null
 ctxMenuManagerView = null
 
 PopupBaseView = Backbone.View.extend
@@ -21,7 +20,7 @@ PopupBaseView = Backbone.View.extend
   onShowPopup: (name, model) ->
     unless name is @name
       return false
-    if @model = model
+    if model
       if @optionsName
         @options = model.get @optionsName
       order = ""
@@ -35,6 +34,7 @@ PopupBaseView = Backbone.View.extend
         shortcut = decodeKbdEvent modelId
       @$(".shortcut").html _.map(shortcut.split(" + "), (s) -> "<span>#{s}</span>").join("+") + order
       model.trigger "setSelected", true
+      @model = model
     @render()
     @$el.show().draggable
       cursor: "move"
@@ -107,6 +107,127 @@ class ExplorerBaseView extends PopupBaseView
       @$(".folder,.contexts").removeClass("opened expanded")
     windowOnResize()
 
+langs =
+  "ja": ["Japanese"]
+  "en": ["English"]
+
+class SettingsView extends PopupBaseView
+  name: "settings"
+  el: ".settingsView"
+  events: _.extend
+    "click .copyExp"   : "onClickCopy"
+    "click .saveSync"  : "onClickSaveSync"
+    "click .loadSync"  : "onClickLoadSync"
+    "click .paste"     : "onClickPaste"
+    "click .impReplace": "onClickReplace"
+    "click .impMerge"  : "onClickMerge"
+    "click .impRestore": "onClickRestore"
+    "click .tabs a"    : "onClickTab"
+    "click .clear"     : "onClickClear"
+    PopupBaseView.prototype.events
+  constructor: (options) ->
+    super(options)
+    lang$ = @$(".lang")
+    $.each langs, (key, item) =>
+      lang$.append """<option value="#{key}">#{item[0]}</option>"""
+    # キーボード設定
+    keys = keyCodes[@model.get("kbdtype")].keys
+    selectKbd$ = @$(".kbdtype")
+    $.each keyCodes, (key, item) =>
+      selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
+    @model.trigger "change:lang"
+  render: ->
+    @$(".kbdtype").val @model.get("kbdtype")
+    @$(".lang").val (@model.get("lang") || "ja")
+    @trigger "getSaveData", container = {}
+    @saveData = container.data
+    @$(".export").val jsonstr = JSON.stringify @saveData
+    #unless @makeSyncData jsonstr, @saveData
+    if (new Blob([jsonstr])).size >= 102400
+      @$(".saveSync").attr "disabled", "disabled"
+    @$(".tabs li:has(a.tabImp)").removeClass "current"
+    @$(".tabs li:has(a.tabExp)").addClass "current"
+    @$("div.tabImp").hide()
+    @$("div.tabExp").show()
+    @
+  onShowPopup: (name) ->
+    unless super(name)
+      return
+    @$el.append @tmplHelp @
+  onSubmitForm: ->
+    kbdtype = @$(".kbdtype").val()
+    keys = keyCodes[kbdtype].keys
+    @model.set
+      kbdtype: kbdtype
+      lang: @$(".lang").val()
+    @hidePopup()
+    false
+  onClickTab: (event) ->
+    newTab = event.currentTarget.className
+    unless (currentTab$ = @$("div." + newTab)).is(":visible")
+      @$("div.tabExp,div.tabImp").hide()
+      currentTab$.show()
+      @$(".tabs li").removeClass "current"
+      @$(".tabs li:has(a.#{newTab})").addClass "current"
+  onClickCopy: ->
+    chrome.runtime.sendMessage
+      action: "setClipboard"
+      value1: @$(".export").val()
+      (msg) ->
+  onClickSaveSync: ->
+    saved = ((new Date).toString()).match(/(.*?)\s\(/)[1]
+    syncData = "saved": saved
+    for i in [0...@saveData.keyConfigSet.length]
+      syncData["sc" + (1000 + i)] = @saveData.keyConfigSet[i]
+    syncData.config = @saveData.config
+    syncData.ctxMenuFolderSet = @saveData.ctxMenuFolderSet
+    chrome.storage.sync.set syncData, =>
+      if err = chrome.runtime.lastError
+        #if /QUOTA_BYTES_PER_ITEM/.test err.message
+        #  chkData @saveData.keyConfigSet
+        alert err.message
+      else
+        alert 'Settings saved'
+  onClickLoadSync: ->
+    chrome.storage.sync.get (syncData) =>
+      saveData = {}
+      saveData.saved = syncData.saved
+      saveData.config = syncData.config
+      saveData.ctxMenuFolderSet = syncData.ctxMenuFolderSet
+      saveData.keyConfigSet = []
+      i = 0
+      while scData = syncData["sc" + (1000 + i++)]
+        saveData.keyConfigSet.push scData
+      @$(".import").val JSON.stringify saveData
+  onClickReplace: ->
+    #@chkImport()
+    try
+      saveData = JSON.parse @$(".import").val()
+      @$(".impRestore").removeAttr("disabled").removeClass "disabled"
+      @trigger "setSaveData", saveData
+      @lastSaveData = @saveData
+      @saveData = saveData
+      alert "Settings imported"
+    catch e
+      alert e.message
+  onClickPaste: ->
+    chrome.runtime.sendMessage
+      action: "getClipboard"
+      (resp) ->
+        @$(".import").val resp.data
+  onClickRestore: ->
+    @$(".import").val JSON.stringify @lastSaveData
+  onClickClear: ->
+    @$(".import").val("")
+  chkImport: ->
+  chkData: (keyConfigSet) ->
+    if (keyConfigSet || []).length > 0
+      for i in [0...keyConfigSet.length]
+        jsonstr = JSON.stringify keyConfigSet[i]
+        if (new Blob([jsonstr])).size >= 4096
+          keyConfigSet[i].new
+          break
+
 commandsDisp =
   createTab:      ["tab", "Create new tab"]
   createTabBG:    ["tab", "Create new tab in background"]
@@ -147,7 +268,7 @@ catnames =
   win: "Window commands"
   clr: "Browsing data commands"
   clip: "Clipboard commands"
-  custom: "Other"
+  custom: "Others"
 
 class CommandOptionsView extends ExplorerBaseView
   name: "commandOptions"

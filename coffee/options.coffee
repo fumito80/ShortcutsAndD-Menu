@@ -1,10 +1,6 @@
 gMaxItems = 100
 defaultSleep = 100
 lastFocused = null
-keyCodes = {}
-scHelp = null
-scHelpSect = null
-keys = null
 loading = true
 
 WebFontConfig =
@@ -25,6 +21,10 @@ bmOpenMode =
   newtab:    "Open in new tab"
   newwin:    "Open in new window"
   incognito: "Open in incognito window"
+  left:      "Open in new tab to left of the current tab"
+  right:     "Open in new tab to right of the current tab"
+  first:     "Open in new tab to first position"
+  last:      "Open in new tab to last position"
 
 escape = (html) ->
   entity =
@@ -75,44 +75,31 @@ HeaderView = Backbone.View.extend
   # Backbone Buitin Events
   el: "div.header"
   events:
-    "click button.addKeyConfig": "onClickAddKeyConfig"
-    "click .ctxmgr"            : "onClickCtxmgr"
-    "change select.kbdtype"    : "onChangeSelKbd"
+    "click .addKeyConfig": "onClickAddKeyConfig"
+    "click .ctxmgr"      : "onClickCtxmgr"
+    "click .settings"     : "onClickSettings"
   initialize: (options) ->
-    # キーボード設定
-    keys = keyCodes[kbdtype = @model.get("kbdtype")].keys
-    selectKbd$ = @$("select.kbdtype")
-    $.each keyCodes, (key, item) =>
-      selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
-    selectKbd$.val kbdtype
-    @setScHelp kbdtype
-    @$(".addKeyConfig,.ctxmgr,.kbdtype,.scHelp,.helpview,.header a").show()
+    @$(".addKeyConfig,.ctxmgr,.scHelp,.helpview,.settings").show()
+    @model.on "change:lang", @onChangeLang, @
   # DOM Events
   onClickAddKeyConfig: (event) ->
     @trigger "clickAddKeyConfig", (event)
   onClickCtxmgr: ->
     @trigger "showPopup", "ctxMenuManager"
-  onChangeSelKbd: (event) ->
-    @trigger "changeSelKbd", (event)
-    @setScHelp @$("select.kbdtype").val()
-  # Object method
-  setScHelp0: (kbdtype) ->
-    @$(".scHelp")
-      .text("ショートカットキー一覧")
-      .attr "href", @scHelpUrl + "ja"
-  setScHelp: (kbdtype) ->
-    if kbdtype is "JP"
-      lang = "ja"
-    else
-      lang = "en"
-    @$(".scHelp")
-      .text("Keyboard shortcuts")
-      .attr "href", @scHelpUrl + lang
-    #@$(".helpview").show()
+  onClickSettings: ->
+    @trigger "showPopup", "settings"
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->
     @$("button").removeAttr("disabled").removeClass("disabled")
+  onChangeLang0: (kbdtype) ->
+    @$(".scHelp")
+      .text("ショートカットキー一覧")
+      .attr "href", @scHelpUrl + "ja"
+  onChangeLang: ->
+    @$(".scHelp")
+      .text("Keyboard shortcuts")
+      .attr "href", @scHelpUrl + @model.get("lang")
 
 Config = Backbone.Model.extend {}
 
@@ -173,14 +160,17 @@ KeyConfigView = Backbone.View.extend
       "triggerEventCtxMenuSelected": @onTriggerCtxMenuSelected
       @
     @model.collection.on
-      "kbdEvent":    @onKbdEvent
-      "changeKbd":   @onChangeKbd
+      "kbdEvent":        @onKbdEvent
+      "changeKbd":       @onChangeKbd
+      "changeLang":      @onChangeLang
       "updateOrderByEl": @onUpdateOrderByEl
       "mouseoverchild" : @onMouseOverChild
-      "mouseoutchild" : @onMouseOutChild
+      "mouseoutchild" :  @onMouseOutChild
       @
   
-  render: (kbdtype) ->
+  render: (kbdtype, lang) ->
+    @kbdtype = kbdtype
+    @lang = lang
     @setElement @template options: modeDisp
     mode = @model.get("mode")
     if /^C/.test @model.id
@@ -195,7 +185,6 @@ KeyConfigView = Backbone.View.extend
     unless @$el.hasClass("parent") || @$el.hasClass("child")
       @$el.find(".comment").hide()
     @setKbdValue @$(".origin"), @model.get("origin")
-    @kbdtype = kbdtype
     @onChangeMode null, mode
     @
   
@@ -291,6 +280,9 @@ KeyConfigView = Backbone.View.extend
     @kbdtype = kbdtype
     @setKbdValue @$(".new"), @model.id
     @setKbdValue @$(".origin"), @model.get("origin")
+
+  onChangeLang: (lang) ->
+    @lang = lang
     @setDesc()
   
   onUpdateOrderByEl: ->
@@ -636,7 +628,6 @@ KeyConfigView = Backbone.View.extend
         else
           tdDesc.append @tmplCommand desc: desc, ctg: commandDisp[0].substring(0,1).toUpperCase() + commandDisp[0].substring(1)
       when "remap", "disabled"
-        lang = if @kbdtype is "JP" then "ja" else "en"
         if mode is "remap"
           keycombo = @$(".origin").text()
         else
@@ -645,9 +636,9 @@ KeyConfigView = Backbone.View.extend
         unless help = scHelp[keycombo]
           if /^CTRL\+[2-7]$/.test keycombo
             help = scHelp["CTRL+1"]
-        if help　&& help[lang]
-          for i in [0...help[lang].length]
-            test = help[lang][i].match /(^\w+)\^(.+)/
+        if help　&& help[@lang]
+          for i in [0...help[@lang].length]
+            test = help[@lang][i].match /(^\w+)\^(.+)/
             key = RegExp.$1
             content = RegExp.$2
             tdDesc.append(@tmplHelp
@@ -679,7 +670,7 @@ KeyConfigView = Backbone.View.extend
       <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>
       <div class="addCommand"><i class="icon-plus"></i> Add command</div>
       <div class="ctxmenu"><i class="icon-reorder"></i> Create context menu...</div>
-      <div class="copySC"><i class="icon-paper-clip"></i> Copy script</div>
+      <div class="copySC"><i class="icon-copy"></i> Copy script</div>
       <span class="seprater 1st"><hr style="margin:3px 1px" noshade></span>
       <div class="pause"><i class="icon-pause"></i> Pause</div>
       <div class="resume"><i class="icon-play"></i> Resume</div>
@@ -711,7 +702,7 @@ KeyConfigView = Backbone.View.extend
     """
   
   tmplBookmark: _.template """
-    <div class="bookmark" title="<<%=openmode%>>\n<%=url%>" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></div>
+    <div class="bookmark" title="<%=url%>\n[<%=openmode%>]" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></div>
     """
 
   tmplCommand: _.template """<div class="ctgIcon <%=ctg%>"><%=ctg%></div><div class="command"><%=desc%></div>"""
@@ -762,6 +753,8 @@ KeyConfigSetView = Backbone.View.extend
     "click": "onClickBlank"
   
   initialize: (options) ->
+    @model.on "change:lang"   , @onChangeLang   , @
+    @model.on "change:kbdtype", @onChangeKbdtype, @
     @collection.comparator = (model) ->
       model.get "order"
     @collection.on
@@ -811,7 +804,7 @@ KeyConfigSetView = Backbone.View.extend
     tbody = @$("tbody")[0]
     if /^C/.test(model.id) && lastFocused
       divAddNew = lastFocused.nextSibling || null
-    tbody.insertBefore keyConfigView.render(@model.get("kbdtype")).el, divAddNew
+    tbody.insertBefore keyConfigView.render(@model.get("kbdtype"), @model.get("lang")).el, divAddNew
     tbody.insertBefore $(@tmplBorder)[0], divAddNew
     if keyConfigView.state is "invalid"
       @onChildRemoveConfig model
@@ -928,6 +921,21 @@ KeyConfigSetView = Backbone.View.extend
       width:  width
       height: height
   
+  onGetSaveData: (container) ->
+    container.data = @getSaveData()
+  
+  onSetSaveData: (newData) ->
+    @collection.remove @collection.findWhere new: @placeholder
+    @model.set newData.config
+    ctxMenuManagerView.collection.reset newData.ctxMenuFolderSet
+    while model = @collection.at(0)
+      @collection.remove(model)
+    loading = true
+    @collection.set newData.keyConfigSet
+    @redrawTable()
+    loading = false
+    windowOnResize()
+  
   # DOM Events
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
@@ -956,10 +964,11 @@ KeyConfigSetView = Backbone.View.extend
     @$("tbody").sortable "enable"
     windowOnResize()
   
-  onChangeSelKbd: (event) ->
-    keys = keyCodes[newKbd = event.currentTarget.value].keys
-    @collection.trigger "changeKbd", newKbd
-    @model.set "kbdtype", newKbd
+  onChangeLang: ->
+    @collection.trigger "changeLang", @model.get("lang")
+  
+  onChangeKbdtype: ->
+    @collection.trigger "changeKbd", @model.get("kbdtype")
   
   onStartSort: ->
     @$("tr.child").hide()
@@ -1042,12 +1051,13 @@ Router = Backbone.Router.extend
   initialize: (options) ->
     {@collection} = options
     @popupType =
-      "bookmark": "popup"
-      "command" : "popup"
+      "bookmark"       : "popup"
+      "command"        : "popup"
       "bookmarkOptions": "editable"
       "commandOptions" : "editable"
       "ctxMenuOptions" : "editable"
       "ctxMenuManager" : "editable"
+      "settings"       : "editable"
   routes:
     "popup/:name(/:id)(/:option1)(/:option2)"   : "showPopup"
     "editable/:name(/:id)(/:option1)(/:option2)": "showPopup"
@@ -1064,12 +1074,6 @@ Router = Backbone.Router.extend
     Array.prototype.slice.call(arguments, 1).forEach (param) ->
       params += "/" + param if param
     @navigate @popupType[name] + "/" + name + params, {trigger: true}
-
-#document.addEventListener "contextmenu",
-#  (event) ->
-#    event.preventDefault()
-#    event.stopPropagation()
-#  true
 
 marginBottom = 0
 resizeTimer = false
@@ -1100,21 +1104,25 @@ $ ->
   scHelpSect = andy.getScHelpSect()
   saveData = andy.local
   
+  config = new Config saveData.config
   keyConfigSet = new KeyConfigSet()
+  
   router = new Router
     collection: keyConfigSet
   
   headerView = new HeaderView
-    model: new Config(saveData.config)
-  headerView.render()
+    model: config
+  
+  settingsView = new SettingsView
+    model: config
   
   keyConfigSetView = new KeyConfigSetView
-    model: new Config(saveData.config)
+    model: config
     collection: keyConfigSet
   
-  bookmarksView = new BookmarksView {}
-  bookmarkOptionsView = new BookmarkOptionsView {}
-  commandsView = new CommandsView {}
+  new BookmarksView {}
+  new BookmarkOptionsView {}
+  new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
   ctxMenuFolderSet = new CtxMenuFolderSet()
   ctxMenuOptionsView = new CtxMenuOptionsView
@@ -1122,11 +1130,9 @@ $ ->
   ctxMenuManagerView = new CtxMenuManagerView
     collection: ctxMenuFolderSet
   
-  headerView.on       "showPopup", router.onNavigatePopup, router
-  keyConfigSetView.on "showPopup", router.onNavigatePopup, router
-  
-  headerView.on "clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
-  headerView.on "changeSelKbd"     , keyConfigSetView.onChangeSelKbd     , keyConfigSetView
+  headerView.on       "showPopup"      , router.onNavigatePopup, router
+  keyConfigSetView.on "showPopup"      , router.onNavigatePopup, router
+  headerView.on "clickAddKeyConfig"    , keyConfigSetView.onClickAddKeyConfig, keyConfigSetView
   ctxMenuOptionsView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
   ctxMenuOptionsView.on "remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView
   ctxMenuManagerView.on "getCtxMenues" , keyConfigSetView.onGetCtxMenues , keyConfigSetView
@@ -1140,6 +1146,8 @@ $ ->
   ctxMenuManagerView.on "setCtxMenus", keyConfigSetView.onSetCtxMenus, keyConfigSetView
   commandOptionsView.on "getEditerSize", keyConfigSetView.onGetEditerSize, keyConfigSetView
   commandOptionsView.on "setEditerSize", keyConfigSetView.onSetEditerSize, keyConfigSetView
+  settingsView.on "getSaveData", keyConfigSetView.onGetSaveData, keyConfigSetView
+  settingsView.on "setSaveData", keyConfigSetView.onSetSaveData, keyConfigSetView
   
   ctxMenuFolderSet.reset saveData.ctxMenuFolderSet
   keyConfigSetView.render(saveData.keyConfigSet)
