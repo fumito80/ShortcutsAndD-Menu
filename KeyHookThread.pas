@@ -119,7 +119,7 @@ begin
   // Paste Text Mode
   if wPrm = g_pasteText then begin
     scanCode:= 86;
-    scans:= '0086';
+    scans:= '1586';
   end else if ((wPrm and g_callShortcut) <> 0) or ((wPrm and g_keydown) <> 0) then begin
     scanCode:= HiWord(wPrm);
     if (wPrm and g_callShortcut) <> 0 then

@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION 1,0,0,0
-PRODUCTVERSION 1,0,0,0
+FILEVERSION 1,0,0,1
+PRODUCTVERSION 1,0,0,1
 FILEOS 0x4
 FILETYPE 0x1
 {
@@ -8,11 +8,11 @@ BLOCK "StringFileInfo"
 {
     BLOCK "040904E4"
     {
-        VALUE "FileVersion", "0.1.0.0\0"
-        VALUE "ProductVersion", "1.0\0"
+        VALUE "FileVersion", "1.0.0.1\0"
+        VALUE "ProductVersion", "1.0.0.1\0"
         VALUE "CompanyName", "\0"
         VALUE "ProductName", "Flex keyboard plugin\0"
-        VALUE "LegalCopyright", "Copyright takada80\0"
+        VALUE "LegalCopyright", "Copyright takadaZ\0"
         VALUE "FileDescription", "Flex keyboard plugin\0"
         VALUE "MIMEType", "application/x-flexkbd\0"
     }

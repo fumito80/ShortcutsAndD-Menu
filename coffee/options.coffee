@@ -77,7 +77,8 @@ HeaderView = Backbone.View.extend
   events:
     "click .addKeyConfig": "onClickAddKeyConfig"
     "click .ctxmgr"      : "onClickCtxmgr"
-    "click .settings"     : "onClickSettings"
+    "click .settings"    : "onClickSettings"
+    "click"              : "onClickHeader"
   initialize: (options) ->
     @$(".addKeyConfig,.ctxmgr,.scHelp,.helpview,.settings").show()
     @model.on "change:lang", @onChangeLang, @
@@ -88,6 +89,9 @@ HeaderView = Backbone.View.extend
     @trigger "showPopup", "ctxMenuManager"
   onClickSettings: ->
     @trigger "showPopup", "settings"
+  onClickHeader: (event) ->
+    unless event.target.tagName in ["A", "BUTTON", "I"]
+      $(".fixed-table-container-inner")[0].scrollTop = 0
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->

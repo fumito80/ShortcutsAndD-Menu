@@ -286,7 +286,7 @@ begin
       ));
     end;
     // For Paste Text
-    keyConfigList.AddObject('0086', TKeyConfig.Create(
+    keyConfigList.AddObject('1586', TKeyConfig.Create(
       'remap',
       '0147',
       '0186',
@@ -375,6 +375,16 @@ begin
 end;
 
 procedure TMyClass.PasteText(const params: array of Variant);
+var
+  dummyFlag: Boolean;
+  bytesRead: Cardinal;
+begin
+  if params[0] = '' then Exit;
+  gpcStrToClipboard(params[0]);
+  CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
+end;
+
+procedure PasteText0(const params: array of Variant);
 begin
   if params[0] = '' then Exit;
   gpcStrToClipboard(params[0]);

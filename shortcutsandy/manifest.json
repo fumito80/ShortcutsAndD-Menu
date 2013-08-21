@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Shortcuts &D-Menu",
-  "version": "0.4.4.0",
+  "version": "0.4.4.2",
   "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
   "icons": {
      "128": "images/shortcutsandy.png"

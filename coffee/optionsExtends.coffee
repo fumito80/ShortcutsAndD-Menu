@@ -183,13 +183,17 @@ class SettingsView extends PopupBaseView
       syncData["sc" + (1000 + i)] = @saveData.keyConfigSet[i]
     syncData.config = @saveData.config
     syncData.ctxMenuFolderSet = @saveData.ctxMenuFolderSet
-    chrome.storage.sync.set syncData, =>
+    chrome.storage.sync.clear =>
       if err = chrome.runtime.lastError
-        #if /QUOTA_BYTES_PER_ITEM/.test err.message
-        #  chkData @saveData.keyConfigSet
         alert err.message
       else
-        alert 'Settings saved'
+        chrome.storage.sync.set syncData, =>
+          if err = chrome.runtime.lastError
+            #if /QUOTA_BYTES_PER_ITEM/.test err.message
+            #  chkData @saveData.keyConfigSet
+            alert err.message
+          else
+            alert 'Settings saved'
   onClickLoadSync: ->
     chrome.storage.sync.get (syncData) =>
       saveData = {}
@@ -208,7 +212,7 @@ class SettingsView extends PopupBaseView
       @$(".impRestore").removeAttr("disabled").removeClass "disabled"
       @trigger "setSaveData", saveData
       @lastSaveData = @saveData
-      @saveData = saveData
+      @$(".export").val jsonstr = JSON.stringify @saveData = saveData
       alert "Settings imported"
     catch e
       alert e.message
@@ -837,7 +841,9 @@ class CtxMenuManagerView extends ExplorerBaseView
     ui.item.focus() if ui
   onUpdateMenu: (event, ui, view) ->
     $.each view.$(".ctxMenus"), (i, menuItem) ->
-      if (menuItem$ = $(menuItem)).find(".ctxMenuItem,.dummy").length is 0
+      if (menuItem$ = $(menuItem)).find(".ctxMenuItem,.dummy").length > 0
+        menuItem$.parents(".folder").addClass("hasFolder")
+      else
         menuItem$.parents(".folder").removeClass("hasFolder")
     if ui
       ui.item.parents(".folder").addClass("hasFolder")
