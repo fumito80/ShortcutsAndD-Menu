@@ -662,24 +662,21 @@ setConfigPlugin = (keyConfigSet) ->
 window.andy =
   local: null
   setLocal: ->
-    if localStorage.flexkbd
-      @local = JSON.parse(localStorage.flexkbd || null) || {}
-      unless @local.config
-        @local.config = {kbdtype: "JP", lang: "ja"}
+    dfd = $.Deferred()
+    chrome.storage.local.get null, (items) =>
+      @local = items
       unless @local.ctxMenuFolderSet
         @local.ctxMenuFolderSet = []
-      delete localStorage.flexkbd
-      $.Deferred().resolve()
-    else
-      dfd = $.Deferred()
-      chrome.storage.local.get null, (items) =>
-        unless items.config
-          items.config = {kbdtype: "JP"}
-        unless items.ctxMenuFolderSet
-          items.ctxMenuFolderSet = []
-        @local = items
+      if @local.config
         dfd.resolve()
-      dfd.promise()
+      else
+        chrome.i18n.getAcceptLanguages (langs) =>
+          if /^ja/.test langs
+            @local.config = {kbdtype: "JP", lang: "ja"}
+          else
+            @local.config = {kbdtype: "US", lang: "en"}
+          $.Deferred().resolve()
+    dfd.promise()
   ###
   setLocal: ->
     dfd = $.Deferred()

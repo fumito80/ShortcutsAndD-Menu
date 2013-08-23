@@ -1,8 +1,9 @@
 {
   "manifest_version": 2,
-  "name": "Shortcuts &D-Menu",
-  "version": "0.4.4.2",
-  "description": "You can remap keyboard shortcuts almost all. (Run Windows only)",
+  "name": "__MSG_appName__",
+  "description": "__MSG_appDesc__",
+  "default_locale": "ja",
+  "version": "0.4.4.5",
   "icons": {
      "128": "images/shortcutsandy.png"
   },

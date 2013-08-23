@@ -306,13 +306,14 @@ class CommandOptionsView extends ExplorerBaseView
       minWidth: 650
       minHeight: 100
   render: ->
-    if @commandName
+    @optionsName = "command"
+    if @commandName && @commandName isnt "bookmarklet"
       @options = name: @commandName
     @trigger "getEditerSize", container = {}
     if container.width
       @$(".content_outer").width(container.width).height(container.height)
     else
-      @$(".content_outer").width(700)
+      @$(".content_outer").width(700).height(200)
     @$(".command").html commandsDisp[@options.name][1]
     @$(".caption").val(@options.caption)
     commandOption = @$(".inputs").empty()
@@ -324,10 +325,7 @@ class CommandOptionsView extends ExplorerBaseView
     @$el.append @tmplHelp @
     @editer.setOption "readOnly", false
     @onClickChkCoffee currentTarget: @$("input[value='coffee']")
-  onShowPopup: (name, model, commandName) ->
-    @commandName = commandName
-    unless super(name, model)
-      return
+  showPopup2: ->
     if @options.name is "pasteText"
       @cmMode = "plain"
     else if @options.name is "insertCSS"
@@ -346,6 +344,21 @@ class CommandOptionsView extends ExplorerBaseView
       @editer.focus()
     else
       @$(".caption").focus()
+  onShowPopup: (name, model, @commandName, bmId) ->
+    if @name is name
+      if bmId
+        chrome.bookmarks.get bmId, (treeNode) =>
+          if node = treeNode[0]
+            @options =
+              name: "execJS"
+              caption: node.title
+              content: $.trim node.url.substring(11)
+            @optionsName = null
+            super(name, model)
+            @showPopup2()
+      else
+        super(name, model)
+        @showPopup2()
   onSubmitForm: ->
     unless (content = @$(".content").val()) is ""
       options = {}
@@ -528,7 +541,7 @@ class BookmarksView extends ExplorerBaseView
   name: "bookmark"
   el: ".bookmarks"
   events: _.extend
-    "click  a": "onClickBookmark"
+    "click  a"          : "onClickBookmark"
     "click .title"      : "onClickFolder"
     "click .expand-icon": "onClickExpandIcon"
     ExplorerBaseView.prototype.events
@@ -593,8 +606,12 @@ class BookmarksView extends ExplorerBaseView
     windowOnResize()
     event.stopPropagation()
   onClickBookmark: (event) ->
+    target$ = $(event.currentTarget)
+    if /^javascript:/i.test target$.attr("title")
+      @trigger "showPopup", "commandOptions", @model.id, "bookmarklet", target$.attr("data-id")
+    else
+      @trigger "showPopup", "bookmarkOptions", @model.id, target$.attr("data-id")
     @hidePopup()
-    @trigger "showPopup", "bookmarkOptions", @model.id, $(event.currentTarget).attr("data-id")
     false
   tmplFolder: _.template """
     <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
