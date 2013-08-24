@@ -262,7 +262,7 @@ commandsDisp =
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
   insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS", ""]
-  execJS:         ["custom", "Inject script", [
+  execJS:         ["custom", "Inject JavaScript", [
     {value:"allFrames" ,  caption:"All frames"}
     {value:"coffee"    ,  caption:"CoffeeScript"}
     {value:"jquery"    ,  caption:"jQuery"}
@@ -270,11 +270,11 @@ commandsDisp =
   ], "JS"]
 
 catnames =
-  tab: "Tab commands"
-  win: "Window commands"
-  clr: "Browsing data commands"
-  clip: "Clipboard commands"
-  custom: "Others"
+  tab: "Tabs"
+  win: "Windows"
+  clr: "Browsing data"
+  clip: "Clipboard"
+  custom: "Custom"
 
 class CommandOptionsView extends ExplorerBaseView
   name: "commandOptions"

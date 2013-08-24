@@ -75,8 +75,9 @@ http://www.vector.co.jp/soft/screen/winnt/util/se503549.html
 単独キー
 
 コマンド追加
-　ズーム
-　履歴削除
+　履歴削除（期間指定？）
+
+Chrome sync残容量表示
 
 メソッド追加
 　タブ情報  ID

@@ -94,12 +94,13 @@
 > >    <i class="icon-cog"></i>**Command** .............. 拡張コマンドをショートカットキーに割り当てます。   
 > > 　　　　　　　　　　　　　　　 [コマンド選択](#command)ダイアログが開き、続けて、追加オプションが必要な場合、<wbr>[拡張コマンドのオプション](#commandOptions)入力ダイアログが開きます。  
 > > 
-> >    <i class="icon-bookmark"></i>**Bookmark** .............. ブックマークをショートカットキーに割り当てます。  
-> > 　　　　　　　　　　　　　　　 ブックマーク選択ダイアログが開き、続けて[ブックマークのオプション](#bookmarkOptions)入力ダイアログが開きます。  
+> >    <i class="icon-bookmark"></i>**Bookmark** .............. ブックマーク（ブックマークレット含む）をショートカットキーに割り当てます。  
+> > 　　　　　　　　　　　　　　　 ブックマーク選択ダイアログが開き、ブックマークの場合は、続けて[ブックマークのオプション](#bookmarkOptions)入力ダイアログが開きます。  
+> > 　　　　　　　　　　　　　　　 ブックマークレットの場合は、続けて[Inject JavaScriptのオプション](#commandOptions)入力ダイアログが開きます。  
 > > 
 > >    <i class="icon-ban-circle"></i>**Disabled** .................. ショートカットキーを無効にして使用不可にします。  
 > > 
-> >    <i class="icon-eye-close"></i>**Sleep** ......................... バッチ実行モード時に選択できます。  次の機能を呼び出すまでの時間（間隔）を調整します。 
+> >    <i class="icon-eye-close"></i>**Sleep** ......................... バッチ実行モード時に選択できます。  次の機能を呼び出すまでの時間（間隔）をミリ秒単位で調整します。 
 > > 
 > >    <i class="icon-comment-alt"></i>**Comment** ................ バッチ実行モード時に選択できます。 何も実行されません。 バッチのタイトルやメモ替わりに使用します。  
 > 
@@ -125,7 +126,7 @@
 >    「Add command」を選択します。 詳細は、[バッチ実行機能](#batch)を参照してください。
 > - **ショートカットキー操作スクリプトのコピー**  
 >    「Copy script」を選択します。  
->    拡張コマンドのInject scriptで使用する、JavaScriptのショートカットキー操作スクリプトが、クリップボードにコピーされます。
+>    拡張コマンドのInject JavaScriptで使用する、JavaScriptのショートカットキー操作スクリプトが、クリップボードにコピーされます。
 > 
 
 <a name="settings"></a>
@@ -170,7 +171,7 @@
 <a name="command"></a>
 ###### 拡張コマンド一覧
 > > 
-> - Tab commands  
+> - Tabs  
 >    - **Create new tab**  
 >        アクティブなタブの右隣に、新しいタブを作成します。 新しいタブがアクティブになります。  
 >    - **Create new tab in background**  
@@ -191,41 +192,41 @@
 >        アクティブなタブを、ウィンドウから切り離して、新しいウィンドウに作成します。
 >    - **Attach current tab to the next window**  
 >        アクティブなタブを、現在開いている別のウィンドウに順次移動します。
-> - Window commands  
+> - Windows  
 >    - **Switch to the previous/next window**  
 >        アクティブなウィンドウを順次切り替えます。
 >    - **Close other windows**  
 >        アクティブなウィンドウ以外のすべてのウィンドウを閉じます。
-> - Browsing data commands  
+> - Browsing data  
 >    - **Clear the browser's cache**  
 >        ブラウザキャッシュをクリアします。
 >    - **Clear the browser's cookies and site data**  
 >        ブラウザのクッキーとサイトデータ（サーバ証明書等）をすべてクリアします。
 >    - **Clear all cookies for the current domain**  
 >        アクティブなページのサイトと同じドメインのクッキーをすべてクリアします。
-> - Other  
+> - Custom  
 >    - **Paste fixed text**  
 >        登録した定型文を、クリップボードを経由して貼り付けます。  
 >    - **Inject CSS**  
 >        登録したCSS(Cascading Style Sheet)を、アクティブなタブのページへ適用します。  
->    - **Inject script**  
->        登録したJavaScriptコードを、アクティブなタブのページで実行します。   
+>    - **Inject JavaScript**  
+>        登録したJavaScript/CoffeeScriptコードを、アクティブなタブのページで実行します。  
 >        なお、本来のページのDOMのwindowオブジェクトにはアクセスできません。
 
 <a name="commandOptions"></a>
 ###### 拡張コマンドのオプション
 > 拡張コマンド（Command mode）に追加オプションが必要な場合は、オプション入力ダイアログが開きます。
 > 
-> - Paste text、Inject CSS、Inject scriptのオプション
+> - Paste text、Inject CSS、Inject JavaScriptのオプション
 >    - **Caption(Optional)**  
 >    オプションページのCommentに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
 >    - **Content**  
->    貼り付ける文字列(Paste text時)や、CSS(Inject CSS時)、JavaScriptコード(Inject script時)を入力します。  
-> - Inject CSS、Inject scriptのオプション
+>    貼り付ける文字列(Paste text時)や、CSS(Inject CSS時)、JavaScriptコード(Inject JavaScript時)を入力します。  
+> - Inject CSS、Inject JavaScriptのオプション
 >    - **All frames**  
 >    チェック時は、ページのすべてのフレームに、CSSやJavaScriptが適用されます。  
 >    未チェック時はトップフレームにのみ適用されます。
-> - Inject scriptのオプション
+> - Inject JavaScriptのオプション
 >    - **CoffeeScript**  
 >    チェック時に、CoffeeScriptでコードを記述できます。  
 >    コンパイルオプションは"bare"で、コードはコンパイル済の状態で待機されます。  
@@ -276,7 +277,7 @@
 > コンテキストメニューを登録すると、コンテキストメニュー（ページを右クリックしたときに表示されるメニュー）から  
 > ショートカットキーに割り当てた機能を呼び出すことができます。
 > 
-> また、拡張コマンドのInject scriptで利用できる、UtilityObjectのctxDataプロパティの値に対象コンテキストの情報がセットされ  
+> また、拡張コマンドのInject JavaScriptで利用できる、UtilityObjectのctxDataプロパティの値に対象コンテキストの情報がセットされ  
 > JavaScriptコードから参照することができます。
 > </pre>
 >
