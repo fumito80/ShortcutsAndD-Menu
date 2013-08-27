@@ -694,7 +694,7 @@ class CtxMenuOptionsView extends PopupBaseView
     if (caption = $.trim @$(".caption").val()) is ""
       return false
     if /delete/.test event?.currentTarget.className
-      unless confirm "Are you sure you want to delete this Context Menu?"
+      unless confirm "Are you sure you want to delete this context menu?"
         return false
       @model.unset("ctxMenu")
     else
