@@ -187,10 +187,30 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
             gCurrentTabId = null
             doneCallback dfd, 0
           ), 0)
+        when "clientOnKeyDown"
+          setTimeout((->
+            if keynames = keyIdentifiers[andy.local.config.kbdtype][request.value1]
+              if request.value2
+                unless keyname = keynames[1]
+                  return
+                scCode = "04"
+              else
+                keyname = keynames[0]
+                scCode = "00"
+              for i in [0...keys.length]
+                if keys[i] && (keyname is keys[i][0] || keyname is keys[i][1])
+                  scanCode = i
+                  break
+              if scanCode
+                execBatchMode(scCode + i)
+            doneCallback dfd, 0
+          ), 0)
     catch e
-      sendResponse msg: e.message
-      dfd.resolve()
-    dfd.promise()
+      setTimeout((->
+        sendResponse msg: e.message
+        dfd.resolve()
+      ), 0)
+      dfd.promise()
   true
 
 jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage("openUrl",u),this.returnValue.cid=s},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)}};"""
@@ -255,6 +275,13 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
         chrome.tabs.sendMessage optionsTabId,
           action: "saveConfig"
         optionsTabId = null
+      if andy.local.config.singleKey && !/^chrome|^about|^https:\/\/chrome.google.com/.test tab.url
+        chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
+          unless resp is "hello"
+            chrome.tabs.executeScript tab.id,
+              file: "kbdagent.js"
+              allFrames: false
+              runAt: "document_end"
 
 chrome.windows.onFocusChanged.addListener (windowId) ->
   if optionsTabId
@@ -278,6 +305,13 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
         optionsTabId = tab.id
     else
       tabStateNotifier.callComplete tabId
+      if andy.local.config.singleKey && !/^chrome|^about|^https:\/\/chrome.google.com/.test tab.url
+        chrome.tabs.sendMessage tab.id, action: "askAlive", (resp) ->
+          unless resp is "hello"
+            chrome.tabs.executeScript tab.id,
+              file: "kbdagent.js"
+              allFrames: false
+              runAt: "document_end"
 
 execBatchMode = (scCode) ->
   gCurrentTabId = null
@@ -332,8 +366,10 @@ execBatchMode = (scCode) ->
           else
             execShortcut dfd, doneCallback, null, keyConfig.new, defaultSleep, keyConfig.mode, batchIndex
       catch e
-        dfd.reject()
-        console.log e.message
+        setTimeout((->
+          dfd.reject()
+          console.log e.message
+        ), 0)
       dfd.promise()
   dfdKicker.resolve(0)
 
@@ -652,8 +688,13 @@ execCommand = (keyEvent) ->
 setConfigPlugin = (keyConfigSet) ->
   sendData = []
   if keyConfigSet
+    kbdtype = andy.local.config.kbdtype
+    keys = andy.getKeyCodes()[kbdtype].keys
     keyConfigSet.forEach (item) ->
-      if item.batch && item.new && item.mode isnt "through"
+      scanCode = ~~item.new.substring(2)
+      if /^00|^04/.test(item.new) && !/^F\d|^Application/.test(keys[scanCode])
+        null
+      else if item.batch && item.new && item.mode isnt "through"
         sendData.push [item.new, item.origin, "batch"].join(";")
       else if !/^C/.test item.new
         sendData.push [item.new, item.origin, item.mode].join(";")
@@ -710,12 +751,12 @@ window.andy =
         dfd.resolve()
     dfd.promise()
   getKeyCodes: ->
-    JP:
-      keys: keysJP
-      name: "JP 109 Keyboard"
     US:
       keys: keysUS
       name: "US 104 Keyboard"
+    JP:
+      keys: keysJP
+      name: "JP 109 Keyboard"
   getScHelp: ->
     scHelp
   getScHelpSect: ->
@@ -731,6 +772,9 @@ window.andy =
     undoData[id]
   setUndoData: (id, data) ->
     undoData[id] = data
+  changePK: (id, prev) ->
+    if jsTransCodes[id] = jsTransCodes[prev]
+      jsTransCodes[prev] = null
   coffee2JS: (id, coffee) ->
     try
       jsTransCodes[id] = CoffeeScript.compile coffee, bare: "on"

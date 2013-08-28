@@ -193,10 +193,10 @@ begin
   li_WLen := Length(sWText) * 2 + 2;
   ls_Text := AnsiString(sWText);
   li_Len  := Length(ls_Text) + 1;
-  if (sWText <> '') then begin
-    if (OpenClipboard(GetActiveWindow)) then begin
-      try
-        EmptyClipboard;
+  if (OpenClipboard(GetActiveWindow)) then begin
+    try
+      EmptyClipboard;
+      if (sWText <> '') then begin
         //CF_UNICODETEXT
         lh_Mem  := GlobalAlloc(GHND or GMEM_SHARE, li_WLen);
         lp_Data := GlobalLock(lh_Mem);
@@ -209,9 +209,9 @@ begin
         lstrcpy(lp_Data, PAnsiChar(ls_Text));
         GlobalUnlock(lh_Mem);
         SetClipboardData(CF_TEXT, lh_Mem);
-      finally
-        CloseClipboard;
       end;
+    finally
+      CloseClipboard;
     end;
   end;
 end;

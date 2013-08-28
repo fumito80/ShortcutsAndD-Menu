@@ -137,8 +137,7 @@ KeyConfigView = Backbone.View.extend
     "click .updown a"      : "onClickUpDownChild"
     "focus .new,.origin"   : "onFocusKeyInput"
     "focus .inputSleep"    : "onClickInputMemo"
-    "keydown .origin"      : "onKeydownOrigin"
-    "keydown .new"         : "onKeydownNew"
+    "keydown"              : "onKeydown"
     "submit  .memo"        : "onSubmitMemo"
     "submit  .formSleep"   : "onSubmitSleep"
     "blur  .selectMode"    : "onBlurSelectMode"
@@ -151,6 +150,7 @@ KeyConfigView = Backbone.View.extend
   initialize: (options) ->
     @optionKeys = _.keys modeDisp
     @model.on
+      "change:new":      @onChangeNew
       "change:bookmark": @onChangeBookmark
       "change:command":  @onChangeCommand
       "change:ctxMenu":  @onChangeCtxmenu
@@ -258,6 +258,9 @@ KeyConfigView = Backbone.View.extend
   onGetDescription: (container) ->
     container.desc = @getDescription()
   
+  onChangeNew: (model) ->
+    andy.changePK @model.id, model.previous("new")
+  
   # Collection Events
   onKbdEvent: (value) ->
     input$ = @$("div:focus")
@@ -296,7 +299,9 @@ KeyConfigView = Backbone.View.extend
     @$el.parent()[0].insertBefore @el, (@$el.parent().children().eq(@model.get("order")).get(0) || null)
 
   # DOM Events
-  onKeydownOrigin: (event) ->
+  onKeydown: (event) ->
+    if event.target.tagName in ["TEXTAREA", "INPUT", "SELECT"]
+      return
     if keynames = keyIdentifiers[@kbdtype][event.originalEvent.keyIdentifier]
       if event.originalEvent.shiftKey
         unless keyname = keynames[1]
@@ -310,14 +315,7 @@ KeyConfigView = Backbone.View.extend
           scanCode = i
           break
       if scanCode
-        scCode += i
-        if event.originalEvent.shiftKey
-          @$(".origin").html "<span>Shift</span>+<span>#{keyname}</span>"
-        else
-          @$(".origin").html "<span>#{keyname}</span>"
-        @model.set "origin", scCode
-        @setDesc()
-        @trigger "resizeInput"
+        @onKbdEvent(scCode + i)
   
   onClickCopySC: (event) ->
     if (mode = @model.get("mode")) is "through"
@@ -754,7 +752,7 @@ KeyConfigSetView = Backbone.View.extend
   events:
     "click .addnew": "onClickAddnew"
     "blur  .addnew": "onBlurAddnew"
-    "click": "onClickBlank"
+    "click"        : "onClickBlank"
   
   initialize: (options) ->
     @model.on "change:lang"   , @onChangeLang   , @
@@ -941,6 +939,24 @@ KeyConfigSetView = Backbone.View.extend
     windowOnResize()
   
   # DOM Events
+  onKeyDown: (event) ->
+    if (elActive = document.activeElement) && (elActive.tagName in ["TEXTAREA", "INPUT", "SELECT"])
+      return
+    if keynames = keyIdentifiers[@model.get "kbdtype"][event.originalEvent.keyIdentifier]
+      if event.originalEvent.shiftKey
+        unless keyname = keynames[1]
+          return
+        scCode = "04"
+      else
+        keyname = keynames[0]
+        scCode = "00"
+      for i in [0...keys.length]
+        if keys[i] && (keyname is keys[i][0] || keyname is keys[i][1])
+          scanCode = i
+          break
+      if scanCode
+        @onKbdEvent(scCode + i)
+  
   onClickAddKeyConfig: (event) ->
     if @$(".addnew").length > 0
       return
@@ -1170,6 +1186,8 @@ $ ->
       windowOnResize()
     .on "click", ->
       lastFocused = null
+    .on "keydown", (event) ->
+      keyConfigSetView.onKeyDown event
   
   windowOnResize()
   

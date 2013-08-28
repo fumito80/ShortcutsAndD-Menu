@@ -108,8 +108,8 @@ class ExplorerBaseView extends PopupBaseView
     windowOnResize()
 
 langs =
-  "ja": ["Japanese"]
   "en": ["English"]
+  "ja": ["Japanese"]
 
 class SettingsView extends PopupBaseView
   name: "settings"
@@ -137,6 +137,7 @@ class SettingsView extends PopupBaseView
       selectKbd$.append """<option value="#{key}">#{item.name}</option>"""
     @model.trigger "change:lang"
   render: ->
+    @$(".singleKey")[0].checked = @model.get("singleKey")
     @$(".kbdtype").val @model.get("kbdtype")
     @$(".lang").val (@model.get("lang") || "ja")
     @trigger "getSaveData", container = {}
@@ -157,11 +158,10 @@ class SettingsView extends PopupBaseView
       return
     @$el.append @tmplHelp @
   onSubmitForm: ->
-    kbdtype = @$(".kbdtype").val()
-    keys = keyCodes[kbdtype].keys
     @model.set
-      kbdtype: kbdtype
+      kbdtype: @$(".kbdtype").val()
       lang: @$(".lang").val()
+      singleKey: @$(".singleKey").is(":checked")
     @hidePopup()
     false
   onClickTab: (event) ->

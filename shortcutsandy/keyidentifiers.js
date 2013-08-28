@@ -34,7 +34,7 @@ keyIdentifiers_cmn = {
   "U+00DB": ["[", "{"],
   "U+00DC": ["\¥", "|"],
   "U+00DD": ["]", "}"],
-  "U+0020": ["Space"],
+  "U+0020": ["Space", "Space"],
   "Left": ["Left"],
   "Down": ["Down"],
   "Up": ["Up"],
