@@ -187,13 +187,16 @@ class SettingsView extends PopupBaseView
       if err = chrome.runtime.lastError
         alert err.message
       else
-        chrome.storage.sync.set syncData, =>
+        chrome.storage.sync.set syncData, ->
           if err = chrome.runtime.lastError
             #if /QUOTA_BYTES_PER_ITEM/.test err.message
             #  chkData @saveData.keyConfigSet
             alert err.message
           else
-            alert 'Settings saved'
+            chrome.storage.sync.getBytesInUse null, (bytes) ->
+              if bytes >= 1000
+                bytes = Math.floor(bytes / 1000) + "," + bytes.toString().substr(-3)
+              alert "Settings has been saved to Chrome Sync successfully.\n\n• Bytes in use/Capacity: #{bytes}/102,400"
   onClickLoadSync: ->
     chrome.storage.sync.get (syncData) =>
       saveData = {}

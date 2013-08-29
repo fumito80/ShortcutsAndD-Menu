@@ -513,6 +513,9 @@ KeyConfigView = Backbone.View.extend
       newChild$
         .removeClass("parent hover").addClass("child").find(".disabled").hide().end()
         .find(".desc").find(".ctxmenu,.copySC").hide()
+      if ctxMenu = parentModel.get("ctxMenu")
+        childModel.set "ctxMenu", ctxMenu
+        parentModel.unset "ctxMenu"
       if childModel.get("mode") is "through"
         newParent$.find(".new").addClass "through"
       else
