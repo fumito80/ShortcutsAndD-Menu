@@ -196,7 +196,7 @@ class SettingsView extends PopupBaseView
             chrome.storage.sync.getBytesInUse null, (bytes) ->
               if bytes >= 1000
                 bytes = Math.floor(bytes / 1000) + "," + bytes.toString().substr(-3)
-              alert "Settings has been saved to Chrome Sync successfully.\n\n• Bytes in use/Capacity: #{bytes}/102,400"
+              alert "Settings has been saved to Chrome Sync successfully.\n\n• Bytes in use/capacity: #{bytes}/102,400"
   onClickLoadSync: ->
     chrome.storage.sync.get (syncData) =>
       saveData = {}

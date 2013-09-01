@@ -1,8 +1,16 @@
-chrome.runtime.onMessage.addListener (req, sender, sendResponse) ->
-  switch req.action
-    when "askAlive"
-      sendResponse "hello"
-  true
+window.scdReadyKbdAgent = true
+unless window.scdReadyJQuery
+  chrome.runtime.onMessage.addListener (req, sender, sendResponse) ->
+    switch req.action
+      when "askAlive"
+        sendResponse "hello"
+      when "askJQuery"
+        if window.scdReadyJQuery
+          sendResponse "hello"
+        else
+          sendResponse "no"
+      else
+        sendResponse "no"
 
 document.addEventListener "keydown", ((event) ->
   if event.ctrlKey || event.altKey || event.metaKey || (/F\d/.test event.keyIdentifier)
@@ -13,5 +21,5 @@ document.addEventListener "keydown", ((event) ->
     action: "clientOnKeyDown"
     value1: event.keyIdentifier
     value2: event.shiftKey
-    (resp) -> console.log resp unless resp?.msg is "done"
+    (resp) -> #console.log resp if resp?.msg isnt "done" && resp isnt "no"
 ), false

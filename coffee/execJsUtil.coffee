@@ -112,3 +112,6 @@ scd =
 
   getData: (name) ->
     (new Messenger()).sendMessage "getData", name
+
+  getTabInfo: ->
+    (new Messenger()).sendMessage "getTabInfo", @tabId
