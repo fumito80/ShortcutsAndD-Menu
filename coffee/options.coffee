@@ -302,6 +302,10 @@ KeyConfigView = Backbone.View.extend
   onKeydown: (event) ->
     if event.target.tagName in ["TEXTAREA", "INPUT", "SELECT"]
       return
+    if @$("div:focus").hasClass("new")
+      @trigger "getConfigValue", "singleKey", container = {}
+      unless container.result
+        return
     if keynames = keyIdentifiers[@kbdtype][event.originalEvent.keyIdentifier]
       if event.originalEvent.shiftKey
         unless keyname = keynames[1]
@@ -804,7 +808,8 @@ KeyConfigSetView = Backbone.View.extend
     keyConfigView.on "showPopup"   , @onShowPopup        , @
     keyConfigView.on "addCtxMenu"  , @onAddCtxMenu       , @
     keyConfigView.on "updateChildPos", @redrawTable      , @
-    keyConfigView.on "remakeCtxMenu", @onRemakeCtxMenu   , @
+    keyConfigView.on "remakeCtxMenu" , @onRemakeCtxMenu  , @
+    keyConfigView.on "getConfigValue", @onGetConfigValue , @
     divAddNew = @$("tr.addnew")[0] || null
     tbody = @$("tbody")[0]
     if /^C/.test(model.id) && lastFocused
@@ -941,8 +946,13 @@ KeyConfigSetView = Backbone.View.extend
     loading = false
     windowOnResize()
   
+  onGetConfigValue: (key, container) ->
+    container.result = @model.get(key)
+  
   # DOM Events
   onKeyDown: (event) ->
+    unless @model.get "singleKey"
+      return
     if (elActive = document.activeElement) && (elActive.tagName in ["TEXTAREA", "INPUT", "SELECT"])
       return
     if keynames = keyIdentifiers[@model.get "kbdtype"][event.originalEvent.keyIdentifier]

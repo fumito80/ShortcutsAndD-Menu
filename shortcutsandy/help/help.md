@@ -526,7 +526,7 @@
 > >    
 > > [Code Exsample](#codeExsample1)
 
-> ###### `scd.showNotify(title string, message string [, optional icon string, optional newPopup boolean)`  
+> ###### `scd.showNotify(title string, message string [, optional icon string, optional newPopup boolean])`  
 > > 
 > > タイトル付きメッセージを、画面右下に表示されるデスクトップ通知ウィンドウに表示します。  
 > > オプションで、既定のアイコンを表示したり、ウィンドウの表示方法を指定できます。  
