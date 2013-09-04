@@ -655,7 +655,7 @@ execCommand = (keyEvent) ->
                   execJS dfd, tab.id, code, item.command.allFrames
                 else
                   chrome.tabs.executeScript tab.id,
-                    file: "lib/jquery.min.js"
+                    file: "lib/jquery.cli.min.js"
                     allFrames: item.command.allFrames
                     (resp) ->
                       execJS dfd, tab.id, code, item.command.allFrames
