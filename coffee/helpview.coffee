@@ -9,14 +9,9 @@ mdToHtml = (md, iframe) ->
     pre.className = "prettyprint"
   prettyPrint()
 
-getMD = (iframe) ->
-  if md = iframe.contentDocument.querySelector("pre")?.textContent
-    mdToHtml md, iframe
-    true
-  else
-    false
-
+helpFileName = chrome.extension.getBackgroundPage().andy.helpFileName
 iframe = document.getElementById "mdloader"
-unless getMD iframe
-  iframe.addEventListener "load", ->
-    getMD @
+iframe.addEventListener "load", ->
+  if md = iframe.contentDocument.querySelector("pre")?.textContent
+    mdToHtml md, @
+iframe.setAttribute "src", helpFileName

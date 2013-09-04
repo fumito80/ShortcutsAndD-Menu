@@ -19,6 +19,7 @@ PopupBaseView = Backbone.View.extend
   onSubmitForm: -> # Virtual
   onShowPopup: (name, model) ->
     unless name is @name
+      @$el.hide()
       return false
     if model
       if @optionsName
@@ -91,6 +92,7 @@ class ExplorerBaseView extends PopupBaseView
     @elResult$ = @$(".result")
   onShowPopup: (name, model) ->
     unless super(name, model)
+      @$(".result_outer").getNiceScroll().hide()
       return false
     @$(".result_outer").getNiceScroll().show()
     true
@@ -362,6 +364,8 @@ class CommandOptionsView extends ExplorerBaseView
       else
         super(name, model)
         @showPopup2()
+    else
+      @$el.hide()
   onSubmitForm: ->
     unless (content = @$(".content").val()) is ""
       options = {}
@@ -459,10 +463,10 @@ class CommandsView extends PopupBaseView
     @$el.append @tmplHelp @
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
-      @hidePopup()
       if commandsDisp[command][2]
         @trigger "showPopup", "commandOptions", @model.id, command
       else
+        @hidePopup()
         @model
           .set({"command": name: command}, {silent: true})
           .trigger "change:command"
@@ -511,6 +515,8 @@ class BookmarkOptionsView extends PopupBaseView
             super(name, model)
       else
         super(name, model)
+    else
+      @$el.hide()
   onSubmitForm: ->
     options =
       findtab:  @$("input[value='findtab']").is(":checked")
@@ -614,7 +620,6 @@ class BookmarksView extends ExplorerBaseView
       @trigger "showPopup", "commandOptions", @model.id, "bookmarklet", target$.attr("data-id")
     else
       @trigger "showPopup", "bookmarkOptions", @model.id, target$.attr("data-id")
-    @hidePopup()
     false
   tmplFolder: _.template """
     <div class="folder <%=state%>" style="text-indent:<%=indent%>em">
@@ -919,7 +924,9 @@ class CtxMenuManagerView extends ExplorerBaseView
       @activeFolder.selector = "#" + @activeFolder.parentId + " .title"
     @activeFolder.icon = contexts$.find("i")[0].className
     @activeFolder.contextName = contexts$.text()
-    @ctxMenuGetterView.render @activeFolder
+    setTimeout((=>
+      @ctxMenuGetterView.render @activeFolder
+    ), 0)
     entried = _.map(@$(".ctxMenuItem"), (el) -> el.id)
     @trigger "enterCtxMenuSelMode", entried
     @$(".result_outer").getNiceScroll().hide()
@@ -933,6 +940,7 @@ class CtxMenuManagerView extends ExplorerBaseView
   onAddCtxMenus: (cancel) ->
     @trigger "leaveCtxMenuSelMode", cancel
     @$el.show()
+    @$(".newmenu").focus()
     @$(".result_outer").getNiceScroll().show()
     $(".backscreen").show()
     @$(@activeFolder.selector).focus()

@@ -791,6 +791,7 @@ window.andy =
     catch e
       jsTransCodes[id] = ""
       success: false, err: e.message
+  helpFileName: "help/help.md"
 
 window.pluginEvent = (action, value) ->
   #console.log action + ": " + value
@@ -912,6 +913,27 @@ createCtxMenus = ->
       registerCtxMenu dfdMain, ctxMenus, 0
     dfdMain.promise()
 
+getHelp = (lang) ->
+  $.get(scHelpPageUrl + lang).done (responseText) ->
+    analyzeScHelpPage responseText, lang
+    dfd.resolve()
+  (dfd = $.Deferred()).promise()
+
+createFileHelpMd = (content) ->
+  window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem
+  window.requestFileSystem PERSISTENT, 1024*100, (fileSystem) ->
+    fileSystem.root.getFile "help.md", {create: true, exclusive: false},
+      (fileEntry) ->
+        fileEntry.createWriter (fileWriter) ->
+          blob = new Blob [content], {"type": "text/plain"}
+          fileWriter.write(blob)
+          fileWriter.onwriteend = (e) ->
+            andy.helpFileName = fileEntry.toURL()
+          fileWriter.onerror = (e) ->
+            console.log e
+      (error) ->
+        console.log "FileApi error": error
+
 $ ->
   andy.setLocal().done ->
     if keyConfigSet = andy.local.keyConfigSet
@@ -920,12 +942,6 @@ $ ->
       for i in [0...keyConfigSet.length]
         if (item = keyConfigSet[i]).mode is "command" && item.command.name is "execJS" && item.command.coffee
           andy.coffee2JS item.new, item.command.content
-  
-  getHelp = (lang) ->
-    $.get(scHelpPageUrl + lang).done (responseText) ->
-      analyzeScHelpPage responseText, lang
-      dfd.resolve()
-    (dfd = $.Deferred()).promise()
   
   getHelp("ja").done ->
     getHelp("en").done ->
@@ -936,7 +952,11 @@ $ ->
       scHelp["CTRL+-"] =
         en: ["W^Makes everything on the page smaller."]
         ja: ["W^ページ全体を縮小表示します。"]
-
+  
+  urlHelpMd = "https://dl.dropboxusercontent.com/u/41884666/help.md"
+  $.get(urlHelpMd).done (respText) ->
+    createFileHelpMd respText
+  
 #indexedDB = new db.IndexedDB
 #  schema_name: "scremapper"
 #  schema_version: 1
