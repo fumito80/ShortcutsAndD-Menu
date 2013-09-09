@@ -78,7 +78,6 @@ HeaderView = Backbone.View.extend
     "click .addKeyConfig": "onClickAddKeyConfig"
     "click .ctxmgr"      : "onClickCtxmgr"
     "click .settings"    : "onClickSettings"
-    "click"              : "onClickHeader"
   initialize: (options) ->
     @$(".addKeyConfig,.ctxmgr,.scHelp,.helpview,.settings").show()
     @model.on "change:lang", @onChangeLang, @
@@ -89,9 +88,6 @@ HeaderView = Backbone.View.extend
     @trigger "showPopup", "ctxMenuManager"
   onClickSettings: ->
     @trigger "showPopup", "settings"
-  onClickHeader: (event) ->
-    unless event.target.tagName in ["A", "BUTTON", "I"]
-      $(".fixed-table-container-inner")[0].scrollTop = 0
   onEnterCtxMenuSelMode: ->
     @$("button").attr("disabled", "disabled").addClass("disabled")
   onLeaveCtxMenuSelMode: ->
@@ -760,6 +756,7 @@ KeyConfigSetView = Backbone.View.extend
     "click .addnew": "onClickAddnew"
     "blur  .addnew": "onBlurAddnew"
     "click"        : "onClickBlank"
+    "click .scrollEnd i": "onClickScrollEnd"
   
   initialize: (options) ->
     @model.on "change:lang"   , @onChangeLang   , @
@@ -787,14 +784,27 @@ KeyConfigSetView = Backbone.View.extend
       stop: (event, ui) =>
         @redrawTable()
         ui.item.effect("highlight", 1500)[0].scrollIntoViewIfNeeded true
-    $(".fixed-table-container-inner").niceScroll
-      #cursorcolor: "#1E90FF"
-      cursorwidth: 13
-      cursorborderradius: 2
-      smoothscroll: true
-      cursoropacitymin: .3
-      cursoropacitymax: .7
-      zindex: 999998
+    $(".fixed-table-container-inner")
+      .on "scroll", (event) ->
+        #console.log @scrollTop + ": " + (@scrollHeight - @offsetHeight)
+        if @scrollTop < 10
+          $(".header-background").removeClass("scrolling")
+        else
+          $(".header-background").addClass("scrolling")
+          $(".scrollEnd").show()
+        if @scrollTop + 30 > @scrollHeight - @offsetHeight
+          $(".footer").removeClass("scrolling")
+        else
+          $(".footer").addClass("scrolling")
+          $(".scrollEnd").show()
+      .niceScroll
+        #cursorcolor: "#1E90FF"
+        cursorwidth: 13
+        cursorborderradius: 2
+        smoothscroll: true
+        cursoropacitymin: .3
+        cursoropacitymax: .7
+        zindex: 999998
     @niceScroll = $(".fixed-table-container-inner").getNiceScroll()
     loading = false
     @redrawTable()
@@ -950,6 +960,13 @@ KeyConfigSetView = Backbone.View.extend
     container.result = @model.get(key)
   
   # DOM Events
+  onClickScrollEnd: (event) ->
+    if /icon-double-angle-up/.test event.target.className
+      scrollTop = 0
+    else
+      scrollTop = 10000
+    $(".fixed-table-container-inner")[0].scrollTop = scrollTop
+  
   onKeyDown: (event) ->
     unless @model.get "singleKey"
       return
@@ -1072,9 +1089,10 @@ KeyConfigSetView = Backbone.View.extend
         </th>
         <th class="ctxmenu"></th>
         <th>
-          <div class="th_inner desc">Comment</div>
+          <div class="th_inner desc">Description</div>
+          <div class="scrollEnd top"><i class="icon-double-angle-up" title="Scroll to Top"></i></div>
+          <div class="scrollEnd bottom"><i class="icon-double-angle-down" title="Scroll to Bottom"></i></div>
         </th>
-        <th><div class="th_inner blank">&nbsp;</div></th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -1203,5 +1221,10 @@ $ ->
       keyConfigSetView.onKeyDown event
   
   windowOnResize()
+  
+  scrollContainer = $(".fixed-table-container-inner")[0]
+  unless scrollContainer.scrollHeight is scrollContainer.offsetHeight
+    $(".footer").addClass("scrolling")
+    $(".scrollEnd").show()
   
   Backbone.history.start pushState: false

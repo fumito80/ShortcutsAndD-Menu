@@ -17,14 +17,38 @@ body {
   box-shadow: 0 0 7px #666;
   z-index: 1;
 }
+.scrollEnd {
+  position: absolute;
+  top: 8px;
+  font-size: 24px;
+  z-index: 3;
+  display: none;
+}
+.scrollEnd.top {
+  right: 32px;
+}
+.scrollEnd.bottom {
+  right: 7px;
+}
+.scrollEnd i {
+  cursor: pointer;
+  color: #ccc;
+}
+.scrollEnd i:hover {
+  color: #000;
+}
 .footer {
-  height: 50px;
+  height: 10px;
   position: fixed;
   width: 100%;
-  bottom: 0;
   left: 0;
+  bottom: 0;
   pointer-events: none;
-  background: -webkit-gradient(linear, left top, left bottom, from(rgba(255,255,255,0.0)), to(rgba(255,255,255,1.0)));
+  z-index: 2;
+  box-shadow: none;
+}
+.footer.scrolling {
+  box-shadow: 0 -7px 4px -4px #999 inset;
 }
 .header .h1 {
   font: 14px 'Michroma', Arial;
@@ -81,9 +105,14 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
+  right: 28px;
   border-bottom: 1px solid #BBBBBB;
   height: 40px;
+  z-index: 2;
+  box-shadow: none;
+}
+.header-background.scrolling {
+  box-shadow: 0 6px 4px -4px #999;
 }
 .fixed-table-container-inner {
   height: 100%;
@@ -110,12 +139,6 @@ tbody .data:hover {
 }
 .keyConfigSetView .th_inner.desc {
   padding-left: 0;
-}
-.th_inner.blank {
-  top: 0;
-  background-color: #FCFCFC;
-  padding: 0 12px;
-  right: 0;
 }
 .new, .origin {
   /* color: #518BAB; */
@@ -436,7 +459,6 @@ button.cog.selecting {
   padding: 10px;
   background: #FCFCFC;
   box-shadow: 0 0 20px black;
-  border-radius: 1px;
 }
 .popup input[type='text'], .popup textarea {
   font: 1.0em 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;

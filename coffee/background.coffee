@@ -262,15 +262,6 @@ getAllTabs = ->
     dfd.resolve(tabs)
   dfd.promise()
 
-getAllTabs2 = ->
-  dfd = $.Deferred()
-  chrome.windows.getAll {populate: true}, (windows) ->
-    tabs = []
-    windows.forEach (win) ->
-      tabs = tabs.concat win.tabs
-    dfd.resolve(tabs)
-  dfd.promise()
-
 # オプションページ表示時切り替え
 optionsTabId = null
 chrome.tabs.onActivated.addListener (activeInfo) ->
@@ -289,7 +280,7 @@ chrome.tabs.onActivated.addListener (activeInfo) ->
           unless resp is "hello"
             chrome.tabs.executeScript tab.id,
               file: "kbdagent.js"
-              allFrames: false
+              allFrames: true
               runAt: "document_end"
 
 chrome.windows.onFocusChanged.addListener (windowId) ->
@@ -319,7 +310,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
           unless resp is "hello"
             chrome.tabs.executeScript tab.id,
               file: "kbdagent.js"
-              allFrames: false
+              allFrames: true
               runAt: "document_end"
 
 execBatchMode = (scCode) ->
@@ -465,7 +456,9 @@ preOpenBookmark = (keyEvent, params) ->
                 if noActivate
                   dfd.resolve orderedTabs[i].id
                 else
-                  chrome.tabs.update orderedTabs[i].id, {active: true}, -> dfd.resolve()
+                  chrome.tabs.update orderedTabs[i].id, {active: true}, ->
+                    chrome.windows.update orderedTabs[i].windowId, {focused: true}, ->
+                      dfd.resolve()
                 found = true
                 break
             unless found
