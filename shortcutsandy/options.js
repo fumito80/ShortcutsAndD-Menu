@@ -1,3 +1,3101 @@
-(function(){var e,t,n,r,i,s,o,u,a,f,l,c,h,p,d,v,m,g,y,b,w,E,S,x,T,N,C,k,L,A,O,M,D,P,H,B,j,F,I,q,R,U,z,W,X,V,$,J,K,Q,G,Y,Z,et,tt={}.hasOwnProperty,nt=function(e,t){function r(){this.constructor=e}for(var n in t)tt.call(t,n)&&(e[n]=t[n]);return r.prototype=t.prototype,e.prototype=new r,e.__super__=t.prototype,e},rt=[].indexOf||function(e){for(var t=0,n=this.length;t<n;t++)if(t in this&&this[t]===e)return t;return-1};D={},X=null,V=null,H=null,W=null,P=null,N=null,g=Backbone.View.extend({initialize:function(e){return W.on("showPopup",this.onShowPopup,this),W.on("hidePopup",this.onHidePopup,this),W.listenTo(this,"showPopup",W.onNavigatePopup),W.listenTo(this,"hidePopup",W.onNavigateRootPage)},events:{"submit form":"onSubmitForm","click  .icon-remove":"onClickIconRemove"},render:function(){},onSubmitForm:function(){},onShowPopup:function(t,n){var r,i,s,o,u=this;return t!==this.name?(this.$el.hide(),!1):(n&&(this.optionsName&&(this.options=n.get(this.optionsName)),i="",/^C/.test(r=n.get("new"))?(o=C(s=n.get("parentId")),e.each(n.collection.where({parentId:s}),function(e,t){if(t.id===r)return i="-#"+(e+1),!1})):o=C(r),this.$(".shortcut").html(_.map(o.split(" + "),function(e){return"<span>"+e+"</span>"}).join("+")+i),n.trigger("setSelected",!0),this.model=n),this.render(),this.$el.show().draggable({cursor:"move",delay:200,cancel:"input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title,div.CodeMirror",stop:function(){return u.onStopDrag()}}),this.el.style.pixelLeft=Math.round((window.innerWidth-this.el.offsetWidth)/2),this.el.style.pixelTop=Math.max(0,Math.round((window.innerHeight-this.el.offsetHeight)/2)),this.$(".caption").focus(),e(".backscreen").show(),!0)},onStopDrag:function(){},onClickIconRemove:function(){return this.hidePopup()},onHidePopup:function(){var t;if(this.$el.is(":visible"))return e(".backscreen").hide(),this.$el.hide(),(t=this.model)!=null?t.trigger("setSelected",!1):void 0},hidePopup:function(){return this.trigger("hidePopup")},tmplHelp:_.template('<a href="helpview.html#<%=name%>" target="helpview" class="help" title="help">\n  <i class="icon-question-sign" title="Help"></i>\n</a>')}),c=function(e){function t(e){var n;t.__super__.constructor.call(this,e),n=document.getCSSCanvasContext("2d","triangle",10,6),n.translate(.5,.5),n.fillStyle="#000000",n.beginPath(),n.moveTo(8,0),n.lineTo(8,.5),n.lineTo(3.5,4.5),n.lineTo(0,.5),n.lineTo(0,0),n.closePath(),n.fill(),n.stroke(),this.$(".result_outer").niceScroll({cursorwidth:12,cursorborderradius:6,smoothscroll:!0,cursoropacitymin:.1,cursoropacitymax:.6}),this.elResult$=this.$(".result")}return nt(t,e),t.prototype.events=_.extend({"click .expand-icon":"onClickExpandIcon","click .expandAll":"onClickExpandAll"},g.prototype.events),t.prototype.onShowPopup=function(e,n){return t.__super__.onShowPopup.call(this,e,n)?(this.$(".result_outer").getNiceScroll().show(),!0):(this.$(".result_outer").getNiceScroll().hide(),!1)},t.prototype.onStopDrag=function(){return this.$(".result_outer").getNiceScroll().resize()},t.prototype.onHidePopup=function(){if(this.$el.is(":visible"))return this.$(".result_outer").getNiceScroll().hide(),t.__super__.onHidePopup.call(this)},t.prototype.onClickExpandAll=function(){return this.$(".expandAll").is(":checked")?this.$(".folder,.contexts").addClass("opened expanded"):this.$(".folder,.contexts").removeClass("opened expanded"),Q()},t}(g),B={en:["English"],ja:["Japanese"]},b=function(t){function n(t){var r,i,s=this;n.__super__.constructor.call(this,t),r=this.$(".lang"),e.each(B,function(e,t){return r.append('<option value="'+e+'">'+t[0]+"</option>")}),H=D[this.model.get("kbdtype")].keys,i=this.$(".kbdtype"),e.each(D,function(e,t){return i.append('<option value="'+e+'">'+t.name+"</option>")}),this.model.trigger("change:lang")}return nt(n,t),n.prototype.name="settings",n.prototype.el=".settingsView",n.prototype.events=_.extend({"click .copyExp":"onClickCopy","click .saveSync":"onClickSaveSync","click .loadSync":"onClickLoadSync","click .paste":"onClickPaste","click .impReplace":"onClickReplace","click .impMerge":"onClickMerge","click .impRestore":"onClickRestore","click .tabs a":"onClickTab","click .clear":"onClickClear"},g.prototype.events),n.prototype.render=function(){var e,t;return this.$(".singleKey")[0].checked=this.model.get("singleKey"),this.$(".kbdtype").val(this.model.get("kbdtype")),this.$(".lang").val(this.model.get("lang")||"ja"),this.trigger("getSaveData",e={}),this.saveData=e.data,this.$(".export").val(t=JSON.stringify(this.saveData)),(new Blob([t])).size>=102400?this.$(".saveSync").attr("disabled","disabled"):this.$(".saveSync").removeAttr("disabled"),this.$(".tabs li:has(a.tabImp)").removeClass("current"),this.$(".tabs li:has(a.tabExp)").addClass("current"),this.$("div.tabImp").hide(),this.$("div.tabExp").show(),this},n.prototype.onShowPopup=function(e){if(!n.__super__.onShowPopup.call(this,e))return;return this.$el.append(this.tmplHelp(this))},n.prototype.onSubmitForm=function(){return this.model.set({kbdtype:this.$(".kbdtype").val(),lang:this.$(".lang").val(),singleKey:this.$(".singleKey").is(":checked")}),this.hidePopup(),!1},n.prototype.onClickTab=function(e){var t,n;n=e.currentTarget.className;if(!(t=this.$("div."+n)).is(":visible"))return this.$("div.tabExp,div.tabImp").hide(),t.show(),this.$(".tabs li").removeClass("current"),this.$(".tabs li:has(a."+n+")").addClass("current")},n.prototype.onClickCopy=function(){return chrome.runtime.sendMessage({action:"setClipboard",value1:this.$(".export").val()},function(e){})},n.prototype.onClickSaveSync=function(){var e,t,n,r,i,s=this;t=(new Date).toString().match(/(.*?)\s\(/)[1],n={saved:t};for(e=r=0,i=this.saveData.keyConfigSet.length;0<=i?r<i:r>i;e=0<=i?++r:--r)n["sc"+(1e3+e)]=this.saveData.keyConfigSet[e];return n.config=this.saveData.config,n.ctxMenuFolderSet=this.saveData.ctxMenuFolderSet,chrome.storage.sync.clear(function(){var e;return(e=chrome.runtime.lastError)?alert(e.message):chrome.storage.sync.set(n,function(){return(e=chrome.runtime.lastError)?alert(e.message):chrome.storage.sync.getBytesInUse(null,function(e){return e>=1e3&&(e=Math.floor(e/1e3)+","+e.toString().substr(-3)),alert("Settings has been saved to Chrome Sync successfully.\n\n• Bytes in use/capacity: "+e+"/102,400")})})})},n.prototype.onClickLoadSync=function(){var e=this;return chrome.storage.sync.get(function(t){var n,r,i;r={},r.saved=t.saved,r.config=t.config,r.ctxMenuFolderSet=t.ctxMenuFolderSet,r.keyConfigSet=[],n=0;while(i=t["sc"+(1e3+n++)])r.keyConfigSet.push(i);return e.$(".import").val(JSON.stringify(r))})},n.prototype.onClickReplace=function(){var e,t,n;try{return n=JSON.parse(this.$(".import").val()),this.$(".impRestore").removeAttr("disabled").removeClass("disabled"),this.trigger("setSaveData",n),this.lastSaveData=this.saveData,this.$(".export").val(t=JSON.stringify(this.saveData=n)),alert("Settings imported")}catch(r){return e=r,alert(e.message)}},n.prototype.onClickPaste=function(){return chrome.runtime.sendMessage({action:"getClipboard"},function(e){return this.$(".import").val(e.data)})},n.prototype.onClickRestore=function(){return this.$(".import").val(JSON.stringify(this.lastSaveData))},n.prototype.onClickClear=function(){return this.$(".import").val("")},n.prototype.chkImport=function(){},n.prototype.chkData=function(e){var t,n,r,i,s;if((e||[]).length>0){s=[];for(t=r=0,i=e.length;0<=i?r<i:r>i;t=0<=i?++r:--r){n=JSON.stringify(e[t]);if((new Blob([n])).size>=4096){e[t]["new"];break}s.push(void 0)}return s}},n}(g),T={createTab:["tab","Create new tab"],createTabBG:["tab","Create new tab in background"],moveTabLeft:["tab","Move current tab left"],moveTabRight:["tab","Move current tab right"],moveTabFirst:["tab","Move current tab to first position"],moveTabLast:["tab","Move current tab to last position"],closeOtherTabs:["tab","Close other tabs"],closeTabsLeft:["tab","Close tabs to the left"],closeTabsRight:["tab","Close tabs to the right"],duplicateTab:["tab","Duplicate current tab"],pinTab:["tab","Pin/Unpin current tab"],detachTab:["tab","Detach current tab"],attachTab:["tab","Attach current tab to the next window"],switchPrevWin:["win","Switch to the previous window"],switchNextWin:["win","Switch to the next window"],closeOtherWins:["win","Close other windows"],clearCache:["clr","Clear the browser's cache"],clearCookiesAll:["clr","Clear the browser's cookies and site data"],clearCookies:["clr","Clear all cookies for the current domain"],pasteText:["custom","Paste fixed text",[],"Clip"],insertCSS:["custom","Inject CSS",[{value:"allFrames",caption:"All frames"}],"CSS",""],execJS:["custom","Inject JavaScript",[{value:"allFrames",caption:"All frames"},{value:"coffee",caption:"CoffeeScript"},{value:"jquery",caption:"jQuery"},{value:"useUtilObj",caption:'Use <a href="helpview.html#utilobj" target="helpview">utility object</a>'}],"JS"]},x={tab:"Tabs",win:"Windows",clr:"Browsing data",clip:"Clipboard",custom:"Custom"},r=function(t){function n(t){var r=this;this.editer=CodeMirror.fromTextArea(e(".content")[0],{mode:"text/javascript",theme:"default",tabSize:4,indentUnit:4,indentWithTabs:!0,lineNumbers:!0,firstLineNumber:1,gutter:!1,fixedGutter:!1,matchBrackets:!0}),e(".CodeMirror-scroll").addClass("result_outer"),this.editer.on("change",function(){return r.onStopDrag()}),this.editer.lineAtHeight(18),n.__super__.constructor.call(this,t),this.$(".content_outer").resizable({minWidth:650,minHeight:100})}return nt(n,t),n.prototype.name="commandOptions",n.prototype.el=".commandOptions",n.prototype.optionsName="command",n.prototype.events=_.extend({"click input[value='coffee']":"onClickChkCoffee","click .tabs a":"onClickSwitchCoffee"},g.prototype.events),n.prototype.render=function(){var e,t,n=this;return this.optionsName="command",this.commandName&&this.commandName!=="bookmarklet"&&(this.options={name:this.commandName}),this.trigger("getEditerSize",t={}),t.width?this.$(".content_outer").width(t.width).height(t.height):this.$(".content_outer").width(700).height(200),this.$(".command").html(T[this.options.name][1]),this.$(".caption").val(this.options.caption),e=this.$(".inputs").empty(),T[this.options.name][2].forEach(function(t){return t.checked="",n.options[t.value]&&(t.checked="checked"),e.append(n.tmplOptions(t))}),this.$el.append(this.tmplHelp(this)),this.editer.setOption("readOnly",!1),this.onClickChkCoffee({currentTarget:this.$("input[value='coffee']")})},n.prototype.showPopup2=function(){var e;return this.options.name==="pasteText"?this.cmMode="plain":this.options.name==="insertCSS"?this.cmMode="css":this.options.coffee?this.cmMode="x-coffeescript":this.cmMode="javascript",this.editer.setOption("mode","text/"+this.cmMode),this.editer.setValue(this.options.content||""),this.editer.clearHistory(),(e=E.getUndoData(this.model.id))&&this.editer.setHistory(e),this.options.content?this.editer.focus():this.$(".caption").focus()},n.prototype.onShowPopup=function(t,r,i,s){var o=this;return this.commandName=i,this.name===t?s?chrome.bookmarks.get(s,function(i){var s;if(s=i[0])return o.options={name:"execJS",caption:s.title,content:e.trim(s.url.substring(11))},o.optionsName=null,n.__super__.onShowPopup.call(o,t,r),o.showPopup2()}):(n.__super__.onShowPopup.call(this,t,r),this.showPopup2()):this.$el.hide()},n.prototype.onSubmitForm=function(){var t,n,r,i,s=this;if((n=this.$(".content").val())!==""){r={},e.each(this.$(".inputs input[type='checkbox']"),function(e,t){r[t.value]=t.checked}),(t=this.$(".caption").val())||(t=n.split("\n")[0]);if(this.options.name==="execJS"&&r.coffee){n=this.$(".tabs li:has(a.x-coffeescript)").hasClass("current")?n:this.coffee,i=E.coffee2JS(this.model.id,n);if(!i.success&&!confirm("A compilation error has occurred, but do you continue?\n\n  "+i.err))return!1}if(this.options.name!=="execJS"||this.$(".tabs li:has(a.x-coffeescript)").hasClass("current"))this.undoData=this.editer.getHistory();E.setUndoData(this.model.id,this.undoData),this.model.set({command:_.extend({name:this.options.name,caption:t,content:n},r)},{silent:!0}).trigger("change:command"),this.hidePopup()}return!1},n.prototype.onClickChkCoffee=function(t){return e(t.currentTarget).is(":checked")&&this.options.name==="execJS"?(this.$(".tabs").show(),this.cmMode="x-coffeescript",this.$(".tabs li").removeClass("current"),this.$(".tabs li:has(a[class='"+this.cmMode+"'])").addClass("current")):(this.$(".tabs").hide(),this.cmMode="javascript",this.editer.setOption("readOnly",!1),this.$(".tabs li:has(a.javascript)").hasClass("current")&&this.editer.clearHistory()),this.editer.setOption("mode","text/"+this.cmMode)},n.prototype.onClickSwitchCoffee=function(e){var t,n,r,i;if((t=e.currentTarget.className)!==this.cmMode){if(r=t==="javascript")try{i=CoffeeScript.compile(this.coffee=this.editer.getValue(),{bare:"on"}),this.undoData=this.editer.getHistory()}catch(s){n=s,alert("A compilation error has occurred.\n\n  "+n.message);return}else i=this.coffee;return this.editer.setValue(""),this.editer.setOption("mode","text/"+(this.cmMode=t)),this.editer.setValue(i),this.editer.setOption("readOnly",r),this.cmMode==="x-coffeescript"&&(this.editer.clearHistory(),this.editer.setHistory(this.undoData)),this.$(".tabs li").removeClass("current"),this.$(".tabs li:has(a[class='"+this.cmMode+"'])").addClass("current")}},n.prototype.hidePopup=function(){return this.trigger("setEditerSize",this.$(".content_outer").width(),this.$(".content_outer").height()),n.__super__.hidePopup.call(this)},n.prototype.tmplOptions=_.template('<label>\n  <input type="checkbox" value="<%=value%>" <%=checked%>> <%=caption%>\n</label><br>'),n}(c),i=function(e){function t(){return G=t.__super__.constructor.apply(this,arguments),G}return nt(t,e),t.prototype.name="command",t.prototype.el=".commands",t.prototype.optionsName="command",t.prototype.render=function(){var e,t,n;n=this.$(".commandRadios"),n.empty(),e=[];for(t in T)e.push(T[t][0]);e=_.unique(e),e.forEach(function(e){return n.append('<div class="cat'+e+'"><div class="catname">'+x[e]+"</div>")});for(t in T)n.find(".cat"+T[t][0]).append(this.tmplItem({key:t,value:T[t][1]}));return this},t.prototype.onShowPopup=function(e,n){if(!t.__super__.onShowPopup.call(this,e,n))return;return this.options&&this.$(".radioCommand").val([this.options.name]),this.$el.append(this.tmplHelp(this))},t.prototype.onSubmitForm=function(){var e;if(e=this.$(".radioCommand:checked").val())T[e][2]?this.trigger("showPopup","commandOptions",this.model.id,e):(this.hidePopup(),this.model.set({command:{name:e}},{silent:!0}).trigger("change:command"));return!1},t.prototype.tmplItem=_.template('<div>\n  <label>\n    <input type="radio" name="radioCommand" class="radioCommand" value="<%=key%>">\n    <%=value%>\n  </label>\n</div>'),t}(g),t=function(t){function n(){return Y=n.__super__.constructor.apply(this,arguments),Y}return nt(n,t),n.prototype.name="bookmarkOptions",n.prototype.el=".bookmarkOptions",n.prototype.optionsName="bookmark",n.prototype.events=_.extend({"click input[value='findtab']":"onClickFindTab","change input[name='openmode']:radio":"onChangeOpenmode"},g.prototype.events),n.prototype.render=function(){var e,t,n,r;this.newSite&&(this.options=this.newSite),this.$(".bookmark").css("background-image","-webkit-image-set(url(chrome://favicon/size/16@1x/"+this.options.url+") 1x)").text(this.options.title),this.$(".url").text(this.options.url),this.$(".findStr").val(this.options.findStr||this.options.url),(n=this.$("input[value='"+(this.options.openmode||"current")+"']").get(0))!=null&&(n.checked=!0),this.$(".tabpos").val("last");if((r=this.options.openmode)==="left"||r==="right"||r==="first"||r==="last")this.$("input[value='newtab']")[0].checked=!0,this.$(".tabpos").val(this.options.openmode);return(e=this.$("input[value='findtab']")[0]).checked=(t=this.options.findtab)===void 0?!0:t,this.onClickFindTab({currentTarget:e}),this.$("input[value='noActivate']")[0].checked=this.options.noActivate,this.$el.append(this.tmplHelp(this))},n.prototype.onShowPopup=function(e,t,r){var i=this;return this.name===e?(this.newSite=null,r?chrome.bookmarks.get(r,function(r){return r.forEach(function(r){return i.newSite=r,n.__super__.onShowPopup.call(i,e,t)})}):n.__super__.onShowPopup.call(this,e,t)):this.$el.hide()},n.prototype.onSubmitForm=function(){var t,n=this;return t={findtab:this.$("input[value='findtab']").is(":checked"),openmode:this.$("input[name='openmode']:checked").attr("value"),findStr:this.$(".findStr").val()},e.each(this.$("form input[type='checkbox']"),function(e,n){t[n.value]=n.checked}),t.openmode==="newtab"&&(t.openmode=this.$(".tabpos").val()),this.model.set({bookmark:_.extend(this.options,t)},{silent:!0}).trigger("change:bookmark"),this.hidePopup(),!1},n.prototype.onChangeOpenmode=function(e){var t,n;return n=this.$("input[name='openmode']:checked").val(),t=this.$("input[value='findtab']"),n==="findonly"?t.attr("disabled","disabled")[0].checked=!0:t.removeAttr("disabled"),this.onClickFindTab({currentTarget:{checked:t[0].checked}})},n.prototype.onClickFindTab=function(e){return e.currentTarget.checked?this.$(".findStr").removeAttr("disabled"):this.$(".findStr").attr("disabled","disabled").blur()},n}(g),n=function(t){function n(){return Z=n.__super__.constructor.apply(this,arguments),Z}return nt(n,t),n.prototype.name="bookmark",n.prototype.el=".bookmarks",n.prototype.events=_.extend({"click  a":"onClickBookmark","click .title":"onClickFolder","click .expand-icon":"onClickExpandIcon"},c.prototype.events),n.prototype.render=function(){var e;return e=window.innerHeight-60,this.$(".result_outer").height(e-35),this.$el.height(e),this.$(".result").children().length===0&&this.onSubmitForm(),this},n.prototype.onShowPopup=function(e,t){var r;if(!n.__super__.onShowPopup.call(this,e,t))return;if((r=this.$("input.query")).val())return r.focus()},n.prototype.onSubmitForm=function(){var t,n,r=this;return this.$(".result").empty(),t=this.$("input.query").focus().val(),t&&(this.$(".expandAll")[0].checked=!0),n=this.$(".expandAll").is(":checked")?"opened expanded":"",chrome.bookmarks.getTree(function(i){var s;return i.forEach(function(e){return r.digBookmarks(e,r.elResult$,t,0,n)}),r.elResult$.append(s=e(r.tmplFolder({title:"Recent",state:n,indent:0}))),s.find(".title").prepend('<img src="images/star.png">'),chrome.bookmarks.getRecent(50,function(e){return e.forEach(function(e){return r.digBookmarks(e,s,t,1,n)})})}),!1},n.prototype.digBookmarks=function(t,n,r,i,s){var o,u=this;if(t.title){t.state=s;if(t.children)t.indent=i,n.append(o=e(this.tmplFolder(t))),n=o;else if(!r||(t.title+" "+t.url).toUpperCase().indexOf(r.toUpperCase())>-1)t.indent=i+1,n.append(e(this.tmplLink(t)))}else i--;if(t.children)return n.parent().addClass("hasFolder"),t.children.forEach(function(e){return u.digBookmarks(e,n,r,i+1,s)})},n.prototype.onClickFolder=function(t){var n,r;return r=(n=e(t.currentTarget).parent()).hasClass("opened"),r?n.removeClass("opened expanded"):n.addClass("opened expanded"),Q(),t.stopPropagation()},n.prototype.onClickExpandIcon=function(t){var n,r;return n=(r=e(t.currentTarget).parent()).hasClass("expanded"),n?r.removeClass("expanded"):r.addClass("expanded"),Q(),t.stopPropagation()},n.prototype.onClickBookmark=function(t){var n;return n=e(t.currentTarget),/^javascript:/i.test(n.attr("title"))?this.trigger("showPopup","commandOptions",this.model.id,"bookmarklet",n.attr("data-id")):this.trigger("showPopup","bookmarkOptions",this.model.id,n.attr("data-id")),!1},n.prototype.tmplFolder=_.template('<div class="folder <%=state%>" style="text-indent:<%=indent%>em">\n  <span class="expand-icon"></span><span class="title"><%=title%></span>\n</div>'),n.prototype.tmplLink=_.template('<div class="link" style="text-indent:<%=indent%>em;">\n  <a href="#" title="<%=url%>" data-id="<%=id%>" style="background-image:-webkit-image-set(url(\'chrome://favicon/size/16@1x/<%=url%>\') 1x);"><%=title%></a>\n</div>'),n}(c),J={page:["Return the page URL","icon-file-alt"],selection:["Return the selection text","icon-font"],editable:["Return the page URL or selection text","icon-edit"],link:["Return the link URL","icon-link"],image:["Return the image URL","icon-picture"],all:["Return any of the above","icon-asterisk"]},M=function(e){var t;return t=function(){return((1+Math.random())*65536|0).toString(16).substring(1)},e+[t(),t()].join("").toUpperCase()+(new Date/1e3|0)},l=function(t){function n(){return et=n.__super__.constructor.apply(this,arguments),et}return nt(n,t),n.prototype.name="ctxMenuOptions",n.prototype.el=".ctxMenuOptions",n.prototype.events=_.extend({"click  .done,.delete":"onClickSubmit","change .selectParent":"onChangeSelectParent","click  .selectParent":"onClickSelectParent","focus  .parentName":"onFocusParentName","blur   .parentName":"onBlurParentName"},g.prototype.events),n.prototype.render=function(){var e,t,n,r,i,s,o,u,a;return(this.ctxMenu=this.model.get("ctxMenu"))?(this.ctxMenu.parentId!=="route"&&(this.ctxMenu.contexts=this.collection.get(this.ctxMenu.parentId).get("contexts")),r=this.ctxMenu.caption):(this.model.trigger("getDescription",e={}),r=e.desc),this.$(".caption").val(r),this.$el.append(this.tmplHelp(this)),this.$("input[value='"+((t=(u=this.ctxMenu)!=null?u.contexts:void 0)||"page")+"']")[0].checked=!0,this.ctxMenu?this.$(".delete").addClass("orange").removeClass("disabled").removeAttr("disabled"):this.$(".delete").removeClass("orange").addClass("disabled").attr("disabled","disabled"),i=(o=this.$(".selectParent")).val(),n=this.$("input[name='ctxType']:checked").attr("value"),o.html(this.tmplParentMenu),this.collection.models.forEach(function(e){return o.append('<option value="'+e.id+'">'+e.get("title")+"</option>")}),(s=(a=this.ctxMenu)!=null?a.parentId:void 0)?o.val(s):o.find("option[value='"+i+"']").length>0?o.val(i):o.val("route"),this.$(".parentName").val("").hide()},n.prototype.onChangeSelectParent=function(e){return e.currentTarget.value!=="new"?this.$(".parentName").hide():this.$(".parentName").show().focus()},n.prototype.onClickSelectParent=function(e){return e.preventDefault()},n.prototype.onFocusParentName=function(e){return this.$(".selectParent").addClass("focus")},n.prototype.onBlurParentName=function(){return this.$(".selectParent").removeClass("focus")},n.prototype.onSubmitForm=function(){return!1},n.prototype.onClickSubmit=function(t){var n,r,i,s,o,u,a,f,l,c=this;if((u=this.$(".selectParent").val())==="new"&&(a=e.trim(this.$(".parentName").val()))==="")return!1;if((n=e.trim(this.$(".caption").val()))==="")return!1;if(/delete/.test(t!=null?t.currentTarget.className:void 0)){if(!confirm("Are you sure you want to delete this context menu?"))return!1;this.model.unset("ctxMenu")}else{i=this.$("input[name='ctxType']:checked").attr("value");if(u==="route")this.model.set("ctxMenu",{caption:n,contexts:i,parentId:u,order:(f=this.ctxMenu)!=null?f.order:void 0});else{if(u==="new"){if(o=this.collection.findWhere({contexts:i,title:a}))u=o.id}else a=this.$(".selectParent option[value='"+u+"']").text();this.collection.findWhere({id:u,contexts:i})||this.collection.add({id:u=M("T"),contexts:i,title:a}),this.model.set("ctxMenu",{caption:n,parentId:u,order:(l=this.ctxMenu)!=null?l.order:void 0})}}return this.trigger("getCtxMenues",r={}),_.difference(this.collection.pluck("id"),_.pluck(r.ctxMenus,"parentId")).forEach(function(e){return c.collection.remove(c.collection.get(e))}),(s=e.Deferred()).promise(),this.trigger("remakeCtxMenu",{dfd:s}),s.done(function(){return c.hidePopup()}),!1},n.prototype.tmplParentMenu='<option value="route">None(Root)</option>\n<option value="new">Create under new parent menu...</option>',n}(g),o=Backbone.Model.extend({}),u=Backbone.Collection.extend({model:o}),a=function(e){function t(e){t.__super__.constructor.call(this,e),this.$el.css({top:0,right:"30px"}).draggable({cursor:"move",delay:200,cancel:"input,textarea,button,select,option"})}return nt(t,e),t.prototype.el=".ctxMenusGetter",t.prototype.events=_.extend({"click .add":"onClickAdd","click .cancel":"onClickCancel"},g.prototype.events),t.prototype.render=function(e){return this.$(".message").html(this.tmplMessage(e)),this.$el.show(200),this},t.prototype.onHidePopup=function(){return this.$el.hide(200)},t.prototype.onClickAdd=function(){return this.$el.hide(200),this.trigger("addCtxMenus")},t.prototype.onClickCancel=function(){return this.$el.hide(200),this.trigger("addCtxMenus",!0)},t.prototype.tmplMessage=_.template('Add entries to the context menu for <span class="ctxmenu-icon"><i class="<%=icon%>"></i></span><strong><%=contextName%></strong><%=folder%><br>from the functions that you selected.'),t}(g),f=function(t){function n(e){var t,r,i;n.__super__.constructor.call(this,e),this.ctxMenuGetterView=new a({}),this.ctxMenuGetterView.on("addCtxMenus",this.onAddCtxMenus,this),P.on("addCtxMenu",this.onAddCtxMenu,this),t=document.getCSSCanvasContext("2d","empty",18,18),t.strokeStyle="#CC0000",t.lineWidth="2",t.lineCap="round",t.beginPath(),t.moveTo(1,1),t.lineTo(17,17),t.moveTo(1,17),t.lineTo(17,1),t.stroke(),t=document.getCSSCanvasContext("2d","updown",26,24),t.fillStyle="rgb(122, 122, 160)",t.lineWidth="2",t.lineCap="round",t.lineJoin="round",t.strokeStyle="#333333";for(r=i=0;i<=1;r=++i)t.beginPath(),t.moveTo(1,5),t.lineTo(5,1),t.lineTo(9,5),t.moveTo(5,1),t.lineTo(5,9),t.stroke(),t.translate(18,18),t.rotate(180*Math.PI/180);this.collection.comparator=function(e){return e.get("order")}}return nt(n,t),n.prototype.name="ctxMenuManager",n.prototype.el=".ctxMenuManager",n.prototype.events=_.extend({"mousedown span[tabindex='0']":"onClickItem","mousedown button,input,a":"onClickClickable","mousedown .newmenu":"onClickNew","mousedown .newfolder":"onClickNewFolder","mousedown .rename":"onClickRen","dblclick  .menuCaption,.title":"onClickRen","keydown   .menuCaption,.title":"onKeydownCaption","mousedown .remove":"onClickRemove","submit .editCaption":"doneEditCaption","blur .editCaption input":"cancelEditCaption",mousedown:"onClickBlank","click .done":"onClickDone"},c.prototype.events),n.prototype.render=function(){var t,n=this;return t=window.innerHeight-60,this.$(".result_outer").height(t-35),this.$el.height(t),this.setContextMenu(),this.setSortable(".folders",".title,.menuCaption",this.onUpdateFolder),this.setSortable(".ctxMenus",".menuCaption",this.onUpdateMenu),e.each(this.$(".editButtons button"),function(e,t){return n.disableButton(_.map(document.querySelectorAll(".editButtons button"),function(e){return e.className.match(/^(\w+)\s/)[1]}))}),this.$el.append(this.tmplHelp(this)),this},n.prototype.onSubmitForm=function(){return!1},n.prototype.setSortable=function(e,t,n){var r=this;return this.$(e).sortable({scroll:!0,handle:t,connectWith:e,placeholder:"ui-placeholder",delay:200,update:function(e,t){return n(e,t,r)},start:function(e,t){return r.onStartSort(e,t)},stop:function(e,t){return r.onStopSort(e,t,r)}})},n.prototype.setFolderDroppable=function(t){var n;return n=this,t.droppable({accept:".ctxMenuItem.route",tolerance:"pointer",hoverClass:"drop-folder-hover",over:function(){return e(".folders .ui-placeholder").hide()},out:function(){return e(".folders .ui-placeholder").show()},drop:function(t,r){var i;return i=e(this).find(".ctxMenus"),r.draggable.hide("fast",function(){return n.onUpdateMenu(null,{item:e(this).appendTo(i).removeClass("route").show().find("span[tabindex='0']").focus()},n)})}})},n.prototype.onUpdateFolder=function(t,n,r){var i,s;if(n&&_.filter(n.item.parent().find(".title"),function(e){var t;return e.textContent===((t=n.item.prevInfo)!=null?t.text:void 0)}).length>1){alert("A folder with the name '"+n.item.prevInfo.text+"' already exists."),i=r.$(".folders."+n.item.prevInfo.contexts),s=i.children().eq(n.item.prevInfo.order).get(0)||null,i[0].insertBefore(n.item[0],s);return}e.each(r.$(".folders"),function(t,n){return(i=e(n)).find(".folder,.ctxMenuItem").length>0?i.parents(".contexts").addClass("hasFolder"):i.parents(".contexts").removeClass("hasFolder")});if(n)return n.item.focus()},n.prototype.onUpdateMenu=function(t,n,r){e.each(r.$(".ctxMenus"),function(t,n){var r;return(r=e(n)).find(".ctxMenuItem,.dummy").length>0?r.parents(".folder").addClass("hasFolder"):r.parents(".folder").removeClass("hasFolder")});if(n)return n.item.parents(".folder").addClass("hasFolder"),n.item.focus()},n.prototype.onGetCtxMenuContexts=function(e){return e.contexts=this.collection.get(e.parentId).get("contexts")},n.prototype.onClickDone=function(){var t,n,r=this;return n=[],this.collection.reset(),e.each(this.$(".ctxMenuItem"),function(t,i){var s,o,u,a;return o=e(i),u={id:i.id},u.caption=o.find(".menuCaption").text(),u.order=t+1,u.parentId=((a=o.parents(".folder").get(0))!=null?a.id:void 0)||"route",s=o.parents(".folders")[0].className.match(/folders\s(\w+)/)[1],u.parentId==="route"?u.contexts=s:r.collection.findWhere({id:u.parentId,contexts:s})||r.collection.add({id:u.parentId,contexts:s,title:r.$("#"+u.parentId+" .title").text()}),n.push(u)}),this.trigger("setCtxMenus",n),(t=e.Deferred()).promise(),this.trigger("remakeCtxMenu",{dfd:t}),t.done(function(){return r.hidePopup()}),!1},n.prototype.onClickBlank=function(){},n.prototype.onClickClickable=function(e){return e.stopPropagation()},n.prototype.onClickNew=function(t){var n,r,i,s,o,u=this;if(!/contexts|title/.test((o=(s=e(document.activeElement)).get(0))!=null?o.className:void 0))return;return this.activeFolder={},s.hasClass("contexts")?(this.activeFolder.folder="",r=s,this.activeFolder.parentId="route",this.activeFolder.contexts=(n=s.parent()[0].className).match(/droppable\s(\w+)/)[1],this.activeFolder.selector="."+n.replace(/\s/g,".")+" .contexts"):(this.activeFolder.folder=" in the folder '<strong>"+s.text()+"</strong>'",r=s.parents("div.contexts").find("span.contexts"),this.activeFolder.parentId=s.parent()[0].id,this.activeFolder.selector="#"+this.activeFolder.parentId+" .title"),this.activeFolder.icon=r.find("i")[0].className,this.activeFolder.contextName=r.text(),setTimeout(function(){return u.ctxMenuGetterView.render(u.activeFolder)},0),i=_.map(this.$(".ctxMenuItem"),function(e){return e.id}),this.trigger("enterCtxMenuSelMode",i),this.$(".result_outer").getNiceScroll().hide(),this.$el.hide(),e(".backscreen").hide()},n.prototype.onAddCtxMenu=function(e){return this.setContextMenuItem(_.extend(e,this.activeFolder)),this.$("#"+e.id).hide().show(300).effect("highlight",2e3),this.setSortable(".ctxMenus",".menuCaption",this.onUpdateMenu),this.$(".folders").sortable("refresh")},n.prototype.onAddCtxMenus=function(t){this.trigger("leaveCtxMenuSelMode",t),this.$el.show(),this.$(".newmenu").focus(),this.$(".result_outer").getNiceScroll().show(),e(".backscreen").show(),this.$(this.activeFolder.selector).focus();if(t)return;return this.trigger("triggerEventSelected"),this.onUpdateMenu(null,null,this),this.onUpdateFolder(null,null,this),this.$(this.activeFolder.selector).focus()},n.prototype.onClickNewFolder=function(t){var n,r,i;if(!(i=e(document.activeElement)).hasClass("contexts"))return;return n=i.parents(".contexts").find(".folders"),(r=e(this.tmplFolder({id:M("T"),title:""})).appendTo(n)).find(".title").focus(),this.setSortable(".ctxMenus",".menuCaption",this.onUpdateMenu),this.$(".folders").sortable("refresh"),this.setFolderDroppable(r),this.enableButton(["rename","remove","newmenu"]),this.disableButton(["newfolder"]),this.onClickRen(t)},n.prototype.onKeydownCaption=function(e){if(e.originalEvent.keyIdentifier==="F2")return this.onClickRen(e)},n.prototype.onClickRen=function(t){var n,r;if(!/title|menuCaption/.test((r=e(document.activeElement))[0].className))return;return n=r.hide().parent().find(".editCaption input:first").show(),n.val(r.text()).focus(),t.preventDefault()},n.prototype.escapeAmp=function(e){return e.replace(/&&/g,"^ampersand^").replace(/&/g,"").replace(/^ampersand^/g,"")},n.prototype.doneEditCaption=function(t){var n,r,i,s;if(!(s=e.trim((n=e(t.currentTarget).find("> input")).val())))return n.blur(),!1;if((r=n.parent().parent()).hasClass("folder")){i=!0,e.each(r.parent().find(".title"),function(t,o){if(r[0]!==o.parentNode&&o.textContent===s)return e("#tiptip_content").text("Folder '"+s+"' already exists."),n.tipTip(),i=!1});if(!i)return!1}return n.hide().parents("div:first").find("> .title,> .menuCaption").show().text(s).focus(),!1},n.prototype.cancelEditCaption=function(t){var n;if(!(n=e(t.currentTarget).hide().parents("div:first").find(".title,.menuCaption").show()).text())return n.parents(".folder").remove()},n.prototype.onClickRemove=function(t){var n;if(!/title|menuCaption/.test((n=e(document.activeElement))[0].className))return;return n.parent().remove(),this.onUpdateMenu(null,null,this),this.onUpdateFolder(null,null,this)},n.prototype.enableButton=function(e){return e.forEach(function(e){return this.$("button."+e).removeClass("disabled").removeAttr("disabled")})},n.prototype.disableButton=function(e){return e
-.forEach(function(e){return this.$("button."+e).addClass("disabled").attr("disabled","disabled")})},n.prototype.onClickItem=function(e){switch(e.currentTarget.className){case"contexts":this.enableButton(["newmenu","newfolder"]),this.disableButton(["rename","remove"]);break;case"title":this.enableButton(["rename","remove","newmenu"]),this.disableButton(["newfolder"]);break;case"menuCaption":this.enableButton(["rename","remove"]),this.disableButton(["newmenu","newfolder"])}return e.currentTarget.focus(),e.preventDefault(),e.stopPropagation()},n.prototype.onHoverMoveItem=function(e){},n.prototype.onHoverOffMoveItem=function(){},n.prototype.onMouseoverDroppable=function(){return this.$(".ctxMenus .ui-placeholder").hide()},n.prototype.onStartSort=function(e,t){t.item.find("span[tabindex='0']:first").focus();if(/folder/.test(t.item[0].className))return t.item.addClass("sorting").find(".ctxMenus").hide(),t.item.prevInfo={contexts:t.item.parent()[0].className.match(/folders\s(\w+)/)[1],order:t.item.parent().children().index(t.item),text:t.item.find(".title").text()}},n.prototype.onStopSort=function(e,t,n){return t.item.find("span[tabindex='0']:first").focus(),n.$(".folder").removeClass("sorting"),n.$(".ctxMenus").show()},n.prototype.onClickExpandIcon=function(t){var n,r;return this.$(t.currentTarget).parents(".folder").focus(),n=(r=e(t.currentTarget).parents(".contexts")).hasClass("expanded"),n?r.removeClass("expanded"):r.addClass("expanded"),Q(),t.stopPropagation()},n.prototype.setContextMenu=function(){var t,n,r,i,s,o=this;this.$(".result").empty(),this.trigger("getCtxMenues",t={}),r=t.ctxMenus;for(i in J)this.elResult$.append(n=e(this.tmplContexts({contexts:i,dispname:i.substring(0,1).toUpperCase()+i.substring(1),icon:J[i][1]}))),s=this,n.find(".droppable").droppable({accept:".ctxMenuItem:not(.route)",tolerance:"pointer",hoverClass:"drop-hover",over:function(){return e(".ctxMenus .ui-placeholder").hide()},out:function(){return e(".ctxMenus .ui-placeholder").show()},drop:function(t,n){var r;return r=e(".folders."+this.className.match(/droppable\s(\w+)/)[1]),n.draggable.hide("fast",function(){return s.onUpdateMenu(null,{item:e(this).appendTo(r).addClass("route").show().find("span[tabindex='0']").focus()},s)})}});return r.forEach(function(e){return o.setContextMenuItem(e)}),this.onUpdateMenu(null,null,this),this.onUpdateFolder(null,null,this)},n.prototype.setContextMenuItem=function(e){var t,n;return e.parentId==="route"?(t=this.$(".contexts .folders."+e.contexts),e.route=" route"):(e.route="",(t=this.$("#"+e.parentId+" .ctxMenus")).length>0||(n=this.collection.get(e.parentId),this.$(".contexts .folders."+n.get("contexts")).append(this.tmplFolder({id:n.id,title:n.get("title")})),t=this.$("#"+e.parentId+" .ctxMenus"),this.setFolderDroppable(this.$("#"+e.parentId)))),t.append(this.tmplMenuItem(e))},n.prototype.tmplContexts=_.template('<div class="contexts">\n  <div class="droppable <%=contexts%>">\n    <span class="contexts" tabindex="0"><i class="<%=icon%> contextIcon"></i><%=dispname%></span>\n  </div>\n  <div class="folders <%=contexts%>"></div>\n</div>'),n.prototype.tmplFolder=_.template('<div class="folder hasFolder" id="<%=id%>">\n  <span class="title" tabindex="0"><%=title%></span>\n  <div class="updown"></div>\n  <div class="emptyFolder"></div>\n  <form class="editCaption"><input type="text"></form>\n  <div class="ctxMenus"></div>\n</div>'),n.prototype.tmplMenuItem=_.template('<div class="ctxMenuItem<%=route%>" id="<%=id%>">\n  <span class="menuCaption" tabindex="0" title="<%=shortcut%>"><%=caption%></span>\n  <div class="updown"></div>\n  <form class="editCaption"><input type="text"></form>\n</div>'),n}(c),O=100,k=100,j=null,F=!0,w={google:{families:["Noto+Sans::latin"]}},q={remap:["Remap","icon-random"],command:["Command...","icon-cog"],bookmark:["Bookmark...","icon-bookmark"],disabled:["Disabled","icon-ban-circle"],sleep:["Sleep","icon-eye-close"],comment:["Comment","icon-comment-alt"],through:["Pause","icon-pause","nodisp"]},S={current:"Open in current tab",newtab:"Open in new tab",newwin:"Open in new window",incognito:"Open in incognito window",left:"Open in new tab to left of the current tab",right:"Open in new tab to right of the current tab",first:"Open in new tab to first position",last:"Open in new tab to last position"},A=function(e){var t;return t={"&":"&amp;","<":"&lt;",">":"&gt;"},e.replace(/[&<>]/g,function(e){return t[e]})},U=["Ctrl","Alt","Shift","Win","MouseL","MouseR","MouseM"],R=["c","a","s","w"],C=function(e){var t,n,r,i;if(!e)return null;r=parseInt(e.substring(0,2),16),i=e.substring(2);if(n=H[i])return t=[],r&1&&t.push(U[0]),r&4&&t.push(U[2]),r&2&&t.push(U[1]),r&8&&t.push(U[3]),r&16&&t.push(U[4]),r&32&&t.push(U[5]),r&64&&t.push(U[6]),r&4?t.push(n[1]||n[0]):t.push(n[0]),t.join(" + ")},K=function(e){var t,n,r,i,s,o,u;i=parseInt(e.substring(0,2),16),n=[];for(t=o=0,u=R.length;0<=u?o<u:o>u;t=0<=u?++o:--o)i&Math.pow(2,t)&&n.push(R[t]);return s=e.substring(2),r=H[s],"["+n.join("")+"]"+r[0]},h=Backbone.View.extend({scHelpUrl:"https://support.google.com/chrome/answer/157179?hl=",el:"div.header",events:{"click .addKeyConfig":"onClickAddKeyConfig","click .ctxmgr":"onClickCtxmgr","click .settings":"onClickSettings"},initialize:function(e){return this.$(".addKeyConfig,.ctxmgr,.scHelp,.helpview,.settings").show(),this.model.on("change:lang",this.onChangeLang,this)},onClickAddKeyConfig:function(e){return this.trigger("clickAddKeyConfig",e)},onClickCtxmgr:function(){return this.trigger("showPopup","ctxMenuManager")},onClickSettings:function(){return this.trigger("showPopup","settings")},onEnterCtxMenuSelMode:function(){return this.$("button").attr("disabled","disabled").addClass("disabled")},onLeaveCtxMenuSelMode:function(){return this.$("button").removeAttr("disabled").removeClass("disabled")},onChangeLang0:function(e){return this.$(".scHelp").text("ショートカットキー一覧").attr("href",this.scHelpUrl+"ja")},onChangeLang:function(){return this.$(".scHelp").text("Keyboard shortcuts").attr("href",this.scHelpUrl+this.model.get("lang"))}}),s=Backbone.Model.extend({}),p=Backbone.Model.extend({idAttribute:"new",defaults:{mode:"remap"}}),d=Backbone.Collection.extend({model:p}),m=Backbone.View.extend({kbdtype:null,optionKeys:[],events:{"click .origin,.new":"onClickInput","click div.mode":"onClickMode","click .selectMode div":"onChangeMode","click .edit":"onClickEdit","click .addCommand":"onClickAddCommand","click .copySC":"onClickCopySC","click div.ctxmenu":"onClickCtxMenu","click .pause":"onClickPause","click .resume":"onClickResume","click .delete":"onClickDelete","click .editSleep":"onClickEditSleep","click input.memo,.inputSleep":"onClickInputMemo","click button.cog":"onClickCog","click .updown a":"onClickUpDownChild","focus .new,.origin":"onFocusKeyInput","focus .inputSleep":"onClickInputMemo",keydown:"onKeydown","submit  .memo":"onSubmitMemo","submit  .formSleep":"onSubmitSleep","blur  .selectMode":"onBlurSelectMode","blur  .selectCog":"onBlurSelectCog","blur  input.memo":"onBlurInputMemo","blur  .inputSleep":"onBlurInputSleep",mouseover:"onMouseOverChild",mouseout:"onMouseOutChild"},initialize:function(e){return this.optionKeys=_.keys(q),this.model.on({"change:new":this.onChangeNew,"change:bookmark":this.onChangeBookmark,"change:command":this.onChangeCommand,"change:ctxMenu":this.onChangeCtxmenu,setFocus:this.onClickInput,remove:this.onRemove,setUnselectable:this.onSetUnselectable,setRowspan:this.onSetRowspan,updatePosition:this.onUpdatePosition,setSelected:this.onSetSelected,getDescription:this.onGetDescription,triggerEventCtxMenuSelected:this.onTriggerCtxMenuSelected},this),this.model.collection.on({kbdEvent:this.onKbdEvent,changeKbd:this.onChangeKbd,changeLang:this.onChangeLang,updateOrderByEl:this.onUpdateOrderByEl,mouseoverchild:this.onMouseOverChild,mouseoutchild:this.onMouseOutChild},this)},render:function(e,t){var n;return this.kbdtype=e,this.lang=t,this.setElement(this.template({options:q})),n=this.model.get("mode"),/^C/.test(this.model.id)?this.$el.addClass("child").find("th:first-child").remove().end().find(".disabled").hide():this.setKbdValue(this.$(".new"),this.model.id)?(this.$el.find(".sleep").hide(),this.onSetRowspan()):this.state="invalid",!this.$el.hasClass("parent")&&!this.$el.hasClass("child")&&this.$el.find(".comment").hide(),this.setKbdValue(this.$(".origin"),this.model.get("origin")),this.onChangeMode(null,n),this},onChangeBookmark:function(){return this.onChangeMode(null,"bookmark")},onChangeCommand:function(){return this.onChangeMode(null,"command")},onChangeCtxmenu:function(){var e,t;return(t=this.model.get("ctxMenu"))&&!this.$el.hasClass("child")?(t.parentId!=="route"&&(this.model.collection.trigger("getCtxMenuContexts",e={parentId:t.parentId}),t.contexts=e.contexts),this.$("td.ctxmenu").html('<div class="ctxmenu-icon" title="Context menu for '+t.contexts+"\n Title: "+t.caption+'"><i class="'+J[t.contexts][1]+'"></i></div>'),this.$("div.ctxmenu")[0].childNodes[1].nodeValue=" Edit context menu..."):this.model.get("mode")!=="disabled"&&!this.$el.hasClass("child")&&(this.$("td.ctxmenu").empty(),this.$("div.ctxmenu")[0].childNodes[1].nodeValue=" Create context menu..."),this.trigger("resizeInput")},onRemove:function(){var e;return(e=this.model.get("parentId"))&&this.model.collection.trigger("mouseoutchild",e),this.model.collection.off(null,null,this),this.model.off(null,null,this),this.off(null,null,null),this.remove()},onSetUnselectable:function(e){return e?this.$el.addClass("unselectable"):this.$el.removeClass("unselectable")},onTriggerCtxMenuSelected:function(){var e;if(this.$el.hasClass("unselectable"))return this.$el.removeClass("ui-selected unselectable");if(this.$el.hasClass("ui-selected"))return this.$el.removeClass("ui-selected"),e=C(this.model.id),this.trigger("addCtxMenu",{id:this.model.id,caption:this.getDescription()||e,shortcut:e})},onSetRowspan:function(){var e;if((e=this.model.collection.where({parentId:this.model.id})).length>0)return this.$el.addClass("parent").find(".selectMode .comment").show().end().find(".disabled").hide(),this.$("th:first-child").attr("rowspan",e.length+1),this.model.set("batch",!0);this.$el.removeClass("parent"),this.$("th:first-child").removeAttr("rowspan"),this.model.unset("batch");if(!this.$el.hasClass("child"))return this.$(".selectMode .comment").hide().end().find(".disabled").show(),this.$("ul.updown").remove()},onSetSelected:function(e){return e?this.$el.addClass("ui-selected"):this.$el.removeClass("ui-selected")},onGetDescription:function(e){return e.desc=this.getDescription()},onChangeNew:function(e){return E.changePK(this.model.id,e.previous("new"))},onKbdEvent:function(t){var n,r;n=this.$("div:focus");if(n.length>0){if(n.hasClass("new")){if(this.model.id!==t&&this.model.collection.findWhere({"new":t})){e("#tiptip_content").text('"'+C(t)+'" already exists.'),n.tipTip();return}this.model.collection.where({parentId:this.model.id}).forEach(function(e){return e.set("parentId",t)})}else{r=~~t.substring(2);if(r>=512||r===349)return}this.setKbdValue(n,t),this.model.set(n[0].className.match(/(new|origin)/)[0],t),this.setDesc(),this.trigger("resizeInput");if(n.hasClass("new")&&this.model.has("ctxMenu"))return this.trigger("remakeCtxMenu",{dfd:e.Deferred()})}},onChangeKbd:function(e){return this.kbdtype=e,this.setKbdValue(this.$(".new"),this.model.id),this.setKbdValue(this.$(".origin"),this.model.get("origin"))},onChangeLang:function(e){return this.lang=e,this.setDesc()},onUpdateOrderByEl:function(){return this.model.set("order",this.$el.parent().children().index(this.$el))},onUpdatePosition:function(){return this.$el.parent()[0].insertBefore(this.el,this.$el.parent().children().eq(this.model.get("order")).get(0)||null)},onKeydown:function(e){var t,n,r,i,s,o,u,a,f;if((a=e.target.tagName)==="TEXTAREA"||a==="INPUT"||a==="SELECT")return;if(this.$("div:focus").hasClass("new")){this.trigger("getConfigValue","singleKey",t={});if(!t.result)return}if(i=keyIdentifiers[this.kbdtype][e.originalEvent.keyIdentifier]){if(e.originalEvent.shiftKey){if(!(r=i[1]))return;s="04"}else r=i[0],s="00";for(n=u=0,f=H.length;0<=f?u<f:u>f;n=0<=f?++u:--u)if(H[n]&&(r===H[n][0]||r===H[n][1])){o=n;break}if(o)return this.onKbdEvent(s+n)}},onClickCopySC:function(e){var t,n,r,i,s,o,u,a,f;return(u=this.model.get("mode"))==="through"&&(u=this.model.get("lastMode")),(n=this.model.collection.where({parentId:this.model.id})).length>0&&(u="batch"),u==="remap"?(o="keydown",a=this.model.get("origin"),i=this.$(".desc").find(".content,.memo").text()):(o="send",a=this.model.id,i=this.$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text()),r=this.$("td.options .mode").text().replace("Remap",""),r&&(r=" "+r+":"),s=C(a).replace(/\s/g,""),i&&(i=" "+i),t="scd."+o+"('"+K(a)+"');",f=t+" /* "+s+r+i+" */",chrome.runtime.sendMessage({action:"setClipboard",value1:f},function(e){})},getDescription:function(){var t;return this.model.get("mode")==="remap"?t=this.$(".desc").find(".content,.memo").text():t=this.$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text(),e.trim(t)},onClickCtxMenu:function(){return this.trigger("showPopup","ctxMenuOptions",this.model.id)},onClickInputMemo:function(e){return e.stopPropagation()},onSubmitMemo:function(){return this.$("form.memo").hide(),this.model.set({memo:this.$("div.memo").show().html(A(this.$("input.memo").val())).text()}),L(),!1},onClickMode:function(e){if(e.currentTarget.getAttribute("title")==="Pause")return;return this.$(".selectMode").toggle().is(":visible")?(this.$(".selectMode").focus(),this.$(".mode").addClass("selecting")):this.$(".mode").removeClass("selecting"),e.stopPropagation()},onChangeMode:function(e,t){if(e){this.$(".mode").removeClass("selecting"),t=e.currentTarget.className,this.$(".selectMode").hide();if(t==="bookmark"||t==="command"){this.trigger("showPopup",t,this.model.id);return}}return this.model.set("mode",t),this.setDispMode(t),this.setDesc(),this.trigger("resizeInput")},onBlurSelectMode:function(){return this.$(".selectMode").hide(),this.$(".mode").removeClass("selecting")},onFocusKeyInput:function(){return j=this.el},onClickInput:function(t,n){return t?e(t.currentTarget).focus():n?this.$(n).focus():this.$(".origin").focus(),t!=null?t.stopPropagation():void 0},onBlurInputMemo:function(){return this.onSubmitMemo()},onClickCog:function(t){return this.$(".selectCog").toggle().is(":visible")?(this.$(".selectCog").focus(),e(t.currentTarget).addClass("selecting")):e(t.currentTarget).removeClass("selecting"),t.stopPropagation()},onBlurSelectCog:function(){return this.$(".selectCog").hide(),this.$("button.cog").removeClass("selecting")},onClickEdit:function(e){var t,n,r,i;(i=this.model.get("mode"))==="through"&&(i=this.model.get("lastMode"));switch(i){case"bookmark":return this.trigger("showPopup","bookmarkOptions",this.model.id);case"command":return this.trigger("showPopup","commandOptions",this.model.id);default:return(r=this.$("div.memo")).toggle(),t=(n=this.$("form.memo").toggle().find("input.memo")).is(":visible"),t?(n.focus().val(r.text()),$()):this.onSubmitMemo(),e.stopPropagation()}},onClickAddCommand:function(){var e;/^C/.test(e=this.model.get("new"))&&(e=this.model.get("parentId")),j=this.el,this.model.collection.add({"new":M("C"),origin:~~e.substring(2)>=512?"0130":e,parentId:e});if(this.$el.hasClass("parent")){this.setDispMode(this.model.get("mode"));if(!(this.$("ul.updown").length>0))return this.$(".desc").append(this.tmplUpDown)}},onMouseOverChild:function(e,t){var n;t===this.model.id&&this.$el.addClass("hover");if(e&&(n=this.model.get("parentId")))return this.model.collection.trigger("mouseoverchild",null,n)},onMouseOutChild:function(e,t){var n;t===this.model.id&&this.$el.removeClass("hover");if(e&&(n=this.model.get("parentId")))return this.model.collection.trigger("mouseoutchild",null,n)},onClickPause:function(){var e;this.model.set("lastMode",this.model.get("mode")),this.onChangeMode(null,"through");if(e=this.model.get("ctxMenu"))return E.updateCtxMenu(this.model.id,e,!0)},onClickResume:function(){var e;this.onChangeMode(null,this.model.get("lastMode"));if(e=this.model.get("ctxMenu"))return E.updateCtxMenu(this.model.id,e,!1)},onClickDelete:function(){var e,t,n,r,i,s,o=this;if(i=this.model.get("parentId")){s="",n='"'+this.getDescription()+'"';switch(this.model.get("mode")){case"remap":s=C(this.model.get("origin"))+"\n\n ";break;case"sleep":s="Sleep "+this.model.get("sleep")+" msec",n=""}e=[],r="Are you sure you want to delete this child command?\n\n "+s+n}else(e=this.model.collection.where({parentId:this.model.id})).length>0?r="Are you sure you want to delete this shortcut and all the child commands?":r="Are you sure you want to delete this shortcut?",s=C(this.model.id),r+="\n\n "+s+'\n\n "'+this.getDescription()+'"';if(!confirm(r))return this.$(".selectCog").blur();e.forEach(function(e){return o.trigger("removeConfig",e)}),t=this.model.collection,this.trigger("removeConfig",this.model);if(i)return t.get(i).trigger("setRowspan")},onClickUpDownChild:function(t){var n,r,i,s,o,u,a,f,l=this;n=function(){var e,t;e=r.id,r.set("new","temp"),r.unset("parentId"),f.set("new",e),f.set("parentId",a),r.set("new",a),o.removeClass("child").find(".disabled").show().end().prepend(s.find("th:first-child")).find("td.ctxmenu").append(s.find("div.ctxmenu-icon")).end().find(".desc").find(".ctxmenu,.copySC").show(),s.removeClass("parent hover").addClass("child").find(".disabled").hide().end().find(".desc").find(".ctxmenu,.copySC").hide();if(t=f.get("ctxMenu"))r.set("ctxMenu",t),f.unset("ctxMenu");return r.get("mode")==="through"?o.find(".new").addClass("through"):o.find(".new").removeClass("through")},u=-1,a=this.model.get("parentId")||this.model.id,i=[f=this.model.collection.get(a)].concat(this.model.collection.where({parentId:a})),e.each(i,function(e,t){if(t.id===l.model.id)return u=e,!1});if(t.currentTarget.title==="up"&&u>0)return(s=this.$el.prev()).before(o=this.$el),u===1&&(r=this.model,n()),this.trigger("updateChildPos");if(t.currentTarget.title==="down"&&i.length>u+1)return(s=this.$el).before(o=this.$el.next()),u===0&&(r=i[1],n()),this.trigger("updateChildPos")},onClickEditSleep:function(){var e=this;return this.$(".dispSleep").hide(),this.$(".inputSleep").show().val(this.model.get("sleep")),setTimeout(function(){return e.$(".inputSleep").focus()},0)},onSubmitSleep:function(){var e;return e=this.$(".inputSleep").val(),e?(e<0&&(e=0),e>6e4&&(e=6e4)):e=100,e=Math.round(e),this.model.set({sleep:e}),this.$(".dispSleep").show().html(e).attr("title","Sleep "+e+" msec"),this.$(".inputSleep").hide(),!1},onBlurInputSleep:function(){return this.onSubmitSleep()},setDispMode:function(e){return this.$(".mode").attr("title",q[e][0].replace("...","")).find(".icon")[0].className="icon "+q[e][1],e==="through"&&(e=this.model.get("lastMode")+" through"),this.$(".new,.origin,.icon-arrow-right").removeClass(this.optionKeys.join(" ")).addClass(e),/remap/.test(e)?(this.$("th:first,th:eq(1)").removeAttr("colspan").css("padding","").find("i").show(),this.$("th:eq(1),th:eq(2),th .origin").show().find("i").show()):this.$el.hasClass("child")?(this.$("th:first").css("padding","16px 0").find("i").hide(),this.$("th .origin").hide()):this.$el.hasClass("parent")?(this.$("th:first").removeAttr("colspan"),this.$("th:eq(1),th:eq(2)").show(),this.$("th:eq(1)").css("padding","18px 0").find("i").hide(),this.$("th .origin").hide()):(this.$("th:first").attr("colspan","3"),this.$("th:eq(1),th:eq(2)").hide())},setKbdValue:function(e,t){var n;return(n=C(t))?(e.html(_.map(n.split(" + "),function(e){return"<span>"+e+"</span>"}).join("+")),!0):!1},setDesc:function(){var e,t,n,r,i,s,o,u,a,f,l,c,h,p,d,v,m,g,y,b,w,E;(v=this.$(".desc")).empty(),o={iconName:"",command:""},(h=this.model.get("mode"))==="through"&&(p=!0,h=this.model.get("lastMode"));switch(h){case"sleep":(d=this.model.get("sleep"))||this.model.set("sleep",d=100),v.append(this.tmplSleep({sleep:d}));break;case"bookmark":e=this.model.get("bookmark"),v.append(this.tmplBookmark({openmode:S[e.openmode],url:e.url,title:e.title})),o={iconName:"icon-pencil",command:"Edit bookmark..."};break;case"command":s=(n=T[this.model.get("command").name])[1];if(n[2]){i=[],t=this.model.get("command"),c=((b=t.content)!=null?b.split("\n"):void 0)||[];for(a=g=0,w=c.length;0<=w?g<w:g>w;a=0<=w?++g:--g){if(a>2){i[a-1]+=" ...";break}i.push(c[a].replace(/"/g,"'"))}v.append(this.tmplCommandCustom({ctg:n[3],desc:s,content3row:i.join("\n"),caption:t.caption})),o={iconName:"icon-pencil",command:"Edit command..."}}else v.append(this.tmplCommand({desc:s,ctg:n[0].substring(0,1).toUpperCase()+n[0].substring(1)}));break;case"remap":case"disabled":h==="remap"?l=this.$(".origin").text():l=this.$(".new").text(),l=l.replace(/\s/g,"").toUpperCase(),(u=X[l])||/^CTRL\+[2-7]$/.test(l)&&(u=X["CTRL+1"]);if(u&&u[this.lang])for(a=y=0,E=u[this.lang].length;0<=E?y<E:y>E;a=0<=E?++y:--y)m=u[this.lang][a].match(/(^\w+)\^(.+)/),f=RegExp.$1,r=RegExp.$2,v.append(this.tmplHelp({sectDesc:V[f],sectKey:f,scHelp:r})).find(".sectInit").tooltip({position:{my:"left+10 top-60"},tooltipClass:"tooltipClass"})}return v.html()===""&&(v.append(this.tmplMemo({memo:this.model.get("memo")})),o={iconName:"icon-pencil",command:"Edit comment"}),v.append(this.tmplDesc(o)),h==="disabled"&&this.$(".addKey,.copySC,.seprater.1st,div.ctxmenu,.addCommand").hide(),o.iconName===""&&v.find(".edit").hide(),p?v.find(".pause").hide():v.find(".resume").hide(),this.$el.hasClass("child")&&v.find(".ctxmenu,.copySC").hide(),(this.$el.hasClass("child")||this.$el.hasClass("parent"))&&v.append(this.tmplUpDown),this.onChangeCtxmenu()},tmplDesc:_.template('<button class="cog small" title="menu"><i class="icon-caret-down"></i></button>\n<div class="selectCog" tabIndex="0">\n  <div class="edit"><i class="<%=iconName%>"></i> <%=command%></div>\n  <div class="addCommand"><i class="icon-plus"></i> Add command</div>\n  <div class="ctxmenu"><i class="icon-reorder"></i> Create context menu...</div>\n  <div class="copySC"><i class="icon-copy"></i> Copy script</div>\n  <span class="seprater 1st"><hr style="margin:3px 1px" noshade></span>\n  <div class="pause"><i class="icon-pause"></i> Pause</div>\n  <div class="resume"><i class="icon-play"></i> Resume</div>\n  <span class="seprater"><hr style="margin:3px 1px" noshade></span>\n  <div class="delete"><i class="icon-trash"></i> Delete</div>\n</div>'),tmplUpDown:'    <ul class="button-bar updown">\n      <li class="first"><a href="#" title="up"><i class="icon-chevron-up"></i></a></li>\n  <li class="last"><a href="#" title="down"><i class="icon-chevron-down"></i></a></li>\n</ul>',tmplMemo:_.template('<form class="memo">\n  <input type="text" class="memo">\n</form>\n<div class="memo"><%=memo%></div>'),tmplSleep:_.template('<form class="formSleep">\n  <input type="number" class="inputSleep" min="0" max="60000" step="10" required>\n  <span class="dispSleep" title="Sleep <%=sleep%> msec"><%=sleep%></span>\n  <i class="icon-pencil editSleep" title="Edit sleep msec(0-60000)"></i>\n</form>'),tmplBookmark:_.template('<div class="bookmark" title="<%=url%>\n[<%=openmode%>]" style="background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);"><%=title%></div>'),tmplCommand:_.template('<div class="ctgIcon <%=ctg%>"><%=ctg%></div><div class="command"><%=desc%></div>'),tmplCommandCustom:_.template('<div class="ctgIcon <%=ctg%>" title="<%=desc%>"><%=ctg%></div><div class="commandCaption" title="<%=content3row%>"><%=caption%></div>'),tmplHelp:_.template('<div class="sectInit" title="<%=sectDesc%>"><%=sectKey%></div><div class="content"><%=scHelp%></div>'),template:_.template('<tr class="data">\n  <th>\n    <div class="new" tabIndex="0"></div>\n    <div class="grpbartop"></div>\n    <div class="grpbarbtm"></div>\n  </th>\n  <th>\n    <i class="icon-arrow-right"></i>\n  </th>\n  <th class="tdOrigin">\n    <div class="origin" tabIndex="-1"></div>\n  </th>\n  <td class="options">\n    <div class="mode"><i class="icon"></i><span></span><i class="icon-caret-down"></i></div>\n    <div class="selectMode" tabIndex="0">\n      <% _.each(options, function(option, key) { if (option[2] != "nodisp") { %>\n      <div class="<%=key%>"><i class="icon <%=option[1]%>"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class="ctxmenu"></td>\n  <td class="desc"></td>\n  <td class="blank">&nbsp;</td>\n</tr>')}),v=Backbone.View.extend({placeholder:"Enter new shortcut key",el:"table.keyConfigSetView",events:{"click .addnew":"onClickAddnew","blur  .addnew":"onBlurAddnew",click:"onClickBlank","click .scrollEnd i":"onClickScrollEnd"},initialize:function(e){return this.model.on("change:lang",this.onChangeLang,this),this.model.on("change:kbdtype",this.onChangeKbdtype,this),this.collection.comparator=function(e){return e.get("order")},this.collection.on({add:this.onAddRender,kbdEvent:this.onKbdEvent},this)},render:function(t){var n=this;return this.$el.append(this.template()),this.collection.set(t),this.$("tbody").sortable({delay:300,scroll:!0,cancel:"tr.border,tr.child,input",placeholder:"ui-placeholder",forceHelperSize:!0,forcePlaceholderSize:!0,cursor:"move",start:function(){return n.onStartSort()},stop:function(e,t){return n.redrawTable(),t.item.effect("highlight",1500)[0].scrollIntoViewIfNeeded(!0)}}),e(".fixed-table-container-inner").on("scroll",function(t){return this.scrollTop<10?e(".header-background").removeClass("scrolling"):(e(".header-background").addClass("scrolling"),e(".scrollEnd").show()),this.scrollTop+30>this.scrollHeight-this.offsetHeight?e(".footer").removeClass("scrolling"):(e(".footer").addClass("scrolling"),e(".scrollEnd").show())}).niceScroll({cursorwidth:13,cursorborderradius:2,smoothscroll:!0,cursoropacitymin:.3,cursoropacitymax:.7,zindex:999998}),this.niceScroll=e(".fixed-table-container-inner").getNiceScroll(),F=!1,this.redrawTable(),this},onAddRender:function(t){var n,r,i;r=new m({model:t}),r.on("removeConfig",this.onChildRemoveConfig,this),r.on("resizeInput",this.onChildResizeInput,this),r.on("showPopup",this.onShowPopup,this),r.on("addCtxMenu",this.onAddCtxMenu,this),r.on("updateChildPos",this.redrawTable,this),r.on("remakeCtxMenu",this.onRemakeCtxMenu,this),r.on("getConfigValue",this.onGetConfigValue,this),n=this.$("tr.addnew")[0]||null,i=this.$("tbody")[0],/^C/.test(t.id)&&j&&(n=j.nextSibling||null),i.insertBefore(r.render(this.model.get("kbdtype"),this.model.get("lang")).el,n),i.insertBefore(e(this.tmplBorder)[0],n),r.state==="invalid"&&this.onChildRemoveConfig(t);if(n||/^C/.test(t.id)&&!F)this.$("div.addnew").blur(),this.redrawTable();if(/^C/.test(t.id)&&j)return j=null,this.collection.get(t.get("parentId")).trigger("setRowspan"),setTimeout(function(){return t.trigger("setFocus")},0)},onKbdEvent:function(t){var n,r,i;if(this.$(".addnew").length===0){if((i=this.$(".new:focus,.origin:focus")).length!==0)return;if(n=this.collection.get(t)){n.trigger("setFocus",null,".new");return}if(!this.onClickAddKeyConfig())return}if(this.collection.findWhere({"new":t})){e("#tiptip_content").text('"'+C(t)+'" already exists.'),this.$("div.addnew").tipTip();return}return this.collection.add(r=new p({"new":t,origin:~~t.substring(2)>=512?"0130":t})),this.$("tbody").sortable("enable").sortable("refresh"),Q(),this.onChildResizeInput(),r.trigger("setFocus")},onChildRemoveConfig:function(e){return this.collection.remove(e),this.redrawTable(),Q(),this.onChildResizeInput()},onChildResizeInput:function(){var e=this;return this.$(".th_inner").css("left",0),setTimeout(function(){return e.$(".th_inner").css("left","")},0)},onShowPopup:function(e,t){return this.trigger("showPopup",e,t)},onRemakeCtxMenu:function(e){return E.remakeCtxMenu(this.getSaveData()).done(function(){return e.dfd.resolve()})},onAddCtxMenu:function(e){return this.trigger("addCtxMenu",e)},onTriggerEventSelected:function(){return this.collection.models.forEach(function(e){return e.trigger("triggerEventCtxMenuSelected")}),this.redrawTable()},onSetCtxMenus:function(e){var t=this;return this.collection.models.forEach(function(e){return e.unset("ctxMenu")}),e.forEach(function(e){var n;return n=t.collection.get(e.id),n.set("ctxMenu",e)})},onGetCtxMenues:function(e){return e.ctxMenus=[],this.collection.models.forEach(function(t){var n;if(n=t.get("ctxMenu"))return e.ctxMenus.push({id:t.id,caption:n.caption,contexts:n.contexts,parentId:n.parentId,shortcut:C(t.id),order:n.order||999})}),e.ctxMenus.sort(function(e,t){return e.order-t.order})},onEnterCtxMenuSelMode:function(e){return this.$("button").attr("disabled","disabled").addClass("disabled"),this.collection.models.forEach(function(t){var n;return t.trigger("setUnselectable",(n=t.id,rt.call(e,n)>=0)?!0:!1)}),this.$("tbody").sortable("disable").selectable({cancel:"tr:has(div.ctxmenu-icon)",filter:"tr"}).find("tr:has(div.mode[title='Disabled'])").addClass("unselectable").end().find("tr:has(div.ctxmenu-icon)").addClass("unselectable").end().find("div.mode,div.new,div.origin").addClass("unselectable").end(),this.onStartSort()},onLeaveCtxMenuSelMode:function(e){this.$("button").removeAttr("disabled").removeClass("disabled"),this.$("tbody").selectable("destroy").sortable("enable").find("div.unselectable").removeClass("unselectable").end();if(e)return this.$("tr").removeClass("ui-selected unselectable"),this.redrawTable()},onGetEditerSize:function(e){var t;if(t=this.model.get("editerSize"))return e.width=t.width,e.height=t.height},onSetEditerSize:function(e,t){return this.model.set("editerSize",{width:e,height:t})},onGetSaveData:function(e){return e.data=this.getSaveData()},onSetSaveData:function(e){var t;this.collection.remove(this.collection.findWhere({"new":this.placeholder})),this.model.set(e.config),N.collection.reset(e.ctxMenuFolderSet);while(t=this.collection.at(0))this.collection.remove(t);return F=!0,this.collection.set(e.keyConfigSet),this.redrawTable(),F=!1,Q()},onGetConfigValue:function(e,t){return t.result=this.model.get(e)},onClickScrollEnd:function(t){var n;return/icon-double-angle-up/.test(t.target.className)?n=0:n=1e4,e(".fixed-table-container-inner")[0].scrollTop=n},onKeyDown:function(e){var t,n,r,i,s,o,u,a,f;if(!this.model.get("singleKey"))return;if(!(!(t=document.activeElement)||(a=t.tagName)!=="TEXTAREA"&&a!=="INPUT"&&a!=="SELECT"))return;if(i=keyIdentifiers[this.model.get("kbdtype")][e.originalEvent.keyIdentifier]){if(e.originalEvent.shiftKey){if(!(r=i[1]))return;s="04"}else r=i[0],s="00";for(n=u=0,f=H.length;0<=f?u<f:u>f;n=0<=f?++u:--u)if(H[n]&&(r===H[n][0]||r===H[n][1])){o=n;break}if(o)return this.onKbdEvent(s+n)}},onClickAddKeyConfig:function(t){var n;if(this.$(".addnew").length>0)return;return this.collection.length>O?(e("#tiptip_content").text("You have reached the maximum number of items. (Max "+O+" items)"),e(t.currentTarget).tipTip({defaultPosition:"left"}),!1):(n=e(this.tmplAddNew({placeholder:this.placeholder})),/child/.test(j!=null?j.className:void 0)&&(j=e(j).prevAll(".parent:first")[0]),this.$("tbody")[0].insertBefore(n[0],j),n.find(".addnew").focus()[0].scrollIntoViewIfNeeded(),this.$("tbody").sortable("disable"),Q())},onClickBlank:function(){return this.$(":focus").blur(),j=null},onClickAddnew:function(e){return e.stopPropagation()},onBlurAddnew:function(){return this.$(".addnew").remove(),this.$("tbody").sortable("enable"),Q()},onChangeLang:function(){return this.collection.trigger("changeLang",this.model.get("lang"))},onChangeKbdtype:function(){return this.collection.trigger("changeKbd",this.model.get("kbdtype"))},onStartSort:function(){return this.$("tr.child").hide(),this.$(".ui-placeholder").nextAll("tr.border:first,tr.border:last").remove(),this.$(".parent th:first-child").removeAttr("rowspan")},redrawTable:function(){var t=this;return this.$("tr.child").show(),this.$("tr.border").remove(),this.collection.models.forEach(function(e){return e.trigger("setRowspan")}),e("#sortarea").append(this.$("tr.data")),this.collection.trigger("updateOrderByEl"),this.collection.sort(),this.collection.models.forEach(function(e){var t;if(t=e.get("parentId"))return e.set("order",999)}),this.collection.sort(),this.collection.models.forEach(function(e){var n;if(n=e.get("parentId"))return e.set("order",t.collection.get(n).get("order"))}),this.collection.sort(),e.each(this.collection.models,function(e,t){return t.set("order",e),t.trigger("updatePosition")}),e.each(e("#sortarea tr"),function(e,n){return t.$("tbody").append(n)}),this.$("tr.last").removeClass("last"),e.each(this.$("tbody > tr"),function(n,r){var i,s;if(!/child/.test((s=r.nextSibling)!=null?s.className:void 0)){(i=e(r)).after(t.tmplBorder);if(/child/.test(r.className))return i.addClass("last")}})},getSaveData:function(){return this.collection.remove(this.collection.findWhere({"new":this.placeholder})),{config:this.model.toJSON(),ctxMenuFolderSet:N.collection.sort().toJSON(),keyConfigSet:this.collection
-.toJSON()}},tmplAddNew:_.template('<tr class="addnew">\n  <th colspan="3">\n    <div class="new addnew" tabIndex="0"><%=placeholder%></div>\n  </th>\n  <td></td><td></td><td></td><td class="blank"></td>\n</tr>'),tmplBorder:'<tr class="border">\n  <td colspan="6"><div class="border"></div></td>\n  <td></td>\n</tr>',template:_.template('<thead>\n  <tr>\n    <th>\n      <div class="th_inner">New <i class="icon-arrow-right"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class="th_inner options">Mode</div>\n    </th>\n    <th class="ctxmenu"></th>\n    <th>\n      <div class="th_inner desc">Description</div>\n      <div class="scrollEnd top"><i class="icon-double-angle-up" title="Scroll to Top"></i></div>\n      <div class="scrollEnd bottom"><i class="icon-double-angle-down" title="Scroll to Bottom"></i></div>\n    </th>\n  </tr>\n</thead>\n<tbody></tbody>')}),y=Backbone.Router.extend({initialize:function(e){return this.collection=e.collection,this.popupType={bookmark:"popup",command:"popup",bookmarkOptions:"editable",commandOptions:"editable",ctxMenuOptions:"editable",ctxMenuManager:"editable",settings:"editable"}},routes:{"popup/:name(/:id)(/:option1)(/:option2)":"showPopup","editable/:name(/:id)(/:option1)(/:option2)":"showPopup","(:any)":"onNavigateRootPage"},showPopup:function(e,t,n,r){var i;return t&&(i=this.collection.get(t)),this.trigger("showPopup",e,i,n,r)},onNavigateRootPage:function(){return this.navigate("/"),this.trigger("hidePopup")},onNavigatePopup:function(e,t){var n;return n="",Array.prototype.slice.call(arguments,1).forEach(function(e){if(e)return n+="/"+e}),this.navigate(this.popupType[e]+"/"+e+n,{trigger:!0})}}),I=0,z=!1,Q=function(){return z&&clearTimeout(z),z=setTimeout(function(){var t;return t=window.innerHeight-document.querySelector(".header").offsetHeight-I,document.querySelector(".fixed-table-container").style.pixelHeight=t,e(".fixed-table-container-inner").getNiceScroll().resize(),e(".result_outer").getNiceScroll().resize()},200)},$=function(){E.startEdit()},L=function(){E.endEdit()},E=chrome.extension.getBackgroundPage().andy,e=jQuery,e(function(){var o,a,c,p,m,g,w,S,x;return D=E.getKeyCodes(),X=E.getScHelp(),V=E.getScHelpSect(),w=E.local,a=new s(w.config),g=new d,W=new y({collection:g}),m=new h({model:a}),x=new b({model:a}),P=new v({model:a,collection:g}),new n({}),new t({}),new i({}),o=new r({}),c=new u,p=new l({collection:c}),N=new f({collection:c}),m.on("showPopup",W.onNavigatePopup,W),P.on("showPopup",W.onNavigatePopup,W),m.on("clickAddKeyConfig",P.onClickAddKeyConfig,P),p.on("getCtxMenues",P.onGetCtxMenues,P),p.on("remakeCtxMenu",P.onRemakeCtxMenu,P),N.on("getCtxMenues",P.onGetCtxMenues,P),N.on("remakeCtxMenu",P.onRemakeCtxMenu,P),g.on("getCtxMenuContexts",N.onGetCtxMenuContexts,N),N.on("enterCtxMenuSelMode",P.onEnterCtxMenuSelMode,P),N.on("enterCtxMenuSelMode",m.onEnterCtxMenuSelMode,m),N.on("leaveCtxMenuSelMode",P.onLeaveCtxMenuSelMode,P),N.on("leaveCtxMenuSelMode",m.onLeaveCtxMenuSelMode,m),N.on("triggerEventSelected",P.onTriggerEventSelected,P),N.on("setCtxMenus",P.onSetCtxMenus,P),o.on("getEditerSize",P.onGetEditerSize,P),o.on("setEditerSize",P.onSetEditerSize,P),x.on("getSaveData",P.onGetSaveData,P),x.on("setSaveData",P.onSetSaveData,P),c.reset(w.ctxMenuFolderSet),P.render(w.keyConfigSet),chrome.runtime.onMessage.addListener(function(e,t,n){switch(e.action){case"kbdEvent":return P.collection.trigger("kbdEvent",e.value);case"saveConfig":return E.saveConfig(P.getSaveData())}}),e(window).on("unload",function(){return E.saveConfig(P.getSaveData())}).on("resize",function(){return Q()}).on("click",function(){return j=null}).on("keydown",function(e){return P.onKeyDown(e)}),Q(),S=e(".fixed-table-container-inner")[0],S.scrollHeight!==S.offsetHeight&&(e(".footer").addClass("scrolling"),e(".scrollEnd").show()),Backbone.history.start({pushState:!1})})}).call(this);
+// Generated by CoffeeScript 1.6.3
+(function() {
+  var $, BookmarkOptionsView, BookmarksView, CommandOptionsView, CommandsView, Config, CtxMenuFolder, CtxMenuFolderSet, CtxMenuGetterView, CtxMenuManagerView, CtxMenuOptionsView, ExplorerBaseView, HeaderView, KeyConfig, KeyConfigSet, KeyConfigSetView, KeyConfigView, PopupBaseView, Router, SettingsView, WebFontConfig, andy, bmOpenMode, catnames, commandsDisp, ctxMenuManagerView, decodeKbdEvent, defaultSleep, endEdit, escape, gMaxItems, getUuid, keyCodes, keyConfigSetView, keys, langs, lastFocused, loading, marginBottom, modeDisp, modifierInits, modifierKeys, resizeTimer, router, scHelp, scHelpSect, startEdit, tmplCtxMenus, transKbdEvent, windowOnResize, _ref, _ref1, _ref2, _ref3,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  keyCodes = {};
+
+  scHelp = null;
+
+  scHelpSect = null;
+
+  keys = null;
+
+  router = null;
+
+  keyConfigSetView = null;
+
+  ctxMenuManagerView = null;
+
+  PopupBaseView = Backbone.View.extend({
+    initialize: function(options) {
+      router.on("showPopup", this.onShowPopup, this);
+      router.on("hidePopup", this.onHidePopup, this);
+      router.listenTo(this, "showPopup", router.onNavigatePopup);
+      return router.listenTo(this, "hidePopup", router.onNavigateRootPage);
+    },
+    events: {
+      "submit form": "onSubmitForm",
+      "click  .icon-remove": "onClickIconRemove"
+    },
+    render: function() {},
+    onSubmitForm: function() {},
+    onShowPopup: function(name, model) {
+      var modelId, order, parentId, shortcut,
+        _this = this;
+      if (name !== this.name) {
+        this.$el.hide();
+        return false;
+      }
+      if (model) {
+        if (this.optionsName) {
+          this.options = model.get(this.optionsName);
+        }
+        order = "";
+        if (/^C/.test(modelId = model.get("new"))) {
+          shortcut = decodeKbdEvent(parentId = model.get("parentId"));
+          $.each(model.collection.where({
+            parentId: parentId
+          }), function(i, model) {
+            if (model.id === modelId) {
+              order = "-#" + (i + 1);
+              return false;
+            }
+          });
+        } else {
+          shortcut = decodeKbdEvent(modelId);
+        }
+        this.$(".shortcut").html(_.map(shortcut.split(" + "), function(s) {
+          return "<span>" + s + "</span>";
+        }).join("+") + order);
+        model.trigger("setSelected", true);
+        this.model = model;
+      }
+      this.render();
+      this.$el.show().draggable({
+        cursor: "move",
+        delay: 200,
+        cancel: "input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title,div.CodeMirror",
+        stop: function() {
+          return _this.onStopDrag();
+        }
+      });
+      this.el.style.pixelLeft = Math.round((window.innerWidth - this.el.offsetWidth) / 2);
+      this.el.style.pixelTop = Math.max(0, Math.round((window.innerHeight - this.el.offsetHeight) / 2));
+      this.$(".caption").focus();
+      $(".backscreen").show();
+      return true;
+    },
+    onStopDrag: function() {},
+    onClickIconRemove: function() {
+      return this.hidePopup();
+    },
+    onHidePopup: function() {
+      var _ref;
+      if (this.$el.is(":visible")) {
+        $(".backscreen").hide();
+        this.$el.hide();
+        return (_ref = this.model) != null ? _ref.trigger("setSelected", false) : void 0;
+      }
+    },
+    hidePopup: function() {
+      return this.trigger("hidePopup");
+    },
+    tmplHelp: _.template("<a href=\"helpview.html#<%=name%>\" target=\"helpview\" class=\"help\" title=\"help\">\n  <i class=\"icon-question-sign\" title=\"Help\"></i>\n</a>")
+  });
+
+  ExplorerBaseView = (function(_super) {
+    __extends(ExplorerBaseView, _super);
+
+    ExplorerBaseView.prototype.events = _.extend({
+      "click .expand-icon": "onClickExpandIcon",
+      "click .expandAll": "onClickExpandAll"
+    }, PopupBaseView.prototype.events);
+
+    function ExplorerBaseView(options) {
+      var ctx;
+      ExplorerBaseView.__super__.constructor.call(this, options);
+      ctx = document.getCSSCanvasContext("2d", "triangle", 10, 6);
+      ctx.translate(.5, .5);
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.moveTo(8, 0);
+      ctx.lineTo(8, .5);
+      ctx.lineTo(8 / 2 - .5, 8 / 2 + .5);
+      ctx.lineTo(0, .5);
+      ctx.lineTo(0, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      this.$(".result_outer").niceScroll({
+        cursorwidth: 12,
+        cursorborderradius: 6,
+        smoothscroll: true,
+        cursoropacitymin: .1,
+        cursoropacitymax: .6
+      });
+      this.elResult$ = this.$(".result");
+    }
+
+    ExplorerBaseView.prototype.onShowPopup = function(name, model) {
+      if (!ExplorerBaseView.__super__.onShowPopup.call(this, name, model)) {
+        this.$(".result_outer").getNiceScroll().hide();
+        return false;
+      }
+      this.$(".result_outer").getNiceScroll().show();
+      return true;
+    };
+
+    ExplorerBaseView.prototype.onStopDrag = function() {
+      return this.$(".result_outer").getNiceScroll().resize();
+    };
+
+    ExplorerBaseView.prototype.onHidePopup = function() {
+      if (this.$el.is(":visible")) {
+        this.$(".result_outer").getNiceScroll().hide();
+        return ExplorerBaseView.__super__.onHidePopup.call(this);
+      }
+    };
+
+    ExplorerBaseView.prototype.onClickExpandAll = function() {
+      if (this.$(".expandAll").is(":checked")) {
+        this.$(".folder,.contexts").addClass("opened expanded");
+      } else {
+        this.$(".folder,.contexts").removeClass("opened expanded");
+      }
+      return windowOnResize();
+    };
+
+    return ExplorerBaseView;
+
+  })(PopupBaseView);
+
+  langs = {
+    "en": ["English"],
+    "ja": ["Japanese"]
+  };
+
+  SettingsView = (function(_super) {
+    __extends(SettingsView, _super);
+
+    SettingsView.prototype.name = "settings";
+
+    SettingsView.prototype.el = ".settingsView";
+
+    SettingsView.prototype.events = _.extend({
+      "click .copyExp": "onClickCopy",
+      "click .saveSync": "onClickSaveSync",
+      "click .loadSync": "onClickLoadSync",
+      "click .paste": "onClickPaste",
+      "click .impReplace": "onClickReplace",
+      "click .impMerge": "onClickMerge",
+      "click .impRestore": "onClickRestore",
+      "click .tabs a": "onClickTab",
+      "click .clear": "onClickClear"
+    }, PopupBaseView.prototype.events);
+
+    function SettingsView(options) {
+      var lang$, selectKbd$,
+        _this = this;
+      SettingsView.__super__.constructor.call(this, options);
+      lang$ = this.$(".lang");
+      $.each(langs, function(key, item) {
+        return lang$.append("<option value=\"" + key + "\">" + item[0] + "</option>");
+      });
+      keys = keyCodes[this.model.get("kbdtype")].keys;
+      selectKbd$ = this.$(".kbdtype");
+      $.each(keyCodes, function(key, item) {
+        return selectKbd$.append("<option value=\"" + key + "\">" + item.name + "</option>");
+      });
+      this.model.trigger("change:lang");
+    }
+
+    SettingsView.prototype.render = function() {
+      var container, jsonstr;
+      this.$(".singleKey")[0].checked = this.model.get("singleKey");
+      this.$(".kbdtype").val(this.model.get("kbdtype"));
+      this.$(".lang").val(this.model.get("lang") || "ja");
+      this.trigger("getSaveData", container = {});
+      this.saveData = container.data;
+      this.$(".export").val(jsonstr = JSON.stringify(this.saveData));
+      if ((new Blob([jsonstr])).size >= 102400) {
+        this.$(".saveSync").attr("disabled", "disabled");
+      } else {
+        this.$(".saveSync").removeAttr("disabled");
+      }
+      this.$(".tabs li:has(a.tabImp)").removeClass("current");
+      this.$(".tabs li:has(a.tabExp)").addClass("current");
+      this.$("div.tabImp").hide();
+      this.$("div.tabExp").show();
+      return this;
+    };
+
+    SettingsView.prototype.onShowPopup = function(name) {
+      if (!SettingsView.__super__.onShowPopup.call(this, name)) {
+        return;
+      }
+      return this.$el.append(this.tmplHelp(this));
+    };
+
+    SettingsView.prototype.onSubmitForm = function() {
+      this.model.set({
+        kbdtype: this.$(".kbdtype").val(),
+        lang: this.$(".lang").val(),
+        singleKey: this.$(".singleKey").is(":checked")
+      });
+      this.hidePopup();
+      return false;
+    };
+
+    SettingsView.prototype.onClickTab = function(event) {
+      var currentTab$, newTab;
+      newTab = event.currentTarget.className;
+      if (!(currentTab$ = this.$("div." + newTab)).is(":visible")) {
+        this.$("div.tabExp,div.tabImp").hide();
+        currentTab$.show();
+        this.$(".tabs li").removeClass("current");
+        return this.$(".tabs li:has(a." + newTab + ")").addClass("current");
+      }
+    };
+
+    SettingsView.prototype.onClickCopy = function() {
+      return chrome.runtime.sendMessage({
+        action: "setClipboard",
+        value1: this.$(".export").val()
+      }, function(msg) {});
+    };
+
+    SettingsView.prototype.onClickSaveSync = function() {
+      var i, saved, syncData, _i, _ref,
+        _this = this;
+      saved = ((new Date).toString()).match(/(.*?)\s\(/)[1];
+      syncData = {
+        "saved": saved
+      };
+      for (i = _i = 0, _ref = this.saveData.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        syncData["sc" + (1000 + i)] = this.saveData.keyConfigSet[i];
+      }
+      syncData.config = this.saveData.config;
+      syncData.ctxMenuFolderSet = this.saveData.ctxMenuFolderSet;
+      return chrome.storage.sync.clear(function() {
+        var err;
+        if (err = chrome.runtime.lastError) {
+          return alert(err.message);
+        } else {
+          return chrome.storage.sync.set(syncData, function() {
+            if (err = chrome.runtime.lastError) {
+              return alert(err.message);
+            } else {
+              return chrome.storage.sync.getBytesInUse(null, function(bytes) {
+                if (bytes >= 1000) {
+                  bytes = Math.floor(bytes / 1000) + "," + bytes.toString().substr(-3);
+                }
+                return alert("Settings has been saved to Chrome Sync successfully.\n\n• Bytes in use/capacity: " + bytes + "/102,400");
+              });
+            }
+          });
+        }
+      });
+    };
+
+    SettingsView.prototype.onClickLoadSync = function() {
+      var _this = this;
+      return chrome.storage.sync.get(function(syncData) {
+        var i, saveData, scData;
+        saveData = {};
+        saveData.saved = syncData.saved;
+        saveData.config = syncData.config;
+        saveData.ctxMenuFolderSet = syncData.ctxMenuFolderSet;
+        saveData.keyConfigSet = [];
+        i = 0;
+        while (scData = syncData["sc" + (1000 + i++)]) {
+          saveData.keyConfigSet.push(scData);
+        }
+        return _this.$(".import").val(JSON.stringify(saveData));
+      });
+    };
+
+    SettingsView.prototype.onClickReplace = function() {
+      var e, jsonstr, saveData;
+      try {
+        saveData = JSON.parse(this.$(".import").val());
+        this.$(".impRestore").removeAttr("disabled").removeClass("disabled");
+        this.trigger("setSaveData", saveData);
+        this.lastSaveData = this.saveData;
+        this.$(".export").val(jsonstr = JSON.stringify(this.saveData = saveData));
+        return alert("Settings imported");
+      } catch (_error) {
+        e = _error;
+        return alert(e.message);
+      }
+    };
+
+    SettingsView.prototype.onClickPaste = function() {
+      return chrome.runtime.sendMessage({
+        action: "getClipboard"
+      }, function(resp) {
+        return this.$(".import").val(resp.data);
+      });
+    };
+
+    SettingsView.prototype.onClickRestore = function() {
+      return this.$(".import").val(JSON.stringify(this.lastSaveData));
+    };
+
+    SettingsView.prototype.onClickClear = function() {
+      return this.$(".import").val("");
+    };
+
+    SettingsView.prototype.chkImport = function() {};
+
+    SettingsView.prototype.chkData = function(keyConfigSet) {
+      var i, jsonstr, _i, _ref, _results;
+      if ((keyConfigSet || []).length > 0) {
+        _results = [];
+        for (i = _i = 0, _ref = keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          jsonstr = JSON.stringify(keyConfigSet[i]);
+          if ((new Blob([jsonstr])).size >= 4096) {
+            keyConfigSet[i]["new"];
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      }
+    };
+
+    return SettingsView;
+
+  })(PopupBaseView);
+
+  commandsDisp = {
+    createTab: ["tab", "Create new tab"],
+    createTabBG: ["tab", "Create new tab in background"],
+    moveTabLeft: ["tab", "Move current tab left"],
+    moveTabRight: ["tab", "Move current tab right"],
+    moveTabFirst: ["tab", "Move current tab to first position"],
+    moveTabLast: ["tab", "Move current tab to last position"],
+    closeOtherTabs: ["tab", "Close other tabs"],
+    closeTabsLeft: ["tab", "Close tabs to the left"],
+    closeTabsRight: ["tab", "Close tabs to the right"],
+    duplicateTab: ["tab", "Duplicate current tab"],
+    pinTab: ["tab", "Pin/Unpin current tab"],
+    detachTab: ["tab", "Detach current tab"],
+    attachTab: ["tab", "Attach current tab to the next window"],
+    switchPrevWin: ["win", "Switch to the previous window"],
+    switchNextWin: ["win", "Switch to the next window"],
+    closeOtherWins: ["win", "Close other windows"],
+    clearCache: ["clr", "Clear the browser's cache"],
+    clearCookiesAll: ["clr", "Clear the browser's cookies and site data"],
+    clearCookies: ["clr", "Clear all cookies for the current domain"],
+    pasteText: ["custom", "Paste fixed text", [], "Clip"],
+    insertCSS: [
+      "custom", "Inject CSS", [
+        {
+          value: "allFrames",
+          caption: "All frames"
+        }
+      ], "CSS", ""
+    ],
+    execJS: [
+      "custom", "Inject JavaScript", [
+        {
+          value: "allFrames",
+          caption: "All frames"
+        }, {
+          value: "coffee",
+          caption: "CoffeeScript"
+        }, {
+          value: "jquery",
+          caption: "jQuery"
+        }, {
+          value: "useUtilObj",
+          caption: "Use <a href=\"helpview.html#utilobj\" target=\"helpview\">utility object</a>"
+        }
+      ], "JS"
+    ]
+  };
+
+  catnames = {
+    tab: "Tabs",
+    win: "Windows",
+    clr: "Browsing data",
+    clip: "Clipboard",
+    custom: "Custom"
+  };
+
+  CommandOptionsView = (function(_super) {
+    __extends(CommandOptionsView, _super);
+
+    CommandOptionsView.prototype.name = "commandOptions";
+
+    CommandOptionsView.prototype.el = ".commandOptions";
+
+    CommandOptionsView.prototype.optionsName = "command";
+
+    CommandOptionsView.prototype.events = _.extend({
+      "click input[value='coffee']": "onClickChkCoffee",
+      "click .tabs a": "onClickSwitchCoffee"
+    }, PopupBaseView.prototype.events);
+
+    function CommandOptionsView(options) {
+      var _this = this;
+      this.editer = CodeMirror.fromTextArea($(".content")[0], {
+        mode: "text/javascript",
+        theme: "default",
+        tabSize: 4,
+        indentUnit: 4,
+        indentWithTabs: true,
+        lineNumbers: true,
+        firstLineNumber: 1,
+        gutter: false,
+        fixedGutter: false,
+        matchBrackets: true
+      });
+      $(".CodeMirror-scroll").addClass("result_outer");
+      this.editer.on("change", function() {
+        return _this.onStopDrag();
+      });
+      this.editer.lineAtHeight(18);
+      CommandOptionsView.__super__.constructor.call(this, options);
+      this.$(".content_outer").resizable({
+        minWidth: 650,
+        minHeight: 100
+      });
+    }
+
+    CommandOptionsView.prototype.render = function() {
+      var commandOption, container,
+        _this = this;
+      this.optionsName = "command";
+      if (this.commandName && this.commandName !== "bookmarklet") {
+        this.options = {
+          name: this.commandName
+        };
+      }
+      this.trigger("getEditerSize", container = {});
+      if (container.width) {
+        this.$(".content_outer").width(container.width).height(container.height);
+      } else {
+        this.$(".content_outer").width(700).height(200);
+      }
+      this.$(".command").html(commandsDisp[this.options.name][1]);
+      this.$(".caption").val(this.options.caption);
+      commandOption = this.$(".inputs").empty();
+      commandsDisp[this.options.name][2].forEach(function(option) {
+        option.checked = "";
+        if (_this.options[option.value]) {
+          option.checked = "checked";
+        }
+        return commandOption.append(_this.tmplOptions(option));
+      });
+      this.$el.append(this.tmplHelp(this));
+      this.editer.setOption("readOnly", false);
+      return this.onClickChkCoffee({
+        currentTarget: this.$("input[value='coffee']")
+      });
+    };
+
+    CommandOptionsView.prototype.showPopup2 = function() {
+      var history;
+      if (this.options.name === "pasteText") {
+        this.cmMode = "plain";
+      } else if (this.options.name === "insertCSS") {
+        this.cmMode = "css";
+      } else {
+        if (this.options.coffee) {
+          this.cmMode = "x-coffeescript";
+        } else {
+          this.cmMode = "javascript";
+        }
+      }
+      this.editer.setOption("mode", "text/" + this.cmMode);
+      this.editer.setValue(this.options.content || "");
+      this.editer.clearHistory();
+      if (history = andy.getUndoData(this.model.id)) {
+        this.editer.setHistory(history);
+      }
+      if (this.options.content) {
+        return this.editer.focus();
+      } else {
+        return this.$(".caption").focus();
+      }
+    };
+
+    CommandOptionsView.prototype.onShowPopup = function(name, model, commandName, bmId) {
+      var _this = this;
+      this.commandName = commandName;
+      if (this.name === name) {
+        if (bmId) {
+          return chrome.bookmarks.get(bmId, function(treeNode) {
+            var node;
+            if (node = treeNode[0]) {
+              _this.options = {
+                name: "execJS",
+                caption: node.title,
+                content: $.trim(node.url.substring(11))
+              };
+              _this.optionsName = null;
+              CommandOptionsView.__super__.onShowPopup.call(_this, name, model);
+              return _this.showPopup2();
+            }
+          });
+        } else {
+          CommandOptionsView.__super__.onShowPopup.call(this, name, model);
+          return this.showPopup2();
+        }
+      } else {
+        return this.$el.hide();
+      }
+    };
+
+    CommandOptionsView.prototype.onSubmitForm = function() {
+      var caption, content, options, result,
+        _this = this;
+      if ((content = this.$(".content").val()) !== "") {
+        options = {};
+        $.each(this.$(".inputs input[type='checkbox']"), function(i, option) {
+          options[option.value] = option.checked;
+        });
+        if (!(caption = this.$(".caption").val())) {
+          caption = content.split("\n")[0];
+        }
+        if (this.options.name === "execJS" && options.coffee) {
+          content = this.$(".tabs li:has(a.x-coffeescript)").hasClass("current") ? content : this.coffee;
+          result = andy.coffee2JS(this.model.id, content);
+          if (!result.success) {
+            if (!confirm("A compilation error has occurred, but do you continue?\n\n  " + result.err)) {
+              return false;
+            }
+          }
+        }
+        if (this.options.name !== "execJS" || this.$(".tabs li:has(a.x-coffeescript)").hasClass("current")) {
+          this.undoData = this.editer.getHistory();
+        }
+        andy.setUndoData(this.model.id, this.undoData);
+        this.model.set({
+          "command": _.extend({
+            name: this.options.name,
+            caption: caption,
+            content: content
+          }, options)
+        }, {
+          silent: true
+        }).trigger("change:command");
+        this.hidePopup();
+      }
+      return false;
+    };
+
+    CommandOptionsView.prototype.onClickChkCoffee = function(event) {
+      if ($(event.currentTarget).is(":checked") && this.options.name === "execJS") {
+        this.$(".tabs").show();
+        this.cmMode = "x-coffeescript";
+        this.$(".tabs li").removeClass("current");
+        this.$(".tabs li:has(a[class='" + this.cmMode + "'])").addClass("current");
+      } else {
+        this.$(".tabs").hide();
+        this.cmMode = "javascript";
+        this.editer.setOption("readOnly", false);
+        if (this.$(".tabs li:has(a.javascript)").hasClass("current")) {
+          this.editer.clearHistory();
+        }
+      }
+      return this.editer.setOption("mode", "text/" + this.cmMode);
+    };
+
+    CommandOptionsView.prototype.onClickSwitchCoffee = function(event) {
+      var className, e, readOnly, value;
+      if ((className = event.currentTarget.className) !== this.cmMode) {
+        if (readOnly = className === "javascript") {
+          try {
+            value = CoffeeScript.compile((this.coffee = this.editer.getValue()), {
+              bare: "on"
+            });
+            this.undoData = this.editer.getHistory();
+          } catch (_error) {
+            e = _error;
+            alert("A compilation error has occurred.\n\n  " + e.message);
+            return;
+          }
+        } else {
+          value = this.coffee;
+        }
+        this.editer.setValue("");
+        this.editer.setOption("mode", "text/" + (this.cmMode = className));
+        this.editer.setValue(value);
+        this.editer.setOption("readOnly", readOnly);
+        if (this.cmMode === "x-coffeescript") {
+          this.editer.clearHistory();
+          this.editer.setHistory(this.undoData);
+        }
+        this.$(".tabs li").removeClass("current");
+        return this.$(".tabs li:has(a[class='" + this.cmMode + "'])").addClass("current");
+      }
+    };
+
+    CommandOptionsView.prototype.hidePopup = function() {
+      this.trigger("setEditerSize", this.$(".content_outer").width(), this.$(".content_outer").height());
+      return CommandOptionsView.__super__.hidePopup.call(this);
+    };
+
+    CommandOptionsView.prototype.tmplOptions = _.template("<label>\n  <input type=\"checkbox\" value=\"<%=value%>\" <%=checked%>> <%=caption%>\n</label><br>");
+
+    return CommandOptionsView;
+
+  })(ExplorerBaseView);
+
+  CommandsView = (function(_super) {
+    __extends(CommandsView, _super);
+
+    function CommandsView() {
+      _ref = CommandsView.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    CommandsView.prototype.name = "command";
+
+    CommandsView.prototype.el = ".commands";
+
+    CommandsView.prototype.optionsName = "command";
+
+    CommandsView.prototype.render = function() {
+      var categories, key, target$;
+      target$ = this.$(".commandRadios");
+      target$.empty();
+      categories = [];
+      for (key in commandsDisp) {
+        categories.push(commandsDisp[key][0]);
+      }
+      categories = _.unique(categories);
+      categories.forEach(function(cat) {
+        return target$.append("<div class=\"cat" + cat + "\"><div class=\"catname\">" + catnames[cat] + "</div>");
+      });
+      for (key in commandsDisp) {
+        target$.find(".cat" + commandsDisp[key][0]).append(this.tmplItem({
+          key: key,
+          value: commandsDisp[key][1]
+        }));
+      }
+      return this;
+    };
+
+    CommandsView.prototype.onShowPopup = function(name, model) {
+      if (!CommandsView.__super__.onShowPopup.call(this, name, model)) {
+        return;
+      }
+      if (this.options) {
+        this.$(".radioCommand").val([this.options.name]);
+      }
+      return this.$el.append(this.tmplHelp(this));
+    };
+
+    CommandsView.prototype.onSubmitForm = function() {
+      var command;
+      if (command = this.$(".radioCommand:checked").val()) {
+        if (commandsDisp[command][2]) {
+          this.trigger("showPopup", "commandOptions", this.model.id, command);
+        } else {
+          this.hidePopup();
+          this.model.set({
+            "command": {
+              name: command
+            }
+          }, {
+            silent: true
+          }).trigger("change:command");
+        }
+      }
+      return false;
+    };
+
+    CommandsView.prototype.tmplItem = _.template("<div>\n  <label>\n    <input type=\"radio\" name=\"radioCommand\" class=\"radioCommand\" value=\"<%=key%>\">\n    <%=value%>\n  </label>\n</div>");
+
+    return CommandsView;
+
+  })(PopupBaseView);
+
+  BookmarkOptionsView = (function(_super) {
+    __extends(BookmarkOptionsView, _super);
+
+    function BookmarkOptionsView() {
+      _ref1 = BookmarkOptionsView.__super__.constructor.apply(this, arguments);
+      return _ref1;
+    }
+
+    BookmarkOptionsView.prototype.name = "bookmarkOptions";
+
+    BookmarkOptionsView.prototype.el = ".bookmarkOptions";
+
+    BookmarkOptionsView.prototype.optionsName = "bookmark";
+
+    BookmarkOptionsView.prototype.events = _.extend({
+      "click input[value='findtab']": "onClickFindTab",
+      "change input[name='openmode']:radio": "onChangeOpenmode"
+    }, PopupBaseView.prototype.events);
+
+    BookmarkOptionsView.prototype.render = function() {
+      var elFindtab, findtab, _ref2, _ref3;
+      if (this.newSite) {
+        this.options = this.newSite;
+      }
+      this.$(".bookmark").css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/" + this.options.url + ") 1x)").text(this.options.title);
+      this.$(".url").text(this.options.url);
+      this.$(".findStr").val(this.options.findStr || this.options.url);
+      if ((_ref2 = this.$("input[value='" + (this.options.openmode || 'current') + "']").get(0)) != null) {
+        _ref2.checked = true;
+      }
+      this.$(".tabpos").val("last");
+      if ((_ref3 = this.options.openmode) === "left" || _ref3 === "right" || _ref3 === "first" || _ref3 === "last") {
+        this.$("input[value='newtab']")[0].checked = true;
+        this.$(".tabpos").val(this.options.openmode);
+      }
+      (elFindtab = this.$("input[value='findtab']")[0]).checked = (findtab = this.options.findtab) === void 0 ? true : findtab;
+      this.onClickFindTab({
+        currentTarget: elFindtab
+      });
+      this.$("input[value='noActivate']")[0].checked = this.options.noActivate;
+      return this.$el.append(this.tmplHelp(this));
+    };
+
+    BookmarkOptionsView.prototype.onShowPopup = function(name, model, bmId) {
+      var _this = this;
+      if (this.name === name) {
+        this.newSite = null;
+        if (bmId) {
+          return chrome.bookmarks.get(bmId, function(treeNode) {
+            return treeNode.forEach(function(node) {
+              _this.newSite = node;
+              return BookmarkOptionsView.__super__.onShowPopup.call(_this, name, model);
+            });
+          });
+        } else {
+          return BookmarkOptionsView.__super__.onShowPopup.call(this, name, model);
+        }
+      } else {
+        return this.$el.hide();
+      }
+    };
+
+    BookmarkOptionsView.prototype.onSubmitForm = function() {
+      var options,
+        _this = this;
+      options = {
+        findtab: this.$("input[value='findtab']").is(":checked"),
+        openmode: this.$("input[name='openmode']:checked").attr("value"),
+        findStr: this.$(".findStr").val()
+      };
+      $.each(this.$("form input[type='checkbox']"), function(i, option) {
+        options[option.value] = option.checked;
+      });
+      if (options.openmode === "newtab") {
+        options.openmode = this.$(".tabpos").val();
+      }
+      this.model.set({
+        "bookmark": _.extend(this.options, options)
+      }, {
+        silent: true
+      }).trigger("change:bookmark");
+      this.hidePopup();
+      return false;
+    };
+
+    BookmarkOptionsView.prototype.onChangeOpenmode = function(event) {
+      var chkFindtab$, openmode;
+      openmode = this.$("input[name='openmode']:checked").val();
+      chkFindtab$ = this.$("input[value='findtab']");
+      if (openmode === "findonly") {
+        chkFindtab$.attr("disabled", "disabled")[0].checked = true;
+      } else {
+        chkFindtab$.removeAttr("disabled");
+      }
+      return this.onClickFindTab({
+        currentTarget: {
+          checked: chkFindtab$[0].checked
+        }
+      });
+    };
+
+    BookmarkOptionsView.prototype.onClickFindTab = function(event) {
+      if (event.currentTarget.checked) {
+        return this.$(".findStr").removeAttr("disabled");
+      } else {
+        return this.$(".findStr").attr("disabled", "disabled").blur();
+      }
+    };
+
+    return BookmarkOptionsView;
+
+  })(PopupBaseView);
+
+  BookmarksView = (function(_super) {
+    __extends(BookmarksView, _super);
+
+    function BookmarksView() {
+      _ref2 = BookmarksView.__super__.constructor.apply(this, arguments);
+      return _ref2;
+    }
+
+    BookmarksView.prototype.name = "bookmark";
+
+    BookmarksView.prototype.el = ".bookmarks";
+
+    BookmarksView.prototype.events = _.extend({
+      "click  a": "onClickBookmark",
+      "click .title": "onClickFolder",
+      "click .expand-icon": "onClickExpandIcon"
+    }, ExplorerBaseView.prototype.events);
+
+    BookmarksView.prototype.render = function() {
+      var height;
+      height = window.innerHeight - 60;
+      this.$(".result_outer").height(height - 35);
+      this.$el.height(height);
+      if (this.$(".result").children().length === 0) {
+        this.onSubmitForm();
+      }
+      return this;
+    };
+
+    BookmarksView.prototype.onShowPopup = function(name, model) {
+      var target;
+      if (!BookmarksView.__super__.onShowPopup.call(this, name, model)) {
+        return;
+      }
+      if ((target = this.$("input.query")).val()) {
+        return target.focus();
+      }
+    };
+
+    BookmarksView.prototype.onSubmitForm = function() {
+      var query, state,
+        _this = this;
+      this.$(".result").empty();
+      query = this.$("input.query").focus().val();
+      if (query) {
+        this.$(".expandAll")[0].checked = true;
+      }
+      state = this.$(".expandAll").is(":checked") ? "opened expanded" : "";
+      chrome.bookmarks.getTree(function(treeNode) {
+        var recent;
+        treeNode.forEach(function(node) {
+          return _this.digBookmarks(node, _this.elResult$, query, 0, state);
+        });
+        _this.elResult$.append(recent = $(_this.tmplFolder({
+          "title": "Recent",
+          "state": state,
+          "indent": 0
+        })));
+        recent.find(".title").prepend("<img src=\"images/star.png\">");
+        return chrome.bookmarks.getRecent(50, function(treeNode) {
+          return treeNode.forEach(function(node) {
+            return _this.digBookmarks(node, recent, query, 1, state);
+          });
+        });
+      });
+      return false;
+    };
+
+    BookmarksView.prototype.digBookmarks = function(node, parent, query, indent, state) {
+      var newParent,
+        _this = this;
+      if (node.title) {
+        node.state = state;
+        if (node.children) {
+          node.indent = indent;
+          parent.append(newParent = $(this.tmplFolder(node)));
+          parent = newParent;
+        } else {
+          if (!query || (node.title + " " + node.url).toUpperCase().indexOf(query.toUpperCase()) > -1) {
+            node.indent = indent + 1;
+            parent.append($(this.tmplLink(node)));
+          }
+        }
+      } else {
+        indent--;
+      }
+      if (node.children) {
+        parent.parent().addClass("hasFolder");
+        return node.children.forEach(function(child) {
+          return _this.digBookmarks(child, parent, query, indent + 1, state);
+        });
+      }
+    };
+
+    BookmarksView.prototype.onClickFolder = function(event) {
+      var target$, visible;
+      visible = (target$ = $(event.currentTarget).parent()).hasClass("opened");
+      if (visible) {
+        target$.removeClass("opened expanded");
+      } else {
+        target$.addClass("opened expanded");
+      }
+      windowOnResize();
+      return event.stopPropagation();
+    };
+
+    BookmarksView.prototype.onClickExpandIcon = function(event) {
+      var expanded, target$;
+      expanded = (target$ = $(event.currentTarget).parent()).hasClass("expanded");
+      if (expanded) {
+        target$.removeClass("expanded");
+      } else {
+        target$.addClass("expanded");
+      }
+      windowOnResize();
+      return event.stopPropagation();
+    };
+
+    BookmarksView.prototype.onClickBookmark = function(event) {
+      var target$;
+      target$ = $(event.currentTarget);
+      if (/^javascript:/i.test(target$.attr("title"))) {
+        this.trigger("showPopup", "commandOptions", this.model.id, "bookmarklet", target$.attr("data-id"));
+      } else {
+        this.trigger("showPopup", "bookmarkOptions", this.model.id, target$.attr("data-id"));
+      }
+      return false;
+    };
+
+    BookmarksView.prototype.tmplFolder = _.template("<div class=\"folder <%=state%>\" style=\"text-indent:<%=indent%>em\">\n  <span class=\"expand-icon\"></span><span class=\"title\"><%=title%></span>\n</div>");
+
+    BookmarksView.prototype.tmplLink = _.template("<div class=\"link\" style=\"text-indent:<%=indent%>em;\">\n  <a href=\"#\" title=\"<%=url%>\" data-id=\"<%=id%>\" style=\"background-image:-webkit-image-set(url('chrome://favicon/size/16@1x/<%=url%>') 1x);\"><%=title%></a>\n</div>");
+
+    return BookmarksView;
+
+  })(ExplorerBaseView);
+
+  tmplCtxMenus = {
+    page: ["Return the page URL", "icon-file-alt"],
+    selection: ["Return the selection text", "icon-font"],
+    editable: ["Return the page URL or selection text", "icon-edit"],
+    link: ["Return the link URL", "icon-link"],
+    image: ["Return the image URL", "icon-picture"],
+    all: ["Return any of the above", "icon-asterisk"]
+  };
+
+  getUuid = function(init) {
+    var S4;
+    S4 = function() {
+      return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    };
+    return init + [S4(), S4()].join("").toUpperCase() + (new Date / 1000 | 0);
+  };
+
+  CtxMenuOptionsView = (function(_super) {
+    __extends(CtxMenuOptionsView, _super);
+
+    function CtxMenuOptionsView() {
+      _ref3 = CtxMenuOptionsView.__super__.constructor.apply(this, arguments);
+      return _ref3;
+    }
+
+    CtxMenuOptionsView.prototype.name = "ctxMenuOptions";
+
+    CtxMenuOptionsView.prototype.el = ".ctxMenuOptions";
+
+    CtxMenuOptionsView.prototype.events = _.extend({
+      "click  .done,.delete": "onClickSubmit",
+      "change .selectParent": "onChangeSelectParent",
+      "click  .selectParent": "onClickSelectParent",
+      "focus  .parentName": "onFocusParentName",
+      "blur   .parentName": "onBlurParentName"
+    }, PopupBaseView.prototype.events);
+
+    CtxMenuOptionsView.prototype.render = function() {
+      var container, contexts, ctxType, desc, lastParentId, parentId, selectParent$, _ref4, _ref5;
+      if (this.ctxMenu = this.model.get("ctxMenu")) {
+        if (this.ctxMenu.parentId !== "route") {
+          this.ctxMenu.contexts = this.collection.get(this.ctxMenu.parentId).get("contexts");
+        }
+        desc = this.ctxMenu.caption;
+      } else {
+        this.model.trigger("getDescription", container = {});
+        desc = container.desc;
+      }
+      this.$(".caption").val(desc);
+      this.$el.append(this.tmplHelp(this));
+      this.$("input[value='" + ((contexts = (_ref4 = this.ctxMenu) != null ? _ref4.contexts : void 0) || 'page') + "']")[0].checked = true;
+      if (this.ctxMenu) {
+        this.$(".delete").addClass("orange").removeClass("disabled").removeAttr("disabled");
+      } else {
+        this.$(".delete").removeClass("orange").addClass("disabled").attr("disabled", "disabled");
+      }
+      lastParentId = (selectParent$ = this.$(".selectParent")).val();
+      ctxType = this.$("input[name='ctxType']:checked").attr("value");
+      selectParent$.html(this.tmplParentMenu);
+      this.collection.models.forEach(function(model) {
+        return selectParent$.append("<option value=\"" + model.id + "\">" + (model.get("title")) + "</option>");
+      });
+      if (parentId = (_ref5 = this.ctxMenu) != null ? _ref5.parentId : void 0) {
+        selectParent$.val(parentId);
+      } else if (selectParent$.find("option[value='" + lastParentId + "']").length > 0) {
+        selectParent$.val(lastParentId);
+      } else {
+        selectParent$.val("route");
+      }
+      return this.$(".parentName").val("").hide();
+    };
+
+    CtxMenuOptionsView.prototype.onChangeSelectParent = function(event) {
+      if (event.currentTarget.value !== "new") {
+        return this.$(".parentName").hide();
+      } else {
+        return this.$(".parentName").show().focus();
+      }
+    };
+
+    CtxMenuOptionsView.prototype.onClickSelectParent = function(event) {
+      return event.preventDefault();
+    };
+
+    CtxMenuOptionsView.prototype.onFocusParentName = function(event) {
+      return this.$(".selectParent").addClass("focus");
+    };
+
+    CtxMenuOptionsView.prototype.onBlurParentName = function() {
+      return this.$(".selectParent").removeClass("focus");
+    };
+
+    CtxMenuOptionsView.prototype.onSubmitForm = function() {
+      return false;
+    };
+
+    CtxMenuOptionsView.prototype.onClickSubmit = function(event) {
+      var caption, container, ctxType, dfd, model, parentId, parentName, _ref4, _ref5,
+        _this = this;
+      if ((parentId = this.$(".selectParent").val()) === "new") {
+        if ((parentName = $.trim(this.$(".parentName").val())) === "") {
+          return false;
+        }
+      }
+      if ((caption = $.trim(this.$(".caption").val())) === "") {
+        return false;
+      }
+      if (/delete/.test(event != null ? event.currentTarget.className : void 0)) {
+        if (!confirm("Are you sure you want to delete this context menu?")) {
+          return false;
+        }
+        this.model.unset("ctxMenu");
+      } else {
+        ctxType = this.$("input[name='ctxType']:checked").attr("value");
+        if (parentId === "route") {
+          this.model.set("ctxMenu", {
+            caption: caption,
+            contexts: ctxType,
+            parentId: parentId,
+            order: (_ref4 = this.ctxMenu) != null ? _ref4.order : void 0
+          });
+        } else {
+          if (parentId === "new") {
+            if (model = this.collection.findWhere({
+              contexts: ctxType,
+              title: parentName
+            })) {
+              parentId = model.id;
+            }
+          } else {
+            parentName = this.$(".selectParent option[value='" + parentId + "']").text();
+          }
+          if (!this.collection.findWhere({
+            id: parentId,
+            contexts: ctxType
+          })) {
+            this.collection.add({
+              id: parentId = getUuid("T"),
+              contexts: ctxType,
+              title: parentName
+            });
+          }
+          this.model.set("ctxMenu", {
+            caption: caption,
+            parentId: parentId,
+            order: (_ref5 = this.ctxMenu) != null ? _ref5.order : void 0
+          });
+        }
+      }
+      this.trigger("getCtxMenues", container = {});
+      (_.difference(this.collection.pluck("id"), _.pluck(container.ctxMenus, "parentId"))).forEach(function(id) {
+        return _this.collection.remove(_this.collection.get(id));
+      });
+      (dfd = $.Deferred()).promise();
+      this.trigger("remakeCtxMenu", {
+        dfd: dfd
+      });
+      dfd.done(function() {
+        return _this.hidePopup();
+      });
+      return false;
+    };
+
+    CtxMenuOptionsView.prototype.tmplParentMenu = "<option value=\"route\">None(Root)</option>\n<option value=\"new\">Create under new parent menu...</option>";
+
+    return CtxMenuOptionsView;
+
+  })(PopupBaseView);
+
+  CtxMenuFolder = Backbone.Model.extend({});
+
+  CtxMenuFolderSet = Backbone.Collection.extend({
+    model: CtxMenuFolder
+  });
+
+  CtxMenuGetterView = (function(_super) {
+    __extends(CtxMenuGetterView, _super);
+
+    CtxMenuGetterView.prototype.el = ".ctxMenusGetter";
+
+    CtxMenuGetterView.prototype.events = _.extend({
+      "click .add": "onClickAdd",
+      "click .cancel": "onClickCancel"
+    }, PopupBaseView.prototype.events);
+
+    function CtxMenuGetterView(options) {
+      CtxMenuGetterView.__super__.constructor.call(this, options);
+      this.$el.css({
+        top: 0,
+        right: "30px"
+      }).draggable({
+        cursor: "move",
+        delay: 200,
+        cancel: "input,textarea,button,select,option"
+      });
+    }
+
+    CtxMenuGetterView.prototype.render = function(message) {
+      this.$(".message").html(this.tmplMessage(message));
+      this.$el.show(200);
+      return this;
+    };
+
+    CtxMenuGetterView.prototype.onHidePopup = function() {
+      return this.$el.hide(200);
+    };
+
+    CtxMenuGetterView.prototype.onClickAdd = function() {
+      this.$el.hide(200);
+      return this.trigger("addCtxMenus");
+    };
+
+    CtxMenuGetterView.prototype.onClickCancel = function() {
+      this.$el.hide(200);
+      return this.trigger("addCtxMenus", true);
+    };
+
+    CtxMenuGetterView.prototype.tmplMessage = _.template("Add entries to the context menu for <span class=\"ctxmenu-icon\"><i class=\"<%=icon%>\"></i></span><strong><%=contextName%></strong><%=folder%><br>from the functions that you selected.");
+
+    return CtxMenuGetterView;
+
+  })(PopupBaseView);
+
+  CtxMenuManagerView = (function(_super) {
+    __extends(CtxMenuManagerView, _super);
+
+    CtxMenuManagerView.prototype.name = "ctxMenuManager";
+
+    CtxMenuManagerView.prototype.el = ".ctxMenuManager";
+
+    CtxMenuManagerView.prototype.events = _.extend({
+      "mousedown span[tabindex='0']": "onClickItem",
+      "mousedown button,input,a": "onClickClickable",
+      "mousedown .newmenu": "onClickNew",
+      "mousedown .newfolder": "onClickNewFolder",
+      "mousedown .rename": "onClickRen",
+      "dblclick  .menuCaption,.title": "onClickRen",
+      "keydown   .menuCaption,.title": "onKeydownCaption",
+      "mousedown .remove": "onClickRemove",
+      "submit .editCaption": "doneEditCaption",
+      "blur .editCaption input": "cancelEditCaption",
+      "mousedown": "onClickBlank",
+      "click .done": "onClickDone"
+    }, ExplorerBaseView.prototype.events);
+
+    function CtxMenuManagerView(options) {
+      var ctx, i, _i;
+      CtxMenuManagerView.__super__.constructor.call(this, options);
+      this.ctxMenuGetterView = new CtxMenuGetterView({});
+      this.ctxMenuGetterView.on("addCtxMenus", this.onAddCtxMenus, this);
+      keyConfigSetView.on("addCtxMenu", this.onAddCtxMenu, this);
+      ctx = document.getCSSCanvasContext("2d", "empty", 18, 18);
+      ctx.strokeStyle = "#CC0000";
+      ctx.lineWidth = "2";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(1, 1);
+      ctx.lineTo(17, 17);
+      ctx.moveTo(1, 17);
+      ctx.lineTo(17, 1);
+      ctx.stroke();
+      ctx = document.getCSSCanvasContext("2d", "updown", 26, 24);
+      ctx.fillStyle = "rgb(122, 122, 160)";
+      ctx.lineWidth = "2";
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#333333";
+      for (i = _i = 0; _i <= 1; i = ++_i) {
+        ctx.beginPath();
+        ctx.moveTo(1, 5);
+        ctx.lineTo(5, 1);
+        ctx.lineTo(9, 5);
+        ctx.moveTo(5, 1);
+        ctx.lineTo(5, 9);
+        ctx.stroke();
+        ctx.translate(18, 18);
+        ctx.rotate(180 * Math.PI / 180);
+      }
+      this.collection.comparator = function(model) {
+        return model.get("order");
+      };
+    }
+
+    CtxMenuManagerView.prototype.render = function() {
+      var height,
+        _this = this;
+      height = window.innerHeight - 60;
+      this.$(".result_outer").height(height - 35);
+      this.$el.height(height);
+      this.setContextMenu();
+      this.setSortable(".folders", ".title,.menuCaption", this.onUpdateFolder);
+      this.setSortable(".ctxMenus", ".menuCaption", this.onUpdateMenu);
+      $.each(this.$(".editButtons button"), function(i, el) {
+        return _this.disableButton(_.map(document.querySelectorAll(".editButtons button"), function(el) {
+          return el.className.match(/^(\w+)\s/)[1];
+        }));
+      });
+      this.$el.append(this.tmplHelp(this));
+      return this;
+    };
+
+    CtxMenuManagerView.prototype.onSubmitForm = function() {
+      return false;
+    };
+
+    CtxMenuManagerView.prototype.setSortable = function(selector, handle, fnDoneUpdate) {
+      var _this = this;
+      return this.$(selector).sortable({
+        scroll: true,
+        handle: handle,
+        connectWith: selector,
+        placeholder: "ui-placeholder",
+        delay: 200,
+        update: function(event, ui) {
+          return fnDoneUpdate(event, ui, _this);
+        },
+        start: function(event, ui) {
+          return _this.onStartSort(event, ui);
+        },
+        stop: function(event, ui) {
+          return _this.onStopSort(event, ui, _this);
+        }
+      });
+    };
+
+    CtxMenuManagerView.prototype.setFolderDroppable = function(target$) {
+      var that;
+      that = this;
+      return target$.droppable({
+        accept: ".ctxMenuItem.route",
+        tolerance: "pointer",
+        hoverClass: "drop-folder-hover",
+        over: function() {
+          return $(".folders .ui-placeholder").hide();
+        },
+        out: function() {
+          return $(".folders .ui-placeholder").show();
+        },
+        drop: function(event, ui) {
+          var ctxMenu$;
+          ctxMenu$ = $(this).find(".ctxMenus");
+          return ui.draggable.hide("fast", function() {
+            return that.onUpdateMenu(null, {
+              item: $(this).appendTo(ctxMenu$).removeClass("route").show().find("span[tabindex='0']").focus()
+            }, that);
+          });
+        }
+      });
+    };
+
+    CtxMenuManagerView.prototype.onUpdateFolder = function(event, ui, view) {
+      var folders$, ref;
+      if (ui && _.filter(ui.item.parent().find(".title"), function(title) {
+        var _ref4;
+        return title.textContent === ((_ref4 = ui.item.prevInfo) != null ? _ref4.text : void 0);
+      }).length > 1) {
+        alert("A folder with the name '" + ui.item.prevInfo.text + "' already exists.");
+        folders$ = view.$(".folders." + ui.item.prevInfo.contexts);
+        ref = folders$.children().eq(ui.item.prevInfo.order).get(0) || null;
+        folders$[0].insertBefore(ui.item[0], ref);
+        return;
+      }
+      $.each(view.$(".folders"), function(i, folders) {
+        if ((folders$ = $(folders)).find(".folder,.ctxMenuItem").length > 0) {
+          return folders$.parents(".contexts").addClass("hasFolder");
+        } else {
+          return folders$.parents(".contexts").removeClass("hasFolder");
+        }
+      });
+      if (ui) {
+        return ui.item.focus();
+      }
+    };
+
+    CtxMenuManagerView.prototype.onUpdateMenu = function(event, ui, view) {
+      $.each(view.$(".ctxMenus"), function(i, menuItem) {
+        var menuItem$;
+        if ((menuItem$ = $(menuItem)).find(".ctxMenuItem,.dummy").length > 0) {
+          return menuItem$.parents(".folder").addClass("hasFolder");
+        } else {
+          return menuItem$.parents(".folder").removeClass("hasFolder");
+        }
+      });
+      if (ui) {
+        ui.item.parents(".folder").addClass("hasFolder");
+        return ui.item.focus();
+      }
+    };
+
+    CtxMenuManagerView.prototype.onGetCtxMenuContexts = function(container) {
+      return container.contexts = this.collection.get(container.parentId).get("contexts");
+    };
+
+    CtxMenuManagerView.prototype.onClickDone = function() {
+      var dfd, newCtxMenu,
+        _this = this;
+      newCtxMenu = [];
+      this.collection.reset();
+      $.each(this.$(".ctxMenuItem"), function(i, el) {
+        var contexts, menu$, message, _ref4;
+        menu$ = $(el);
+        message = {
+          id: el.id
+        };
+        message.caption = menu$.find(".menuCaption").text();
+        message.order = i + 1;
+        message.parentId = ((_ref4 = menu$.parents(".folder").get(0)) != null ? _ref4.id : void 0) || "route";
+        contexts = menu$.parents(".folders")[0].className.match(/folders\s(\w+)/)[1];
+        if (message.parentId === "route") {
+          message.contexts = contexts;
+        } else {
+          if (!_this.collection.findWhere({
+            id: message.parentId,
+            contexts: contexts
+          })) {
+            _this.collection.add({
+              id: message.parentId,
+              contexts: contexts,
+              title: _this.$("#" + message.parentId + " .title").text()
+            });
+          }
+        }
+        return newCtxMenu.push(message);
+      });
+      this.trigger("setCtxMenus", newCtxMenu);
+      (dfd = $.Deferred()).promise();
+      this.trigger("remakeCtxMenu", {
+        dfd: dfd
+      });
+      dfd.done(function() {
+        return _this.hidePopup();
+      });
+      return false;
+    };
+
+    CtxMenuManagerView.prototype.onClickBlank = function() {};
+
+    CtxMenuManagerView.prototype.onClickClickable = function(event) {
+      return event.stopPropagation();
+    };
+
+    CtxMenuManagerView.prototype.onClickNew = function(event) {
+      var className, contexts$, entried, target$, _ref4,
+        _this = this;
+      if (!/contexts|title/.test((_ref4 = (target$ = $(document.activeElement)).get(0)) != null ? _ref4.className : void 0)) {
+        return;
+      }
+      this.activeFolder = {};
+      if (target$.hasClass("contexts")) {
+        this.activeFolder.folder = "";
+        contexts$ = target$;
+        this.activeFolder.parentId = "route";
+        this.activeFolder.contexts = (className = target$.parent()[0].className).match(/droppable\s(\w+)/)[1];
+        this.activeFolder.selector = "." + className.replace(/\s/g, ".") + " .contexts";
+      } else {
+        this.activeFolder.folder = " in the folder '<strong>" + (target$.text()) + "</strong>'";
+        contexts$ = target$.parents("div.contexts").find("span.contexts");
+        this.activeFolder.parentId = target$.parent()[0].id;
+        this.activeFolder.selector = "#" + this.activeFolder.parentId + " .title";
+      }
+      this.activeFolder.icon = contexts$.find("i")[0].className;
+      this.activeFolder.contextName = contexts$.text();
+      setTimeout((function() {
+        return _this.ctxMenuGetterView.render(_this.activeFolder);
+      }), 0);
+      entried = _.map(this.$(".ctxMenuItem"), function(el) {
+        return el.id;
+      });
+      this.trigger("enterCtxMenuSelMode", entried);
+      this.$(".result_outer").getNiceScroll().hide();
+      this.$el.hide();
+      return $(".backscreen").hide();
+    };
+
+    CtxMenuManagerView.prototype.onAddCtxMenu = function(ctxMenu) {
+      this.setContextMenuItem(_.extend(ctxMenu, this.activeFolder));
+      this.$("#" + ctxMenu.id).hide().show(300).effect("highlight", 2000);
+      this.setSortable(".ctxMenus", ".menuCaption", this.onUpdateMenu);
+      return this.$(".folders").sortable("refresh");
+    };
+
+    CtxMenuManagerView.prototype.onAddCtxMenus = function(cancel) {
+      this.trigger("leaveCtxMenuSelMode", cancel);
+      this.$el.show();
+      this.$(".newmenu").focus();
+      this.$(".result_outer").getNiceScroll().show();
+      $(".backscreen").show();
+      this.$(this.activeFolder.selector).focus();
+      if (cancel) {
+        return;
+      }
+      this.trigger("triggerEventSelected");
+      this.onUpdateMenu(null, null, this);
+      this.onUpdateFolder(null, null, this);
+      return this.$(this.activeFolder.selector).focus();
+    };
+
+    CtxMenuManagerView.prototype.onClickNewFolder = function(event) {
+      var folders$, newFolder$, target$;
+      if (!(target$ = $(document.activeElement)).hasClass("contexts")) {
+        return;
+      }
+      folders$ = target$.parents(".contexts").find(".folders");
+      (newFolder$ = $(this.tmplFolder({
+        id: getUuid("T"),
+        title: ""
+      })).appendTo(folders$)).find(".title").focus();
+      this.setSortable(".ctxMenus", ".menuCaption", this.onUpdateMenu);
+      this.$(".folders").sortable("refresh");
+      this.setFolderDroppable(newFolder$);
+      this.enableButton(["rename", "remove", "newmenu"]);
+      this.disableButton(["newfolder"]);
+      return this.onClickRen(event);
+    };
+
+    CtxMenuManagerView.prototype.onKeydownCaption = function(event) {
+      if (event.originalEvent.keyIdentifier === "F2") {
+        return this.onClickRen(event);
+      }
+    };
+
+    CtxMenuManagerView.prototype.onClickRen = function(event) {
+      var editer$, target$;
+      if (!/title|menuCaption/.test((target$ = $(document.activeElement))[0].className)) {
+        return;
+      }
+      editer$ = target$.hide().parent().find(".editCaption input:first").show();
+      editer$.val(target$.text()).focus();
+      return event.preventDefault();
+    };
+
+    CtxMenuManagerView.prototype.escapeAmp = function(text) {
+      return text.replace(/&&/g, "^ampersand^").replace(/&/g, "").replace(/^ampersand^/g, "");
+    };
+
+    CtxMenuManagerView.prototype.doneEditCaption = function(event) {
+      var editer$, folder$, notExists, value;
+      if (value = $.trim((editer$ = $(event.currentTarget).find("> input")).val())) {
+        if ((folder$ = editer$.parent().parent()).hasClass("folder")) {
+          notExists = true;
+          $.each(folder$.parent().find(".title"), function(i, title) {
+            if (folder$[0] !== title.parentNode && title.textContent === value) {
+              $("#tiptip_content").text("Folder '" + value + "' already exists.");
+              editer$.tipTip();
+              return notExists = false;
+            }
+          });
+          if (!notExists) {
+            return false;
+          }
+        }
+      } else {
+        editer$.blur();
+        return false;
+      }
+      editer$.hide().parents("div:first").find("> .title,> .menuCaption").show().text(value).focus();
+      return false;
+    };
+
+    CtxMenuManagerView.prototype.cancelEditCaption = function(event) {
+      var target$;
+      if (!(target$ = $(event.currentTarget).hide().parents("div:first").find(".title,.menuCaption").show()).text()) {
+        return target$.parents(".folder").remove();
+      }
+    };
+
+    CtxMenuManagerView.prototype.onClickRemove = function(event) {
+      var active$;
+      if (!/title|menuCaption/.test((active$ = $(document.activeElement))[0].className)) {
+        return;
+      }
+      active$.parent().remove();
+      this.onUpdateMenu(null, null, this);
+      return this.onUpdateFolder(null, null, this);
+    };
+
+    CtxMenuManagerView.prototype.enableButton = function(buttonClasses) {
+      return buttonClasses.forEach(function(className) {
+        return this.$("button." + className).removeClass("disabled").removeAttr("disabled");
+      });
+    };
+
+    CtxMenuManagerView.prototype.disableButton = function(buttonClasses) {
+      return buttonClasses.forEach(function(className) {
+        return this.$("button." + className).addClass("disabled").attr("disabled", "disabled");
+      });
+    };
+
+    CtxMenuManagerView.prototype.onClickItem = function(event) {
+      switch (event.currentTarget.className) {
+        case "contexts":
+          this.enableButton(["newmenu", "newfolder"]);
+          this.disableButton(["rename", "remove"]);
+          break;
+        case "title":
+          this.enableButton(["rename", "remove", "newmenu"]);
+          this.disableButton(["newfolder"]);
+          break;
+        case "menuCaption":
+          this.enableButton(["rename", "remove"]);
+          this.disableButton(["newmenu", "newfolder"]);
+      }
+      event.currentTarget.focus();
+      event.preventDefault();
+      return event.stopPropagation();
+    };
+
+    CtxMenuManagerView.prototype.onHoverMoveItem = function(event) {};
+
+    CtxMenuManagerView.prototype.onHoverOffMoveItem = function() {};
+
+    CtxMenuManagerView.prototype.onMouseoverDroppable = function() {
+      return this.$(".ctxMenus .ui-placeholder").hide();
+    };
+
+    CtxMenuManagerView.prototype.onStartSort = function(event, ui) {
+      ui.item.find("span[tabindex='0']:first").focus();
+      if (/folder/.test(ui.item[0].className)) {
+        ui.item.addClass("sorting").find(".ctxMenus").hide();
+        return ui.item.prevInfo = {
+          contexts: ui.item.parent()[0].className.match(/folders\s(\w+)/)[1],
+          order: ui.item.parent().children().index(ui.item),
+          text: ui.item.find(".title").text()
+        };
+      }
+    };
+
+    CtxMenuManagerView.prototype.onStopSort = function(event, ui, view) {
+      ui.item.find("span[tabindex='0']:first").focus();
+      view.$(".folder").removeClass("sorting");
+      return view.$(".ctxMenus").show();
+    };
+
+    CtxMenuManagerView.prototype.onClickExpandIcon = function(event) {
+      var expanded, target$;
+      this.$(event.currentTarget).parents(".folder").focus();
+      expanded = (target$ = $(event.currentTarget).parents(".contexts")).hasClass("expanded");
+      if (expanded) {
+        target$.removeClass("expanded");
+      } else {
+        target$.addClass("expanded");
+      }
+      windowOnResize();
+      return event.stopPropagation();
+    };
+
+    CtxMenuManagerView.prototype.setContextMenu = function() {
+      var container, context$, ctxMenus, key, that,
+        _this = this;
+      this.$(".result").empty();
+      this.trigger("getCtxMenues", container = {});
+      ctxMenus = container.ctxMenus;
+      for (key in tmplCtxMenus) {
+        this.elResult$.append(context$ = $(this.tmplContexts({
+          "contexts": key,
+          "dispname": key.substring(0, 1).toUpperCase() + key.substring(1),
+          "icon": tmplCtxMenus[key][1]
+        })));
+        that = this;
+        context$.find(".droppable").droppable({
+          accept: ".ctxMenuItem:not(.route)",
+          tolerance: "pointer",
+          hoverClass: "drop-hover",
+          over: function() {
+            return $(".ctxMenus .ui-placeholder").hide();
+          },
+          out: function() {
+            return $(".ctxMenus .ui-placeholder").show();
+          },
+          drop: function(event, ui) {
+            var target$;
+            target$ = $(".folders." + this.className.match(/droppable\s(\w+)/)[1]);
+            return ui.draggable.hide("fast", function() {
+              return that.onUpdateMenu(null, {
+                item: $(this).appendTo(target$).addClass("route").show().find("span[tabindex='0']").focus()
+              }, that);
+            });
+          }
+        });
+      }
+      ctxMenus.forEach(function(ctxMenu) {
+        return _this.setContextMenuItem(ctxMenu);
+      });
+      this.onUpdateMenu(null, null, this);
+      return this.onUpdateFolder(null, null, this);
+    };
+
+    CtxMenuManagerView.prototype.setContextMenuItem = function(ctxMenu) {
+      var dest$, folder;
+      if (ctxMenu.parentId === "route") {
+        dest$ = this.$(".contexts .folders." + ctxMenu.contexts);
+        ctxMenu.route = " route";
+      } else {
+        ctxMenu.route = "";
+        if (!((dest$ = this.$("#" + ctxMenu.parentId + " .ctxMenus")).length > 0)) {
+          folder = this.collection.get(ctxMenu.parentId);
+          this.$(".contexts .folders." + folder.get("contexts")).append(this.tmplFolder({
+            id: folder.id,
+            title: folder.get("title")
+          }));
+          dest$ = this.$("#" + ctxMenu.parentId + " .ctxMenus");
+          this.setFolderDroppable(this.$("#" + ctxMenu.parentId));
+        }
+      }
+      return dest$.append(this.tmplMenuItem(ctxMenu));
+    };
+
+    CtxMenuManagerView.prototype.tmplContexts = _.template("<div class=\"contexts\">\n  <div class=\"droppable <%=contexts%>\">\n    <span class=\"contexts\" tabindex=\"0\"><i class=\"<%=icon%> contextIcon\"></i><%=dispname%></span>\n  </div>\n  <div class=\"folders <%=contexts%>\"></div>\n</div>");
+
+    CtxMenuManagerView.prototype.tmplFolder = _.template("<div class=\"folder hasFolder\" id=\"<%=id%>\">\n  <span class=\"title\" tabindex=\"0\"><%=title%></span>\n  <div class=\"updown\"></div>\n  <div class=\"emptyFolder\"></div>\n  <form class=\"editCaption\"><input type=\"text\"></form>\n  <div class=\"ctxMenus\"></div>\n</div>");
+
+    CtxMenuManagerView.prototype.tmplMenuItem = _.template("<div class=\"ctxMenuItem<%=route%>\" id=\"<%=id%>\">\n  <span class=\"menuCaption\" tabindex=\"0\" title=\"<%=shortcut%>\"><%=caption%></span>\n  <div class=\"updown\"></div>\n  <form class=\"editCaption\"><input type=\"text\"></form>\n</div>");
+
+    return CtxMenuManagerView;
+
+  })(ExplorerBaseView);
+
+  gMaxItems = 100;
+
+  defaultSleep = 100;
+
+  lastFocused = null;
+
+  loading = true;
+
+  WebFontConfig = {
+    google: {
+      families: ['Noto+Sans::latin']
+    }
+  };
+
+  modeDisp = {
+    remap: ["Remap", "icon-random"],
+    command: ["Command...", "icon-cog"],
+    bookmark: ["Bookmark...", "icon-bookmark"],
+    disabled: ["Disabled", "icon-ban-circle"],
+    sleep: ["Sleep", "icon-eye-close"],
+    comment: ["Comment", "icon-comment-alt"],
+    through: ["Pause", "icon-pause", "nodisp"]
+  };
+
+  bmOpenMode = {
+    current: "Open in current tab",
+    newtab: "Open in new tab",
+    newwin: "Open in new window",
+    incognito: "Open in incognito window",
+    left: "Open in new tab to left of the current tab",
+    right: "Open in new tab to right of the current tab",
+    first: "Open in new tab to first position",
+    last: "Open in new tab to last position"
+  };
+
+  escape = function(html) {
+    var entity;
+    entity = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;"
+    };
+    return html.replace(/[&<>]/g, function(match) {
+      return entity[match];
+    });
+  };
+
+  modifierKeys = ["Ctrl", "Alt", "Shift", "Win", "MouseL", "MouseR", "MouseM"];
+
+  modifierInits = ["c", "a", "s", "w"];
+
+  decodeKbdEvent = function(kbdCode) {
+    var keyCombo, keyIdentifier, modifiers, scanCode;
+    if (!kbdCode) {
+      return null;
+    }
+    modifiers = parseInt(kbdCode.substring(0, 2), 16);
+    scanCode = kbdCode.substring(2);
+    if (keyIdentifier = keys[scanCode]) {
+      keyCombo = [];
+      /*
+      for i in [0...modifierKeys.length]
+        keyCombo.push modifierKeys[i] if modifiers & Math.pow(2, i)
+      */
+
+      if (modifiers & 1) {
+        keyCombo.push(modifierKeys[0]);
+      }
+      if (modifiers & 4) {
+        keyCombo.push(modifierKeys[2]);
+      }
+      if (modifiers & 2) {
+        keyCombo.push(modifierKeys[1]);
+      }
+      if (modifiers & 8) {
+        keyCombo.push(modifierKeys[3]);
+      }
+      if (modifiers & 16) {
+        keyCombo.push(modifierKeys[4]);
+      }
+      if (modifiers & 32) {
+        keyCombo.push(modifierKeys[5]);
+      }
+      if (modifiers & 64) {
+        keyCombo.push(modifierKeys[6]);
+      }
+      if (modifiers & 4) {
+        keyCombo.push(keyIdentifier[1] || keyIdentifier[0]);
+      } else {
+        keyCombo.push(keyIdentifier[0]);
+      }
+      return keyCombo.join(" + ");
+    }
+  };
+
+  transKbdEvent = function(value) {
+    var i, keyCombo, keyIdenfiers, modifiers, scanCode, _i, _ref4;
+    modifiers = parseInt(value.substring(0, 2), 16);
+    keyCombo = [];
+    for (i = _i = 0, _ref4 = modifierInits.length; 0 <= _ref4 ? _i < _ref4 : _i > _ref4; i = 0 <= _ref4 ? ++_i : --_i) {
+      if (modifiers & Math.pow(2, i)) {
+        keyCombo.push(modifierInits[i]);
+      }
+    }
+    scanCode = value.substring(2);
+    keyIdenfiers = keys[scanCode];
+    return "[" + keyCombo.join("") + "]" + keyIdenfiers[0];
+  };
+
+  HeaderView = Backbone.View.extend({
+    scHelpUrl: "https://support.google.com/chrome/answer/157179?hl=",
+    el: "div.header",
+    events: {
+      "click .addKeyConfig": "onClickAddKeyConfig",
+      "click .ctxmgr": "onClickCtxmgr",
+      "click .settings": "onClickSettings"
+    },
+    initialize: function(options) {
+      this.$(".addKeyConfig,.ctxmgr,.scHelp,.helpview,.settings").show();
+      return this.model.on("change:lang", this.onChangeLang, this);
+    },
+    onClickAddKeyConfig: function(event) {
+      return this.trigger("clickAddKeyConfig", event);
+    },
+    onClickCtxmgr: function() {
+      return this.trigger("showPopup", "ctxMenuManager");
+    },
+    onClickSettings: function() {
+      return this.trigger("showPopup", "settings");
+    },
+    onEnterCtxMenuSelMode: function() {
+      return this.$("button").attr("disabled", "disabled").addClass("disabled");
+    },
+    onLeaveCtxMenuSelMode: function() {
+      return this.$("button").removeAttr("disabled").removeClass("disabled");
+    },
+    onChangeLang0: function(kbdtype) {
+      return this.$(".scHelp").text("ショートカットキー一覧").attr("href", this.scHelpUrl + "ja");
+    },
+    onChangeLang: function() {
+      return this.$(".scHelp").text("Keyboard shortcuts").attr("href", this.scHelpUrl + this.model.get("lang"));
+    }
+  });
+
+  Config = Backbone.Model.extend({});
+
+  KeyConfig = Backbone.Model.extend({
+    idAttribute: "new",
+    defaults: {
+      mode: "remap"
+    }
+  });
+
+  KeyConfigSet = Backbone.Collection.extend({
+    model: KeyConfig
+  });
+
+  KeyConfigView = Backbone.View.extend({
+    kbdtype: null,
+    optionKeys: [],
+    events: {
+      "click .origin,.new": "onClickInput",
+      "click div.mode": "onClickMode",
+      "click .selectMode div": "onChangeMode",
+      "click .edit": "onClickEdit",
+      "click .addCommand": "onClickAddCommand",
+      "click .copySC": "onClickCopySC",
+      "click div.ctxmenu": "onClickCtxMenu",
+      "click .pause": "onClickPause",
+      "click .resume": "onClickResume",
+      "click .delete": "onClickDelete",
+      "click .editSleep": "onClickEditSleep",
+      "click input.memo,.inputSleep": "onClickInputMemo",
+      "click button.cog": "onClickCog",
+      "click .updown a": "onClickUpDownChild",
+      "focus .new,.origin": "onFocusKeyInput",
+      "focus .inputSleep": "onClickInputMemo",
+      "keydown": "onKeydown",
+      "submit  .memo": "onSubmitMemo",
+      "submit  .formSleep": "onSubmitSleep",
+      "blur  .selectMode": "onBlurSelectMode",
+      "blur  .selectCog": "onBlurSelectCog",
+      "blur  input.memo": "onBlurInputMemo",
+      "blur  .inputSleep": "onBlurInputSleep",
+      "mouseover": "onMouseOverChild",
+      "mouseout": "onMouseOutChild"
+    },
+    initialize: function(options) {
+      this.optionKeys = _.keys(modeDisp);
+      this.model.on({
+        "change:new": this.onChangeNew,
+        "change:bookmark": this.onChangeBookmark,
+        "change:command": this.onChangeCommand,
+        "change:ctxMenu": this.onChangeCtxmenu,
+        "setFocus": this.onClickInput,
+        "remove": this.onRemove,
+        "setUnselectable": this.onSetUnselectable,
+        "setRowspan": this.onSetRowspan,
+        "updatePosition": this.onUpdatePosition,
+        "setSelected": this.onSetSelected,
+        "getDescription": this.onGetDescription,
+        "triggerEventCtxMenuSelected": this.onTriggerCtxMenuSelected
+      }, this);
+      return this.model.collection.on({
+        "kbdEvent": this.onKbdEvent,
+        "changeKbd": this.onChangeKbd,
+        "changeLang": this.onChangeLang,
+        "updateOrderByEl": this.onUpdateOrderByEl,
+        "mouseoverchild": this.onMouseOverChild,
+        "mouseoutchild": this.onMouseOutChild
+      }, this);
+    },
+    render: function(kbdtype, lang) {
+      var mode;
+      this.kbdtype = kbdtype;
+      this.lang = lang;
+      this.setElement(this.template({
+        options: modeDisp
+      }));
+      mode = this.model.get("mode");
+      if (/^C/.test(this.model.id)) {
+        this.$el.addClass("child").find("th:first-child").remove().end().find(".disabled").hide();
+      } else if (!this.setKbdValue(this.$(".new"), this.model.id)) {
+        this.state = "invalid";
+      } else {
+        this.$el.find(".sleep").hide();
+        this.onSetRowspan();
+      }
+      if (!(this.$el.hasClass("parent") || this.$el.hasClass("child"))) {
+        this.$el.find(".comment").hide();
+      }
+      this.setKbdValue(this.$(".origin"), this.model.get("origin"));
+      this.onChangeMode(null, mode);
+      return this;
+    },
+    onChangeBookmark: function() {
+      return this.onChangeMode(null, "bookmark");
+    },
+    onChangeCommand: function() {
+      return this.onChangeMode(null, "command");
+    },
+    onChangeCtxmenu: function() {
+      var container, ctxMenu;
+      if ((ctxMenu = this.model.get("ctxMenu")) && !this.$el.hasClass("child")) {
+        if (ctxMenu.parentId !== "route") {
+          this.model.collection.trigger("getCtxMenuContexts", container = {
+            parentId: ctxMenu.parentId
+          });
+          ctxMenu.contexts = container.contexts;
+        }
+        this.$("td.ctxmenu").html("<div class=\"ctxmenu-icon\" title=\"Context menu for " + ctxMenu.contexts + "\n Title: " + ctxMenu.caption + "\"><i class=\"" + tmplCtxMenus[ctxMenu.contexts][1] + "\"></i></div>");
+        this.$("div.ctxmenu")[0].childNodes[1].nodeValue = " Edit context menu...";
+      } else if (this.model.get("mode") !== "disabled" && !this.$el.hasClass("child")) {
+        this.$("td.ctxmenu").empty();
+        this.$("div.ctxmenu")[0].childNodes[1].nodeValue = " Create context menu...";
+      }
+      return this.trigger("resizeInput");
+    },
+    onRemove: function() {
+      var parentId;
+      if (parentId = this.model.get("parentId")) {
+        this.model.collection.trigger("mouseoutchild", parentId);
+      }
+      this.model.collection.off(null, null, this);
+      this.model.off(null, null, this);
+      this.off(null, null, null);
+      return this.remove();
+    },
+    onSetUnselectable: function(unSelectable) {
+      if (unSelectable) {
+        return this.$el.addClass("unselectable");
+      } else {
+        return this.$el.removeClass("unselectable");
+      }
+    },
+    onTriggerCtxMenuSelected: function() {
+      var shortcut;
+      if (this.$el.hasClass("unselectable")) {
+        return this.$el.removeClass("ui-selected unselectable");
+      } else if (this.$el.hasClass("ui-selected")) {
+        this.$el.removeClass("ui-selected");
+        shortcut = decodeKbdEvent(this.model.id);
+        return this.trigger("addCtxMenu", {
+          id: this.model.id,
+          caption: this.getDescription() || shortcut,
+          shortcut: shortcut
+        });
+      }
+    },
+    onSetRowspan: function() {
+      var models;
+      if ((models = this.model.collection.where({
+        parentId: this.model.id
+      })).length > 0) {
+        this.$el.addClass("parent").find(".selectMode .comment").show().end().find(".disabled").hide();
+        this.$("th:first-child").attr("rowspan", models.length + 1);
+        return this.model.set("batch", true);
+      } else {
+        this.$el.removeClass("parent");
+        this.$("th:first-child").removeAttr("rowspan");
+        this.model.unset("batch");
+        if (!this.$el.hasClass("child")) {
+          this.$(".selectMode .comment").hide().end().find(".disabled").show();
+          return this.$("ul.updown").remove();
+        }
+      }
+    },
+    onSetSelected: function(selected) {
+      if (selected) {
+        return this.$el.addClass("ui-selected");
+      } else {
+        return this.$el.removeClass("ui-selected");
+      }
+    },
+    onGetDescription: function(container) {
+      return container.desc = this.getDescription();
+    },
+    onChangeNew: function(model) {
+      return andy.changePK(this.model.id, model.previous("new"));
+    },
+    onKbdEvent: function(value) {
+      var input$, scanCode;
+      input$ = this.$("div:focus");
+      if (input$.length > 0) {
+        if (input$.hasClass("new")) {
+          if (this.model.id !== value && this.model.collection.findWhere({
+            "new": value
+          })) {
+            $("#tiptip_content").text("\"" + (decodeKbdEvent(value)) + "\" already exists.");
+            input$.tipTip();
+            return;
+          }
+          this.model.collection.where({
+            parentId: this.model.id
+          }).forEach(function(child) {
+            return child.set("parentId", value);
+          });
+        } else {
+          scanCode = ~~value.substring(2);
+          if (scanCode >= 0x200 || scanCode === 0x15D) {
+            return;
+          }
+        }
+        this.setKbdValue(input$, value);
+        this.model.set(input$[0].className.match(/(new|origin)/)[0], value);
+        this.setDesc();
+        this.trigger("resizeInput");
+        if (input$.hasClass("new") && this.model.has("ctxMenu")) {
+          return this.trigger("remakeCtxMenu", {
+            dfd: $.Deferred()
+          });
+        }
+      }
+    },
+    onChangeKbd: function(kbdtype) {
+      this.kbdtype = kbdtype;
+      this.setKbdValue(this.$(".new"), this.model.id);
+      return this.setKbdValue(this.$(".origin"), this.model.get("origin"));
+    },
+    onChangeLang: function(lang) {
+      this.lang = lang;
+      return this.setDesc();
+    },
+    onUpdateOrderByEl: function() {
+      return this.model.set("order", this.$el.parent().children().index(this.$el));
+    },
+    onUpdatePosition: function() {
+      return this.$el.parent()[0].insertBefore(this.el, this.$el.parent().children().eq(this.model.get("order")).get(0) || null);
+    },
+    onKeydown: function(event) {
+      var container, i, keyname, keynames, scCode, scanCode, _i, _ref4, _ref5;
+      if ((_ref4 = event.target.tagName) === "TEXTAREA" || _ref4 === "INPUT" || _ref4 === "SELECT") {
+        return;
+      }
+      if (this.$("div:focus").hasClass("new")) {
+        this.trigger("getConfigValue", "singleKey", container = {});
+        if (!container.result) {
+          return;
+        }
+      }
+      if (keynames = keyIdentifiers[this.kbdtype][event.originalEvent.keyIdentifier]) {
+        if (event.originalEvent.shiftKey) {
+          if (!(keyname = keynames[1])) {
+            return;
+          }
+          scCode = "04";
+        } else {
+          keyname = keynames[0];
+          scCode = "00";
+        }
+        for (i = _i = 0, _ref5 = keys.length; 0 <= _ref5 ? _i < _ref5 : _i > _ref5; i = 0 <= _ref5 ? ++_i : --_i) {
+          if (keys[i] && (keyname === keys[i][0] || keyname === keys[i][1])) {
+            scanCode = i;
+            break;
+          }
+        }
+        if (scanCode) {
+          return this.onKbdEvent(scCode + i);
+        }
+      }
+    },
+    onClickCopySC: function(event) {
+      var body, children, command, desc, keyCombo, method, mode, scCode, text;
+      if ((mode = this.model.get("mode")) === "through") {
+        mode = this.model.get("lastMode");
+      }
+      if ((children = this.model.collection.where({
+        parentId: this.model.id
+      })).length > 0) {
+        mode = "batch";
+      }
+      if (mode === "remap") {
+        method = "keydown";
+        scCode = this.model.get("origin");
+        desc = this.$(".desc").find(".content,.memo").text();
+      } else {
+        method = "send";
+        scCode = this.model.id;
+        desc = this.$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text();
+      }
+      command = this.$("td.options .mode").text().replace("Remap", "");
+      if (command) {
+        command = " " + command + ":";
+      }
+      keyCombo = (decodeKbdEvent(scCode)).replace(/\s/g, "");
+      if (desc) {
+        desc = " " + desc;
+      }
+      body = "scd." + method + "('" + (transKbdEvent(scCode)) + "');";
+      text = body + " /* " + keyCombo + command + desc + " */";
+      return chrome.runtime.sendMessage({
+        action: "setClipboard",
+        value1: text
+      }, function(msg) {});
+    },
+    getDescription: function() {
+      var desc;
+      if (this.model.get("mode") === "remap") {
+        desc = this.$(".desc").find(".content,.memo").text();
+      } else {
+        desc = this.$(".desc").find(".content,.command,.commandCaption,.bookmark,.memo").text();
+      }
+      return $.trim(desc);
+    },
+    onClickCtxMenu: function() {
+      return this.trigger("showPopup", "ctxMenuOptions", this.model.id);
+    },
+    onClickInputMemo: function(event) {
+      return event.stopPropagation();
+    },
+    onSubmitMemo: function() {
+      this.$("form.memo").hide();
+      this.model.set({
+        "memo": this.$("div.memo").show().html(escape(this.$("input.memo").val())).text()
+      });
+      endEdit();
+      return false;
+    },
+    onClickMode: function(event) {
+      if (event.currentTarget.getAttribute("title") === "Pause") {
+        return;
+      }
+      if (this.$(".selectMode").toggle().is(":visible")) {
+        this.$(".selectMode").focus();
+        this.$(".mode").addClass("selecting");
+      } else {
+        this.$(".mode").removeClass("selecting");
+      }
+      return event.stopPropagation();
+    },
+    onChangeMode: function(event, mode) {
+      if (event) {
+        this.$(".mode").removeClass("selecting");
+        mode = event.currentTarget.className;
+        this.$(".selectMode").hide();
+        if (mode === "bookmark" || mode === "command") {
+          this.trigger("showPopup", mode, this.model.id);
+          return;
+        }
+      }
+      this.model.set("mode", mode);
+      this.setDispMode(mode);
+      this.setDesc();
+      return this.trigger("resizeInput");
+    },
+    onBlurSelectMode: function() {
+      this.$(".selectMode").hide();
+      return this.$(".mode").removeClass("selecting");
+    },
+    onFocusKeyInput: function() {
+      return lastFocused = this.el;
+    },
+    onClickInput: function(event, selector) {
+      if (event) {
+        $(event.currentTarget).focus();
+      } else if (selector) {
+        this.$(selector).focus();
+      } else {
+        this.$(".origin").focus();
+      }
+      return event != null ? event.stopPropagation() : void 0;
+    },
+    onBlurInputMemo: function() {
+      return this.onSubmitMemo();
+    },
+    onClickCog: function(event) {
+      if (this.$(".selectCog").toggle().is(":visible")) {
+        this.$(".selectCog").focus();
+        $(event.currentTarget).addClass("selecting");
+      } else {
+        $(event.currentTarget).removeClass("selecting");
+      }
+      return event.stopPropagation();
+    },
+    onBlurSelectCog: function() {
+      this.$(".selectCog").hide();
+      return this.$("button.cog").removeClass("selecting");
+    },
+    onClickEdit: function(event) {
+      var editing, input$, memo, mode;
+      if ((mode = this.model.get("mode")) === "through") {
+        mode = this.model.get("lastMode");
+      }
+      switch (mode) {
+        case "bookmark":
+          return this.trigger("showPopup", "bookmarkOptions", this.model.id);
+        case "command":
+          return this.trigger("showPopup", "commandOptions", this.model.id);
+        default:
+          (memo = this.$("div.memo")).toggle();
+          editing = (input$ = this.$("form.memo").toggle().find("input.memo")).is(":visible");
+          if (editing) {
+            input$.focus().val(memo.text());
+            startEdit();
+          } else {
+            this.onSubmitMemo();
+          }
+          return event.stopPropagation();
+      }
+    },
+    onClickAddCommand: function() {
+      var parentId;
+      if (/^C/.test(parentId = this.model.get("new"))) {
+        parentId = this.model.get("parentId");
+      }
+      lastFocused = this.el;
+      this.model.collection.add({
+        "new": getUuid("C"),
+        "origin": ~~parentId.substring(2) >= 0x200 ? "0130" : parentId,
+        "parentId": parentId
+      });
+      if (this.$el.hasClass("parent")) {
+        this.setDispMode(this.model.get("mode"));
+        if (!(this.$("ul.updown").length > 0)) {
+          return this.$(".desc").append(this.tmplUpDown);
+        }
+      }
+    },
+    onMouseOverChild: function(event, id) {
+      var parentId;
+      if (id === this.model.id) {
+        this.$el.addClass("hover");
+      }
+      if (event && (parentId = this.model.get("parentId"))) {
+        return this.model.collection.trigger("mouseoverchild", null, parentId);
+      }
+    },
+    onMouseOutChild: function(event, id) {
+      var parentId;
+      if (id === this.model.id) {
+        this.$el.removeClass("hover");
+      }
+      if (event && (parentId = this.model.get("parentId"))) {
+        return this.model.collection.trigger("mouseoutchild", null, parentId);
+      }
+    },
+    onClickPause: function() {
+      var ctxMenu;
+      this.model.set("lastMode", this.model.get("mode"));
+      this.onChangeMode(null, "through");
+      if (ctxMenu = this.model.get("ctxMenu")) {
+        return andy.updateCtxMenu(this.model.id, ctxMenu, true);
+      }
+    },
+    onClickResume: function() {
+      var ctxMenu;
+      this.onChangeMode(null, this.model.get("lastMode"));
+      if (ctxMenu = this.model.get("ctxMenu")) {
+        return andy.updateCtxMenu(this.model.id, ctxMenu, false);
+      }
+    },
+    onClickDelete: function() {
+      var children, collection, desc, msg, parentId, shortcut,
+        _this = this;
+      if (parentId = this.model.get("parentId")) {
+        shortcut = "";
+        desc = "\"" + this.getDescription() + "\"";
+        switch (this.model.get("mode")) {
+          case "remap":
+            shortcut = decodeKbdEvent(this.model.get("origin")) + "\n\n ";
+            break;
+          case "sleep":
+            shortcut = "Sleep " + this.model.get("sleep") + " msec";
+            desc = "";
+        }
+        children = [];
+        msg = "Are you sure you want to delete this child command?\n\n " + shortcut + desc;
+      } else {
+        if ((children = this.model.collection.where({
+          parentId: this.model.id
+        })).length > 0) {
+          msg = "Are you sure you want to delete this shortcut and all the child commands?";
+        } else {
+          msg = "Are you sure you want to delete this shortcut?";
+        }
+        shortcut = decodeKbdEvent(this.model.id);
+        msg = msg + ("\n\n " + shortcut + "\n\n \"" + (this.getDescription()) + "\"");
+      }
+      if (confirm(msg)) {
+        children.forEach(function(child) {
+          return _this.trigger("removeConfig", child);
+        });
+        collection = this.model.collection;
+        this.trigger("removeConfig", this.model);
+        if (parentId) {
+          return collection.get(parentId).trigger("setRowspan");
+        }
+      } else {
+        return this.$(".selectCog").blur();
+      }
+    },
+    onClickUpDownChild: function(event) {
+      var changeParent, childModel, models, newChild$, newParent$, order, parentId, parentModel,
+        _this = this;
+      changeParent = function() {
+        var childId, ctxMenu;
+        childId = childModel.id;
+        childModel.set("new", "temp");
+        childModel.unset("parentId");
+        parentModel.set("new", childId);
+        parentModel.set("parentId", parentId);
+        childModel.set("new", parentId);
+        newParent$.removeClass("child").find(".disabled").show().end().prepend(newChild$.find("th:first-child")).find("td.ctxmenu").append(newChild$.find("div.ctxmenu-icon")).end().find(".desc").find(".ctxmenu,.copySC").show();
+        newChild$.removeClass("parent hover").addClass("child").find(".disabled").hide().end().find(".desc").find(".ctxmenu,.copySC").hide();
+        if (ctxMenu = parentModel.get("ctxMenu")) {
+          childModel.set("ctxMenu", ctxMenu);
+          parentModel.unset("ctxMenu");
+        }
+        if (childModel.get("mode") === "through") {
+          return newParent$.find(".new").addClass("through");
+        } else {
+          return newParent$.find(".new").removeClass("through");
+        }
+      };
+      order = -1;
+      parentId = this.model.get("parentId") || this.model.id;
+      models = [parentModel = this.model.collection.get(parentId)].concat(this.model.collection.where({
+        parentId: parentId
+      }));
+      $.each(models, function(i, model) {
+        if (model.id === _this.model.id) {
+          order = i;
+          return false;
+        }
+      });
+      if (event.currentTarget.title === "up" && order > 0) {
+        (newChild$ = this.$el.prev()).before(newParent$ = this.$el);
+        if (order === 1) {
+          childModel = this.model;
+          changeParent();
+        }
+        return this.trigger("updateChildPos");
+      } else if (event.currentTarget.title === "down" && models.length > (order + 1)) {
+        (newChild$ = this.$el).before((newParent$ = this.$el.next()));
+        if (order === 0) {
+          childModel = models[1];
+          changeParent();
+        }
+        return this.trigger("updateChildPos");
+      }
+    },
+    onClickEditSleep: function() {
+      var _this = this;
+      this.$(".dispSleep").hide();
+      this.$(".inputSleep").show().val(this.model.get("sleep"));
+      return setTimeout((function() {
+        return _this.$(".inputSleep").focus();
+      }), 0);
+    },
+    onSubmitSleep: function() {
+      var value;
+      value = this.$(".inputSleep").val();
+      if (!value) {
+        value = 100;
+      } else {
+        if (value < 0) {
+          value = 0;
+        }
+        if (value > 60000) {
+          value = 60000;
+        }
+      }
+      value = Math.round(value);
+      this.model.set({
+        "sleep": value
+      });
+      this.$(".dispSleep").show().html(value).attr("title", "Sleep " + value + " msec");
+      this.$(".inputSleep").hide();
+      return false;
+    },
+    onBlurInputSleep: function() {
+      return this.onSubmitSleep();
+    },
+    setDispMode: function(mode) {
+      this.$(".mode").attr("title", modeDisp[mode][0].replace("...", "")).find(".icon")[0].className = "icon " + modeDisp[mode][1];
+      if (mode === "through") {
+        mode = this.model.get("lastMode") + " through";
+      }
+      this.$(".new,.origin,.icon-arrow-right").removeClass(this.optionKeys.join(" ")).addClass(mode);
+      if (/remap/.test(mode)) {
+        this.$("th:first,th:eq(1)").removeAttr("colspan").css("padding", "").find("i").show();
+        return this.$("th:eq(1),th:eq(2),th .origin").show().find("i").show();
+      } else {
+        if (this.$el.hasClass("child")) {
+          this.$("th:first").css("padding", "16px 0").find("i").hide();
+          return this.$("th .origin").hide();
+        } else if (this.$el.hasClass("parent")) {
+          this.$("th:first").removeAttr("colspan");
+          this.$("th:eq(1),th:eq(2)").show();
+          this.$("th:eq(1)").css("padding", "18px 0").find("i").hide();
+          return this.$("th .origin").hide();
+        } else {
+          this.$("th:first").attr("colspan", "3");
+          return this.$("th:eq(1),th:eq(2)").hide();
+        }
+      }
+    },
+    setKbdValue: function(input$, value) {
+      var result;
+      if (result = decodeKbdEvent(value)) {
+        input$.html(_.map(result.split(" + "), function(s) {
+          return "<span>" + s + "</span>";
+        }).join("+"));
+        return true;
+      } else {
+        return false;
+      }
+    },
+    setDesc: function() {
+      var bookmark, command, commandDisp, content, content3row, desc, editOption, help, i, key, keycombo, lines, mode, pause, sleep, tdDesc, test, _i, _j, _ref4, _ref5, _ref6;
+      (tdDesc = this.$(".desc")).empty();
+      editOption = {
+        iconName: "",
+        command: ""
+      };
+      if ((mode = this.model.get("mode")) === "through") {
+        pause = true;
+        mode = this.model.get("lastMode");
+      }
+      switch (mode) {
+        case "sleep":
+          if (!(sleep = this.model.get("sleep"))) {
+            this.model.set("sleep", sleep = 100);
+          }
+          tdDesc.append(this.tmplSleep({
+            sleep: sleep
+          }));
+          break;
+        case "bookmark":
+          bookmark = this.model.get("bookmark");
+          tdDesc.append(this.tmplBookmark({
+            openmode: bmOpenMode[bookmark.openmode],
+            url: bookmark.url,
+            title: bookmark.title
+          }));
+          editOption = {
+            iconName: "icon-pencil",
+            command: "Edit bookmark..."
+          };
+          break;
+        case "command":
+          desc = (commandDisp = commandsDisp[this.model.get("command").name])[1];
+          if (commandDisp[2]) {
+            content3row = [];
+            command = this.model.get("command");
+            lines = ((_ref4 = command.content) != null ? _ref4.split("\n") : void 0) || [];
+            for (i = _i = 0, _ref5 = lines.length; 0 <= _ref5 ? _i < _ref5 : _i > _ref5; i = 0 <= _ref5 ? ++_i : --_i) {
+              if (i > 2) {
+                content3row[i - 1] += " ...";
+                break;
+              } else {
+                content3row.push(lines[i].replace(/"/g, "'"));
+              }
+            }
+            tdDesc.append(this.tmplCommandCustom({
+              ctg: commandDisp[3],
+              desc: desc,
+              content3row: content3row.join("\n"),
+              caption: command.caption
+            }));
+            editOption = {
+              iconName: "icon-pencil",
+              command: "Edit command..."
+            };
+          } else {
+            tdDesc.append(this.tmplCommand({
+              desc: desc,
+              ctg: commandDisp[0].substring(0, 1).toUpperCase() + commandDisp[0].substring(1)
+            }));
+          }
+          break;
+        case "remap":
+        case "disabled":
+          if (mode === "remap") {
+            keycombo = this.$(".origin").text();
+          } else {
+            keycombo = this.$(".new").text();
+          }
+          keycombo = (keycombo.replace(/\s/g, "")).toUpperCase();
+          if (!(help = scHelp[keycombo])) {
+            if (/^CTRL\+[2-7]$/.test(keycombo)) {
+              help = scHelp["CTRL+1"];
+            }
+          }
+          if (help　 && help[this.lang]) {
+            for (i = _j = 0, _ref6 = help[this.lang].length; 0 <= _ref6 ? _j < _ref6 : _j > _ref6; i = 0 <= _ref6 ? ++_j : --_j) {
+              test = help[this.lang][i].match(/(^\w+)\^(.+)/);
+              key = RegExp.$1;
+              content = RegExp.$2;
+              tdDesc.append(this.tmplHelp({
+                sectDesc: scHelpSect[key],
+                sectKey: key,
+                scHelp: content
+              })).find(".sectInit").tooltip({
+                position: {
+                  my: "left+10 top-60"
+                },
+                tooltipClass: "tooltipClass"
+              });
+            }
+          }
+      }
+      if (tdDesc.html() === "") {
+        tdDesc.append(this.tmplMemo({
+          memo: this.model.get("memo")
+        }));
+        editOption = {
+          iconName: "icon-pencil",
+          command: "Edit comment"
+        };
+      }
+      tdDesc.append(this.tmplDesc(editOption));
+      if (mode === "disabled") {
+        this.$(".addKey,.copySC,.seprater.1st,div.ctxmenu,.addCommand").hide();
+      }
+      if (editOption.iconName === "") {
+        tdDesc.find(".edit").hide();
+      }
+      if (pause) {
+        tdDesc.find(".pause").hide();
+      } else {
+        tdDesc.find(".resume").hide();
+      }
+      if (this.$el.hasClass("child")) {
+        tdDesc.find(".ctxmenu,.copySC").hide();
+      }
+      if (this.$el.hasClass("child") || this.$el.hasClass("parent")) {
+        tdDesc.append(this.tmplUpDown);
+      }
+      return this.onChangeCtxmenu();
+    },
+    tmplDesc: _.template("<button class=\"cog small\" title=\"menu\"><i class=\"icon-caret-down\"></i></button>\n<div class=\"selectCog\" tabIndex=\"0\">\n  <div class=\"edit\"><i class=\"<%=iconName%>\"></i> <%=command%></div>\n  <div class=\"addCommand\"><i class=\"icon-plus\"></i> Add command</div>\n  <div class=\"ctxmenu\"><i class=\"icon-reorder\"></i> Create context menu...</div>\n  <div class=\"copySC\"><i class=\"icon-copy\"></i> Copy script</div>\n  <span class=\"seprater 1st\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"pause\"><i class=\"icon-pause\"></i> Pause</div>\n  <div class=\"resume\"><i class=\"icon-play\"></i> Resume</div>\n  <span class=\"seprater\"><hr style=\"margin:3px 1px\" noshade></span>\n  <div class=\"delete\"><i class=\"icon-trash\"></i> Delete</div>\n</div>"),
+    tmplUpDown: "    <ul class=\"button-bar updown\">\n      <li class=\"first\"><a href=\"#\" title=\"up\"><i class=\"icon-chevron-up\"></i></a></li>\n  <li class=\"last\"><a href=\"#\" title=\"down\"><i class=\"icon-chevron-down\"></i></a></li>\n</ul>",
+    tmplMemo: _.template("<form class=\"memo\">\n  <input type=\"text\" class=\"memo\">\n</form>\n<div class=\"memo\"><%=memo%></div>"),
+    tmplSleep: _.template("<form class=\"formSleep\">\n  <input type=\"number\" class=\"inputSleep\" min=\"0\" max=\"60000\" step=\"10\" required>\n  <span class=\"dispSleep\" title=\"Sleep <%=sleep%> msec\"><%=sleep%></span>\n  <i class=\"icon-pencil editSleep\" title=\"Edit sleep msec(0-60000)\"></i>\n</form>"),
+    tmplBookmark: _.template("<div class=\"bookmark\" title=\"<%=url%>\n[<%=openmode%>]\" style=\"background-image:-webkit-image-set(url(chrome://favicon/size/16@1x/<%=url%>) 1x);\"><%=title%></div>"),
+    tmplCommand: _.template("<div class=\"ctgIcon <%=ctg%>\"><%=ctg%></div><div class=\"command\"><%=desc%></div>"),
+    tmplCommandCustom: _.template("<div class=\"ctgIcon <%=ctg%>\" title=\"<%=desc%>\"><%=ctg%></div><div class=\"commandCaption\" title=\"<%=content3row%>\"><%=caption%></div>"),
+    tmplHelp: _.template("<div class=\"sectInit\" title=\"<%=sectDesc%>\"><%=sectKey%></div><div class=\"content\"><%=scHelp%></div>"),
+    template: _.template("<tr class=\"data\">\n  <th>\n    <div class=\"new\" tabIndex=\"0\"></div>\n    <div class=\"grpbartop\"></div>\n    <div class=\"grpbarbtm\"></div>\n  </th>\n  <th>\n    <i class=\"icon-arrow-right\"></i>\n  </th>\n  <th class=\"tdOrigin\">\n    <div class=\"origin\" tabIndex=\"-1\"></div>\n  </th>\n  <td class=\"options\">\n    <div class=\"mode\"><i class=\"icon\"></i><span></span><i class=\"icon-caret-down\"></i></div>\n    <div class=\"selectMode\" tabIndex=\"0\">\n      <% _.each(options, function(option, key) { if (option[2] != \"nodisp\") { %>\n      <div class=\"<%=key%>\"><i class=\"icon <%=option[1]%>\"></i> <%=option[0]%></div>\n      <% }}); %>\n    </div>\n  <td class=\"ctxmenu\"></td>\n  <td class=\"desc\"></td>\n  <td class=\"blank\">&nbsp;</td>\n</tr>")
+  });
+
+  KeyConfigSetView = Backbone.View.extend({
+    placeholder: "Enter new shortcut key",
+    el: "table.keyConfigSetView",
+    events: {
+      "click .addnew": "onClickAddnew",
+      "blur  .addnew": "onBlurAddnew",
+      "click": "onClickBlank",
+      "click .scrollEnd i": "onClickScrollEnd"
+    },
+    initialize: function(options) {
+      this.model.on("change:lang", this.onChangeLang, this);
+      this.model.on("change:kbdtype", this.onChangeKbdtype, this);
+      this.collection.comparator = function(model) {
+        return model.get("order");
+      };
+      return this.collection.on({
+        add: this.onAddRender,
+        kbdEvent: this.onKbdEvent
+      }, this);
+    },
+    render: function(keyConfigSet) {
+      var _this = this;
+      this.$el.append(this.template());
+      this.collection.set(keyConfigSet);
+      this.$("tbody").sortable({
+        delay: 300,
+        scroll: true,
+        cancel: "tr.border,tr.child,input",
+        placeholder: "ui-placeholder",
+        forceHelperSize: true,
+        forcePlaceholderSize: true,
+        cursor: "move",
+        start: function() {
+          return _this.onStartSort();
+        },
+        stop: function(event, ui) {
+          _this.redrawTable();
+          return ui.item.effect("highlight", 1500)[0].scrollIntoViewIfNeeded(true);
+        }
+      });
+      $(".fixed-table-container-inner").on("scroll", function(event) {
+        if (this.scrollTop < 10) {
+          $(".header-background").removeClass("scrolling");
+        } else {
+          $(".header-background").addClass("scrolling");
+          $(".scrollEnd").show();
+        }
+        if (this.scrollTop + 120 > this.scrollHeight - this.offsetHeight) {
+          return $(".footer").removeClass("scrolling");
+        } else {
+          $(".footer").addClass("scrolling");
+          return $(".scrollEnd").show();
+        }
+      }).niceScroll({
+        cursorwidth: 13,
+        cursorborderradius: 2,
+        smoothscroll: true,
+        cursoropacitymin: .3,
+        cursoropacitymax: .7,
+        zindex: 999998
+      });
+      this.niceScroll = $(".fixed-table-container-inner").getNiceScroll();
+      loading = false;
+      this.redrawTable();
+      return this;
+    },
+    onAddRender: function(model) {
+      var divAddNew, keyConfigView, tbody;
+      keyConfigView = new KeyConfigView({
+        model: model
+      });
+      keyConfigView.on("removeConfig", this.onChildRemoveConfig, this);
+      keyConfigView.on("resizeInput", this.onChildResizeInput, this);
+      keyConfigView.on("showPopup", this.onShowPopup, this);
+      keyConfigView.on("addCtxMenu", this.onAddCtxMenu, this);
+      keyConfigView.on("updateChildPos", this.redrawTable, this);
+      keyConfigView.on("remakeCtxMenu", this.onRemakeCtxMenu, this);
+      keyConfigView.on("getConfigValue", this.onGetConfigValue, this);
+      divAddNew = this.$("tr.addnew")[0] || null;
+      tbody = this.$("tbody")[0];
+      if (/^C/.test(model.id) && lastFocused) {
+        divAddNew = lastFocused.nextSibling || null;
+      }
+      tbody.insertBefore(keyConfigView.render(this.model.get("kbdtype"), this.model.get("lang")).el, divAddNew);
+      tbody.insertBefore($(this.tmplBorder)[0], divAddNew);
+      if (keyConfigView.state === "invalid") {
+        this.onChildRemoveConfig(model);
+      }
+      if (divAddNew || /^C/.test(model.id) && !loading) {
+        this.$("div.addnew").blur();
+        this.redrawTable();
+      }
+      if (/^C/.test(model.id) && lastFocused) {
+        lastFocused = null;
+        this.collection.get(model.get("parentId")).trigger("setRowspan");
+        return setTimeout((function() {
+          return model.trigger("setFocus");
+        }), 0);
+      }
+    },
+    onKbdEvent: function(value) {
+      var model, newitem, target;
+      if (this.$(".addnew").length === 0) {
+        if ((target = this.$(".new:focus,.origin:focus")).length === 0) {
+          if (model = this.collection.get(value)) {
+            model.trigger("setFocus", null, ".new");
+            return;
+          } else {
+            if (!this.onClickAddKeyConfig()) {
+              return;
+            }
+          }
+        } else {
+          return;
+        }
+      }
+      if (this.collection.findWhere({
+        "new": value
+      })) {
+        $("#tiptip_content").text("\"" + (decodeKbdEvent(value)) + "\" already exists.");
+        this.$("div.addnew").tipTip();
+        return;
+      }
+      this.collection.add(newitem = new KeyConfig({
+        "new": value,
+        origin: ~~value.substring(2) >= 0x200 ? "0130" : value
+      }));
+      this.$("tbody").sortable("enable").sortable("refresh");
+      windowOnResize();
+      this.onChildResizeInput();
+      return newitem.trigger("setFocus");
+    },
+    onChildRemoveConfig: function(model) {
+      this.collection.remove(model);
+      this.redrawTable();
+      windowOnResize();
+      return this.onChildResizeInput();
+    },
+    onChildResizeInput: function() {
+      var _this = this;
+      this.$(".th_inner").css("left", 0);
+      return setTimeout((function() {
+        return _this.$(".th_inner").css("left", "");
+      }), 0);
+    },
+    onShowPopup: function(name, id) {
+      return this.trigger("showPopup", name, id);
+    },
+    onRemakeCtxMenu: function(container) {
+      return andy.remakeCtxMenu(this.getSaveData()).done(function() {
+        return container.dfd.resolve();
+      });
+    },
+    onAddCtxMenu: function(ctxMenu) {
+      return this.trigger("addCtxMenu", ctxMenu);
+    },
+    onTriggerEventSelected: function() {
+      this.collection.models.forEach(function(model) {
+        return model.trigger("triggerEventCtxMenuSelected");
+      });
+      return this.redrawTable();
+    },
+    onSetCtxMenus: function(ctxMenus) {
+      var _this = this;
+      this.collection.models.forEach(function(model) {
+        return model.unset("ctxMenu");
+      });
+      return ctxMenus.forEach(function(ctxMenu) {
+        var model;
+        model = _this.collection.get(ctxMenu.id);
+        return model.set("ctxMenu", ctxMenu);
+      });
+    },
+    onGetCtxMenues: function(container) {
+      container.ctxMenus = [];
+      this.collection.models.forEach(function(model) {
+        var ctxMenu;
+        if (ctxMenu = model.get("ctxMenu")) {
+          return container.ctxMenus.push({
+            id: model.id,
+            caption: ctxMenu.caption,
+            contexts: ctxMenu.contexts,
+            parentId: ctxMenu.parentId,
+            shortcut: decodeKbdEvent(model.id),
+            order: ctxMenu.order || 999
+          });
+        }
+      });
+      return container.ctxMenus.sort(function(a, b) {
+        return a.order - b.order;
+      });
+    },
+    onEnterCtxMenuSelMode: function(entried) {
+      this.$("button").attr("disabled", "disabled").addClass("disabled");
+      this.collection.models.forEach(function(model) {
+        var _ref4;
+        return model.trigger("setUnselectable", (_ref4 = model.id, __indexOf.call(entried, _ref4) >= 0) ? true : false);
+      });
+      this.$("tbody").sortable("disable").selectable({
+        cancel: "tr:has(div.ctxmenu-icon)",
+        filter: "tr"
+      }).find("tr:has(div.mode[title='Disabled'])").addClass("unselectable").end().find("tr:has(div.ctxmenu-icon)").addClass("unselectable").end().find("div.mode,div.new,div.origin").addClass("unselectable").end();
+      return this.onStartSort();
+    },
+    onLeaveCtxMenuSelMode: function(cancel) {
+      this.$("button").removeAttr("disabled").removeClass("disabled");
+      this.$("tbody").selectable("destroy").sortable("enable").find("div.unselectable").removeClass("unselectable").end();
+      if (cancel) {
+        this.$("tr").removeClass("ui-selected unselectable");
+        return this.redrawTable();
+      }
+    },
+    onGetEditerSize: function(container) {
+      var editerSize;
+      if (editerSize = this.model.get("editerSize")) {
+        container.width = editerSize.width;
+        return container.height = editerSize.height;
+      }
+    },
+    onSetEditerSize: function(width, height) {
+      return this.model.set("editerSize", {
+        width: width,
+        height: height
+      });
+    },
+    onGetSaveData: function(container) {
+      return container.data = this.getSaveData();
+    },
+    onSetSaveData: function(newData) {
+      var model;
+      this.collection.remove(this.collection.findWhere({
+        "new": this.placeholder
+      }));
+      this.model.set(newData.config);
+      ctxMenuManagerView.collection.reset(newData.ctxMenuFolderSet);
+      while (model = this.collection.at(0)) {
+        this.collection.remove(model);
+      }
+      loading = true;
+      this.collection.set(newData.keyConfigSet);
+      this.redrawTable();
+      loading = false;
+      return windowOnResize();
+    },
+    onGetConfigValue: function(key, container) {
+      return container.result = this.model.get(key);
+    },
+    onClickScrollEnd: function(event) {
+      var scrollTop;
+      if (/icon-double-angle-up/.test(event.target.className)) {
+        scrollTop = 0;
+      } else {
+        scrollTop = 10000;
+      }
+      return $(".fixed-table-container-inner")[0].scrollTop = scrollTop;
+    },
+    onKeyDown: function(event) {
+      var elActive, i, keyname, keynames, scCode, scanCode, _i, _ref4, _ref5;
+      if (!this.model.get("singleKey")) {
+        return;
+      }
+      if ((elActive = document.activeElement) && ((_ref4 = elActive.tagName) === "TEXTAREA" || _ref4 === "INPUT" || _ref4 === "SELECT")) {
+        return;
+      }
+      if (keynames = keyIdentifiers[this.model.get("kbdtype")][event.originalEvent.keyIdentifier]) {
+        if (event.originalEvent.shiftKey) {
+          if (!(keyname = keynames[1])) {
+            return;
+          }
+          scCode = "04";
+        } else {
+          keyname = keynames[0];
+          scCode = "00";
+        }
+        for (i = _i = 0, _ref5 = keys.length; 0 <= _ref5 ? _i < _ref5 : _i > _ref5; i = 0 <= _ref5 ? ++_i : --_i) {
+          if (keys[i] && (keyname === keys[i][0] || keyname === keys[i][1])) {
+            scanCode = i;
+            break;
+          }
+        }
+        if (scanCode) {
+          return this.onKbdEvent(scCode + i);
+        }
+      }
+    },
+    onClickAddKeyConfig: function(event) {
+      var newItem$;
+      if (this.$(".addnew").length > 0) {
+        return;
+      }
+      if (this.collection.length > gMaxItems) {
+        $("#tiptip_content").text("You have reached the maximum number of items. (Max " + gMaxItems + " items)");
+        $(event.currentTarget).tipTip({
+          defaultPosition: "left"
+        });
+        return false;
+      }
+      newItem$ = $(this.tmplAddNew({
+        placeholder: this.placeholder
+      }));
+      if (/child/.test(lastFocused != null ? lastFocused.className : void 0)) {
+        lastFocused = $(lastFocused).prevAll(".parent:first")[0];
+      }
+      this.$("tbody")[0].insertBefore(newItem$[0], lastFocused);
+      newItem$.find(".addnew").focus()[0].scrollIntoViewIfNeeded();
+      this.$("tbody").sortable("disable");
+      return windowOnResize();
+    },
+    onClickBlank: function() {
+      this.$(":focus").blur();
+      return lastFocused = null;
+    },
+    onClickAddnew: function(event) {
+      return event.stopPropagation();
+    },
+    onBlurAddnew: function() {
+      this.$(".addnew").remove();
+      this.$("tbody").sortable("enable");
+      return windowOnResize();
+    },
+    onChangeLang: function() {
+      return this.collection.trigger("changeLang", this.model.get("lang"));
+    },
+    onChangeKbdtype: function() {
+      return this.collection.trigger("changeKbd", this.model.get("kbdtype"));
+    },
+    onStartSort: function() {
+      this.$("tr.child").hide();
+      this.$(".ui-placeholder").nextAll("tr.border:first,tr.border:last").remove();
+      return this.$(".parent th:first-child").removeAttr("rowspan");
+    },
+    redrawTable: function() {
+      var _this = this;
+      this.$("tr.child").show();
+      this.$("tr.border").remove();
+      this.collection.models.forEach(function(model) {
+        return model.trigger("setRowspan");
+      });
+      $("#sortarea").append(this.$("tr.data"));
+      this.collection.trigger("updateOrderByEl");
+      this.collection.sort();
+      this.collection.models.forEach(function(model) {
+        var parentId;
+        if (parentId = model.get("parentId")) {
+          return model.set("order", 999);
+        }
+      });
+      this.collection.sort();
+      this.collection.models.forEach(function(model) {
+        var parentId;
+        if (parentId = model.get("parentId")) {
+          return model.set("order", _this.collection.get(parentId).get("order"));
+        }
+      });
+      this.collection.sort();
+      $.each(this.collection.models, function(i, model) {
+        model.set("order", i);
+        return model.trigger("updatePosition");
+      });
+      $.each($("#sortarea tr"), function(i, tr) {
+        return _this.$("tbody").append(tr);
+      });
+      this.$("tr.last").removeClass("last");
+      return $.each(this.$("tbody > tr"), function(i, tr) {
+        var tr$, _ref4;
+        if (!/child/.test((_ref4 = tr.nextSibling) != null ? _ref4.className : void 0)) {
+          (tr$ = $(tr)).after(_this.tmplBorder);
+          if (/child/.test(tr.className)) {
+            return tr$.addClass("last");
+          }
+        }
+      });
+    },
+    getSaveData: function() {
+      this.collection.remove(this.collection.findWhere({
+        "new": this.placeholder
+      }));
+      return {
+        config: this.model.toJSON(),
+        ctxMenuFolderSet: ctxMenuManagerView.collection.sort().toJSON(),
+        keyConfigSet: this.collection.toJSON()
+      };
+    },
+    tmplAddNew: _.template("<tr class=\"addnew\">\n  <th colspan=\"3\">\n    <div class=\"new addnew\" tabIndex=\"0\"><%=placeholder%></div>\n  </th>\n  <td></td><td></td><td></td><td class=\"blank\"></td>\n</tr>"),
+    tmplBorder: "<tr class=\"border\">\n  <td colspan=\"6\"><div class=\"border\"></div></td>\n  <td></td>\n</tr>",
+    template: _.template("<thead>\n  <tr>\n    <th>\n      <div class=\"th_inner\">New <i class=\"icon-arrow-right\"></i> Origin shortcut key</div>\n    </th>\n    <th></th>\n    <th></th>\n    <th>\n      <div class=\"th_inner options\">Mode</div>\n    </th>\n    <th class=\"ctxmenu\"></th>\n    <th>\n      <div class=\"th_inner desc\">Description</div>\n      <div class=\"scrollEnd top\"><i class=\"icon-double-angle-up\" title=\"Scroll to Top\"></i></div>\n      <div class=\"scrollEnd bottom\"><i class=\"icon-double-angle-down\" title=\"Scroll to Bottom\"></i></div>\n    </th>\n  </tr>\n</thead>\n<tbody></tbody>")
+  });
+
+  Router = Backbone.Router.extend({
+    initialize: function(options) {
+      this.collection = options.collection;
+      return this.popupType = {
+        "bookmark": "popup",
+        "command": "popup",
+        "bookmarkOptions": "editable",
+        "commandOptions": "editable",
+        "ctxMenuOptions": "editable",
+        "ctxMenuManager": "editable",
+        "settings": "editable"
+      };
+    },
+    routes: {
+      "popup/:name(/:id)(/:option1)(/:option2)": "showPopup",
+      "editable/:name(/:id)(/:option1)(/:option2)": "showPopup",
+      "(:any)": "onNavigateRootPage"
+    },
+    showPopup: function(name, id, option1, option2) {
+      var model;
+      if (id) {
+        model = this.collection.get(id);
+      }
+      return this.trigger("showPopup", name, model, option1, option2);
+    },
+    onNavigateRootPage: function() {
+      this.navigate("/");
+      return this.trigger("hidePopup");
+    },
+    onNavigatePopup: function(name, id) {
+      var params;
+      params = "";
+      Array.prototype.slice.call(arguments, 1).forEach(function(param) {
+        if (param) {
+          return params += "/" + param;
+        }
+      });
+      return this.navigate(this.popupType[name] + "/" + name + params, {
+        trigger: true
+      });
+    }
+  });
+
+  marginBottom = 0;
+
+  resizeTimer = false;
+
+  windowOnResize = function() {
+    if (resizeTimer) {
+      clearTimeout(resizeTimer);
+    }
+    return resizeTimer = setTimeout((function() {
+      var tableHeight;
+      tableHeight = window.innerHeight - document.querySelector(".header").offsetHeight - marginBottom;
+      document.querySelector(".fixed-table-container").style.pixelHeight = tableHeight;
+      $(".fixed-table-container-inner").getNiceScroll().resize();
+      return $(".result_outer").getNiceScroll().resize();
+    }), 200);
+  };
+
+  startEdit = function() {
+    andy.startEdit();
+  };
+
+  endEdit = function() {
+    andy.endEdit();
+  };
+
+  andy = chrome.extension.getBackgroundPage().andy;
+
+  $ = jQuery;
+
+  $(function() {
+    var commandOptionsView, config, ctxMenuFolderSet, ctxMenuOptionsView, headerView, keyConfigSet, saveData, scrollContainer, settingsView;
+    keyCodes = andy.getKeyCodes();
+    scHelp = andy.getScHelp();
+    scHelpSect = andy.getScHelpSect();
+    saveData = andy.local;
+    config = new Config(saveData.config);
+    keyConfigSet = new KeyConfigSet();
+    router = new Router({
+      collection: keyConfigSet
+    });
+    headerView = new HeaderView({
+      model: config
+    });
+    settingsView = new SettingsView({
+      model: config
+    });
+    keyConfigSetView = new KeyConfigSetView({
+      model: config,
+      collection: keyConfigSet
+    });
+    new BookmarksView({});
+    new BookmarkOptionsView({});
+    new CommandsView({});
+    commandOptionsView = new CommandOptionsView({});
+    ctxMenuFolderSet = new CtxMenuFolderSet();
+    ctxMenuOptionsView = new CtxMenuOptionsView({
+      collection: ctxMenuFolderSet
+    });
+    ctxMenuManagerView = new CtxMenuManagerView({
+      collection: ctxMenuFolderSet
+    });
+    headerView.on("showPopup", router.onNavigatePopup, router);
+    keyConfigSetView.on("showPopup", router.onNavigatePopup, router);
+    headerView.on("clickAddKeyConfig", keyConfigSetView.onClickAddKeyConfig, keyConfigSetView);
+    ctxMenuOptionsView.on("getCtxMenues", keyConfigSetView.onGetCtxMenues, keyConfigSetView);
+    ctxMenuOptionsView.on("remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView);
+    ctxMenuManagerView.on("getCtxMenues", keyConfigSetView.onGetCtxMenues, keyConfigSetView);
+    ctxMenuManagerView.on("remakeCtxMenu", keyConfigSetView.onRemakeCtxMenu, keyConfigSetView);
+    keyConfigSet.on("getCtxMenuContexts", ctxMenuManagerView.onGetCtxMenuContexts, ctxMenuManagerView);
+    ctxMenuManagerView.on("enterCtxMenuSelMode", keyConfigSetView.onEnterCtxMenuSelMode, keyConfigSetView);
+    ctxMenuManagerView.on("enterCtxMenuSelMode", headerView.onEnterCtxMenuSelMode, headerView);
+    ctxMenuManagerView.on("leaveCtxMenuSelMode", keyConfigSetView.onLeaveCtxMenuSelMode, keyConfigSetView);
+    ctxMenuManagerView.on("leaveCtxMenuSelMode", headerView.onLeaveCtxMenuSelMode, headerView);
+    ctxMenuManagerView.on("triggerEventSelected", keyConfigSetView.onTriggerEventSelected, keyConfigSetView);
+    ctxMenuManagerView.on("setCtxMenus", keyConfigSetView.onSetCtxMenus, keyConfigSetView);
+    commandOptionsView.on("getEditerSize", keyConfigSetView.onGetEditerSize, keyConfigSetView);
+    commandOptionsView.on("setEditerSize", keyConfigSetView.onSetEditerSize, keyConfigSetView);
+    settingsView.on("getSaveData", keyConfigSetView.onGetSaveData, keyConfigSetView);
+    settingsView.on("setSaveData", keyConfigSetView.onSetSaveData, keyConfigSetView);
+    ctxMenuFolderSet.reset(saveData.ctxMenuFolderSet);
+    keyConfigSetView.render(saveData.keyConfigSet);
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+      switch (request.action) {
+        case "kbdEvent":
+          return keyConfigSetView.collection.trigger("kbdEvent", request.value);
+        case "saveConfig":
+          return andy.saveConfig(keyConfigSetView.getSaveData());
+      }
+    });
+    $(window).on("unload", function() {
+      return andy.saveConfig(keyConfigSetView.getSaveData());
+    }).on("resize", function() {
+      return windowOnResize();
+    }).on("click", function() {
+      return lastFocused = null;
+    }).on("keydown", function(event) {
+      return keyConfigSetView.onKeyDown(event);
+    });
+    windowOnResize();
+    scrollContainer = $(".fixed-table-container-inner")[0];
+    console.log(scrollContainer.scrollHeight - scrollContainer.offsetHeight);
+    if ((scrollContainer.scrollHeight - scrollContainer.offsetHeight) > 40) {
+      $(".footer").addClass("scrolling");
+      $(".scrollEnd").show();
+    }
+    return Backbone.history.start({
+      pushState: false
+    });
+  });
+
+}).call(this);

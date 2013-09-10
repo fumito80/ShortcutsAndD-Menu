@@ -792,7 +792,7 @@ KeyConfigSetView = Backbone.View.extend
         else
           $(".header-background").addClass("scrolling")
           $(".scrollEnd").show()
-        if @scrollTop + 30 > @scrollHeight - @offsetHeight
+        if @scrollTop + 120 > @scrollHeight - @offsetHeight
           $(".footer").removeClass("scrolling")
         else
           $(".footer").addClass("scrolling")
@@ -1223,7 +1223,8 @@ $ ->
   windowOnResize()
   
   scrollContainer = $(".fixed-table-container-inner")[0]
-  unless scrollContainer.scrollHeight is scrollContainer.offsetHeight
+  console.log scrollContainer.scrollHeight - scrollContainer.offsetHeight
+  if (scrollContainer.scrollHeight - scrollContainer.offsetHeight) > 40
     $(".footer").addClass("scrolling")
     $(".scrollEnd").show()
   

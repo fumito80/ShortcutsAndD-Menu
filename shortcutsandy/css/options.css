@@ -48,7 +48,7 @@ body {
   box-shadow: none;
 }
 .footer.scrolling {
-  box-shadow: 0 -7px 4px -4px #999 inset;
+  box-shadow: 0 -7px 4px -4px #666 inset;
 }
 .header .h1 {
   font: 14px 'Michroma', Arial;
