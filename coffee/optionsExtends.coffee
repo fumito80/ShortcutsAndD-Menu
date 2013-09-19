@@ -140,6 +140,7 @@ class SettingsView extends PopupBaseView
     @model.trigger "change:lang"
   render: ->
     @$(".singleKey")[0].checked = @model.get("singleKey")
+    @$(".sleepMSec").val @model.get("defaultSleep")
     @$(".kbdtype").val @model.get("kbdtype")
     @$(".lang").val (@model.get("lang") || "ja")
     @trigger "getSaveData", container = {}
@@ -160,7 +161,15 @@ class SettingsView extends PopupBaseView
       return
     @$el.append @tmplHelp @
   onSubmitForm: ->
+    defaultSleep = ~~@$(".sleepMSec").val()
+    if !defaultSleep?
+      return false
+    else
+      defaultSleep = 0 if defaultSleep < 0
+      defaultSleep = 1000 if defaultSleep > 1000
+    defaultSleep = Math.round defaultSleep
     @model.set
+      defaultSleep: defaultSleep
       kbdtype: @$(".kbdtype").val()
       lang: @$(".lang").val()
       singleKey: @$(".singleKey").is(":checked")
@@ -257,15 +266,15 @@ commandsDisp =
   switchPrevWin:  ["win", "Switch to the previous window"]
   switchNextWin:  ["win", "Switch to the next window"]
   closeOtherWins: ["win", "Close other windows"]
-  clearCache:     ["clr", "Clear the browser's cache"]
-  #clearHistory:   ["clr", "Clear browsing history"]
-  clearCookiesAll:["clr", "Clear the browser's cookies and site data"]
-  clearCookies:   ["clr", "Clear all cookies for the current domain"]
+  clearCache:     ["clr", "Clear browser's cache"]
+  clearCookiesAll:["clr", "Clear browser's cookies and site data"]
+  clearHistory:   ["clr", "Clear browsing history"]
+  clearCookies:   ["clr", "Clear cookies for the current domain"]
   #clearHistoryS:  ["clr", "Delete specific browsing history", [], "Clr"]
-  #clearCookies:   ["browsdata", "Delete cookies and other site and plug-in data"]
   pasteText:      ["custom", "Paste fixed text", [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
+  openExtProg:    ["custom", "Open URL from external program", [], "Ext"]
   insertCSS:      ["custom", "Inject CSS", [{value:"allFrames", caption:"All frames"}], "CSS", ""]
   execJS:         ["custom", "Inject JavaScript", [
     {value:"allFrames" ,  caption:"All frames"}
@@ -275,11 +284,52 @@ commandsDisp =
   ], "JS"]
 
 catnames =
-  tab: "Tabs"
-  win: "Windows"
+  tab: "Tab"
+  win: "Window"
   clr: "Browsing data"
   clip: "Clipboard"
   custom: "Custom"
+
+class OptionExtProgView extends PopupBaseView
+  name: "optionExtProg"
+  el: ".optionExtProg"
+  events: _.extend
+    "change input[name='program']": "onChangeProgram"
+    PopupBaseView.prototype.events
+  render: ->
+    @$(".progPath").val ""
+    if @options = @model.get("command")
+      value = @options.content
+      if (radio = @$("input[name='program'][value='#{value}']")).length is 0
+        @$(".progPath").val value
+        value = "other"
+    else
+      value = "iexplore"
+    @$("input[name='program'][value='#{value}']")[0].checked = true
+  onChangeProgram: (event) ->
+    if @$("input[name='program'][value='other']").is(":checked")
+      @$(".progPath").focus()
+    else
+      @$(".progPath").blur()
+  onSubmitForm: ->
+    if (content = @$("input[name='program']:checked").val()) is "other"
+      caption = content = $.trim @$(".progPath").val()
+    else
+      caption = $.trim @$("input[name='program']:checked").parent().text()
+    unless content is ""
+      #unless caption = @$(".caption").val()
+      #  caption = content.split("\n")[0]
+      @model
+        .set
+          "command":
+            _.extend
+              name: "openExtProg"
+              caption: caption
+              content: content
+          {silent: true}
+        .trigger "change:command"
+      @hidePopup()
+    false
 
 class CommandOptionsView extends ExplorerBaseView
   name: "commandOptions"
@@ -378,7 +428,7 @@ class CommandOptionsView extends ExplorerBaseView
         content = if @$(".tabs li:has(a.x-coffeescript)").hasClass("current") then content else @coffee
         result = andy.coffee2JS @model.id, content
         unless result.success
-          unless confirm "A compilation error has occurred, but do you continue?\n\n  " + result.err
+          unless confirm "A compilation error has occurred, but do you continue?\n\n  Line: #{result.errLine}\n  Error: #{result.err}"
             return false
       if @options.name isnt "execJS" || @$(".tabs li:has(a.x-coffeescript)").hasClass("current")
         @undoData = @editer.getHistory()
@@ -415,7 +465,7 @@ class CommandOptionsView extends ExplorerBaseView
           value = CoffeeScript.compile (@coffee = @editer.getValue()), bare: "on"
           @undoData = @editer.getHistory()
         catch e
-          alert "A compilation error has occurred.\n\n  " + e.message
+          alert "A compilation error has occurred.\n\n  Line: #{e.location.first_line+1}\n  Error: #{e.message}"
           return
       else
         value = @coffee
@@ -463,7 +513,9 @@ class CommandsView extends PopupBaseView
     @$el.append @tmplHelp @
   onSubmitForm: ->
     if command = @$(".radioCommand:checked").val()
-      if commandsDisp[command][2]
+      if command is "openExtProg"
+        @trigger "showPopup", "optionExtProg", @model.id
+      else if commandsDisp[command][2]
         @trigger "showPopup", "commandOptions", @model.id, command
       else
         @hidePopup()
@@ -1092,8 +1144,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     """
   tmplFolder: _.template """
     <div class="folder hasFolder" id="<%=id%>">
-      <span class="title" tabindex="0"><%=title%></span>
-      <div class="updown"></div>
+      <span class="title" tabindex="0"><div class="sortable"></div><%=title%></span>
       <div class="emptyFolder"></div>
       <form class="editCaption"><input type="text"></form>
       <div class="ctxMenus"></div>
@@ -1101,8 +1152,7 @@ class CtxMenuManagerView extends ExplorerBaseView
     """
   tmplMenuItem: _.template """
     <div class="ctxMenuItem<%=route%>" id="<%=id%>">
-      <span class="menuCaption" tabindex="0" title="<%=shortcut%>"><%=caption%></span>
-      <div class="updown"></div>
+      <span class="menuCaption" tabindex="0" title="<%=shortcut%>"><%=caption%><div class="sortable"></div></span>
       <form class="editCaption"><input type="text"></form>
     </div>
     """

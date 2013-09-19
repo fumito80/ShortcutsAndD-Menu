@@ -95,6 +95,10 @@ scd =
     (new Messenger()).sendMessage "openUrl", params
     @returnValue.cid = cid
   
+  execShell: (path, param) ->
+    if path
+      (new Messenger()).sendMessage "execShell", path, param
+  
   clearCurrentTab: ->
     (new Messenger()).sendMessage "clearCurrentTab"
   

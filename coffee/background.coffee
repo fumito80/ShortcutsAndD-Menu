@@ -1,4 +1,3 @@
-defaultSleep = 100
 gCurrentTabId = null
 userData = {}
 undoData = {}
@@ -191,6 +190,11 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
               gCurrentTabId = tabId
               tabStateNotifier.callComplete params.commandId
             doneCallback dfd, 0
+        when "execShell"
+          setTimeout((->
+            flexkbd.ExecUrl request.value1, request.value2
+            doneCallback dfd, 0
+          ), 0)
         when "clearActiveTab"
           setTimeout((->
             gCurrentTabId = null
@@ -222,7 +226,7 @@ chrome.runtime.onMessage.addListener (request, sender, sendResponse) ->
       dfd.promise()
   true
 
-jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage("openUrl",u),this.returnValue.cid=s},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)},tabId:{},getTabInfo:function(){return(new t).sendMessage("getTabInfo",this.tabId)}};"""
+jsUtilObj = """var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage("openUrl",u),this.returnValue.cid=s},execShell:function(e,n){if(e)return(new t).sendMessage("execShell",e,n)},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)},getTabInfo:function(){return(new t).sendMessage("getTabInfo",this.tabId)}};"""
 
 sendMessage = (message) ->
   chrome.tabs.query {active: true}, (tabs) ->
@@ -336,7 +340,7 @@ execBatchMode = (scCode) ->
         keyConfig = keyConfigs[batchIndex]
         switch keyConfig.mode
           when "remap"
-            execShortcut dfd, doneCallback, null, keyConfig.origin, defaultSleep, "keydown", batchIndex
+            execShortcut dfd, doneCallback, null, keyConfig.origin, andy.defaultSleep, "keydown", batchIndex
           when "command"
             execCommand(keyConfig.new).done (results) ->
               if results
@@ -364,7 +368,7 @@ execBatchMode = (scCode) ->
               doneCallback dfd, 0, batchIndex
             ), 0)
           else
-            execShortcut dfd, doneCallback, null, keyConfig.new, defaultSleep, keyConfig.mode, batchIndex
+            execShortcut dfd, doneCallback, null, keyConfig.new, andy.defaultSleep, keyConfig.mode, batchIndex
       catch e
         setTimeout((->
           dfd.reject()
@@ -685,6 +689,10 @@ execCommand = (keyEvent) ->
               removeCookie dfd, removeSpecs, 0
         when "clearCache"
           chrome.browsingData.removeCache {}, -> dfd.resolve()
+        when "openExtProg"
+          getActiveTab().done (tab) ->
+            flexkbd.ExecUrl item.command.content, tab.url
+          
   dfd.promise()
 
 setConfigPlugin = (keyConfigSet) ->
@@ -704,6 +712,7 @@ setConfigPlugin = (keyConfigSet) ->
 
 window.andy =
   local: null
+  defaultSleep: 100
   setLocal: ->
     dfd = $.Deferred()
     chrome.storage.local.get null, (items) =>
@@ -711,6 +720,8 @@ window.andy =
       unless @local.ctxMenuFolderSet
         @local.ctxMenuFolderSet = []
       if @local.config
+        if @local.config.defaultSleep?
+          @defaultSleep = @local.config.defaultSleep
         dfd.resolve()
       else
         chrome.i18n.getAcceptLanguages (langs) =>
@@ -737,6 +748,7 @@ window.andy =
   saveConfig: (saveData) ->
     chrome.storage.local.set saveData, =>
       @local = saveData
+      @defaultSleep = @local.config.defaultSleep
       setConfigPlugin @local.keyConfigSet
   updateCtxMenu: (id, ctxMenu, pause) ->
     ctxMenu.id = id
@@ -783,7 +795,7 @@ window.andy =
       success: true
     catch e
       jsTransCodes[id] = ""
-      success: false, err: e.message
+      success: false, err: e.message, errLine: e.location.first_line + 1
   helpFileName: "help/help.md"
 
 window.pluginEvent = (action, value) ->
@@ -949,8 +961,3 @@ $ ->
   urlHelpMd = "https://dl.dropboxusercontent.com/u/41884666/help.md"
   $.get(urlHelpMd).done (respText) ->
     createFileHelpMd respText
-  
-#indexedDB = new db.IndexedDB
-#  schema_name: "scremapper"
-#  schema_version: 1
-#  keyPath: "new"

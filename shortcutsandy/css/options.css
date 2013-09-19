@@ -4,7 +4,7 @@ body {
   font-family: 'Noto Sans', 'Meiryo UI', 'MS UI Gothic', Arial;
   font-size: 0.9em;
   overflow: hidden;
-  background-color: #FCFCFC;
+  background-color: #F6F6F6;
 }
 .header {
   position: fixed;
@@ -132,7 +132,7 @@ tbody .data:hover {
   top: -1px;
   height: 40px;
   padding-top: 17px;
-  background-color: #FCFCFC;
+  background-color: #F6F6F6;
 }
 .keyConfigSetView .th_inner.options {
   padding-left: 6px;
@@ -338,6 +338,9 @@ thead th i.icon-arrow-right {
 .clr {
   background: #ADFF44;
 }
+.Ext {
+  background: #f66;
+}
 button.cog.small {
   position: absolute;
   top: 8px;
@@ -393,7 +396,7 @@ button.cog.selecting {
   float: left;
 }
 .keyConfigSetView .desc div.commandCaption {
-  overflow: auto;
+  overflow: ellipsis;
   color: #583521;
 }
 .desc .bookmark, .bookmarkOptions .bookmark {
@@ -414,7 +417,7 @@ button.cog.selecting {
   padding-right: 8px;
 }
 .keyConfigSetView .blank {
-  background: #FCFCFC;
+  background: #F6F6F6;
   padding: 0 12px;
 }
 .keyConfigSetView .ui-placeholder {
@@ -457,7 +460,7 @@ button.cog.selecting {
   position: fixed;
   z-index: 7;
   padding: 10px;
-  background: #FCFCFC;
+  background: #F6F6F6;
   box-shadow: 0 0 20px black;
 }
 .popup input[type='text'], .popup textarea {
@@ -647,12 +650,13 @@ button.cog.selecting {
 }
 .commands .cattab {
   float: left;
+  margin-right: 15px;
 }
 .commands .catwin, .commands .catcustom, .catclip, .catclr {
   overflow: auto;
 }
 .catwin {
-  margin-right: 70px;
+  margin-right: 50px;
 }
 .commands .catname {
   font-weight: bold;
@@ -734,6 +738,12 @@ button.cog.selecting {
 .commandParams input[type='text'] {
   width: 450px;
 }
+.optionExtProg .done {
+  margin-right: 50px;
+}
+.optionExtProg .progPath {
+  width: 450px;
+}
 .ctxmenu-icon {
   width: 18px;
   height: 17px;
@@ -798,9 +808,17 @@ button.cog.selecting {
   top: 0;
   left: -22px;
 }
-.title .sortable {
+/*
+.ctxMenuManager .title .sortable {
   left: -37px;
 }
+.ctxMenuManager .title:hover .sortable {
+  display: block;
+}
+.ctxMenuManager .menuCaption:hover .sortable {
+  display: block;
+}
+*/
 .ctxMenuManager .result_outer {
   float: left;
   width: 420px;
@@ -1079,4 +1097,14 @@ tr:not(.parent) .grpbartop, tr:not(.parent) .grpbarbtm {
   padding: 3px;
   border-radius: 0;
   margin-top: -3px;
+}
+.sleepMSec {
+  outline: none;
+  border: 1px solid #ccc;
+  box-shadow: inset 0px 1px 6px #ccc;
+  transition: box-shadow 0.5s, border 0.5s, background 0.5s;
+}
+.sleepMSec:focus {
+  box-shadow: 0 0 7px #6DB9FF;
+  border: 1px solid #50B1FE; 
 }

@@ -72,7 +72,7 @@
 >  2. 自動的に、変更したいキー（Origin）の入力にフォーカスされるので  
 >     任意のキーを押下して登録します。
 > > 
-> >    - Originがショートカットキーで、Chromeのショートカット機能が割り当てられている場合は、Commentにショートカットキーのヘルプが表示されます。
+> >    - Originがショートカットキーで、Chromeのショートカット機能が割り当てられている場合は、Descriptionにショートカットキーのヘルプが表示されます。
 > >    - 修飾キー（Ctrl、Shift、Alt、Winキー）は単独では登録できません。
 > >    - マウスイベントは登録できません。
 > >    - その他、アプリケーションキーやプリントスクリーンキー、日本語入力関連のキー等、一部登録できないキーがあります。
@@ -115,12 +115,12 @@
 > - **ショートカットキーの一時停止**  
 >    「Pause」を選択します。 一時的にショートカットキーの割り当てを停止します。 次回メニューの「Resume」を選択して復帰させることができます。
 > - **拡張コマンドの編集**  
->    「Edit Command」を選択します。 編集可能な拡張コマンド選択時のみ選択できます。
+>    「Edit command」を選択します。 編集可能な拡張コマンド選択時のみ選択できます。
 > - **ブックマークの編集**  
->    「Edit Bookmark」を選択します。 ブックマークのときに選択できます。
-> - **Commentの編集（メモ機能）**  
->    「Edit comment」を選択します。 Remap/Disabled/Commentモード時に  
->    Commentが空欄のときに（Commentモード時は常時）選択できます。 メモ的な用途で利用します。  
+>    「Edit bookmark」を選択します。 ブックマークのときに選択できます。
+> - **Descriptionの編集（メモ機能）**  
+>    「Edit description」を選択します。 Remap/Disabled/Commentモード時に  
+>    Descriptionが空欄のときに（Commentモード時は常時）選択できます。 メモ的な用途で利用します。  
 > - **コンテキストメニューへの登録**  
 >    「Create/Edit context menu」を選択します。 [コンテキストメニュー登録・編集](#ctxMenuOptions)ダイアログが開きます。
 > - **バッチ実行の追加キーイベントの登録**  
@@ -132,7 +132,7 @@
 
 <a name="settings"></a>
 ###### Settings
-> - **単独キーショートカットの有効化** (Enable single key keybord shortcuts)  
+> - **単独キーショートカットの有効化**  
 >
 >    チェックした場合、修飾キー（Ctrl、Alt、Winキー）なしで、ショートカットキーとして登録できます。  
 >
@@ -140,6 +140,10 @@
 >        - テキスト入力欄では使用できません。 通常の文字入力になります。  
 >        - Shiftキーとの併用時は、キーリピートが効きません。  
 >        - 設定直後はすぐに使用できない場合があります。その際はページを読み込み直してください。   
+>
+> - **キーボードマクロ（バッチ実行モード）時の各キーストローク間の間隔**  
+>
+>    バッチ実行モード時、Remapモードのコマンド実行後にスリープされる時間を、ミリ秒単位で指定します。(0~1000msecの範囲)  
 >
 > - **キーボードタイプの選択**  
 >
@@ -181,47 +185,53 @@
 <a name="command"></a>
 ###### 拡張コマンド一覧
 > > 
-> - Tabs  
+> - Tab  
 >    - **Create new tab**  
->        アクティブなタブの右隣に、新しいタブを作成します。 新しいタブがアクティブになります。  
+>    アクティブなタブの右隣に、新しいタブを作成します。 新しいタブがアクティブになります。  
 >    - **Create new tab in background**  
->        アクティブなタブの右隣に、新しいタブを作成しますが、アクティブなタブは変更されません。  
+>    アクティブなタブの右隣に、新しいタブを作成しますが、アクティブなタブは変更されません。  
 >    - **Close other tabs**  
->        アクティブなタブ以外の、現在のウィンドウ内のタブを、すべて閉じます。  
+>    アクティブなタブ以外の、現在のウィンドウ内のタブを、すべて閉じます。  
 >    - **Close tabs to the left/right**  
->        アクティブなタブの左側もしくは右側のタブを、すべて閉じます。
+>    アクティブなタブの左側もしくは右側のタブを、すべて閉じます。
 >    - **Move current tab left/right**  
->        アクティブなタブを、左もしくは右へ一つ移動します。 最端位置から循環はしません。
+>    アクティブなタブを、左もしくは右へ一つ移動します。 最端位置から循環はしません。
 >    - **Move current tab to first/last position**  
->        アクティブなタブを、左端(first)もしくは右端(last)へ移動します。
+>    アクティブなタブを、左端(first)もしくは右端(last)へ移動します。
 >    - **Duplicate current tab**  
->        アクティブなタブを複製して、タブの右隣に新たに作成します。
+>    アクティブなタブを複製して、タブの右隣に新たに作成します。
 >    - **Pin/Unpin current tab**  
->        アクティブなタブを、固定するか、もしくは固定されいている場合は固定を解除します。
+>    アクティブなタブを、固定するか、もしくは固定されいている場合は固定を解除します。
 >    - **Detach current tab**  
->        アクティブなタブを、ウィンドウから切り離して、新しいウィンドウに作成します。
+>    アクティブなタブを、ウィンドウから切り離して、新しいウィンドウに作成します。
 >    - **Attach current tab to the next window**  
->        アクティブなタブを、現在開いている別のウィンドウに順次移動します。
-> - Windows  
+>    アクティブなタブを、現在開いている別のウィンドウに順次移動します。
+> - Window  
 >    - **Switch to the previous/next window**  
->        アクティブなウィンドウを順次切り替えます。
+>    アクティブなウィンドウを順次切り替えます。
 >    - **Close other windows**  
->        アクティブなウィンドウ以外のすべてのウィンドウを閉じます。
+>    アクティブなウィンドウ以外のすべてのウィンドウを閉じます。
 > - Browsing data  
->    - **Clear the browser's cache**  
->        ブラウザキャッシュをクリアします。
->    - **Clear the browser's cookies and site data**  
->        ブラウザのクッキーとサイトデータ（サーバ証明書等）をすべてクリアします。
->    - **Clear all cookies for the current domain**  
->        アクティブなページのサイトと同じドメインのクッキーをすべてクリアします。
+>    - **Clear browser's cache**  
+>    ブラウザキャッシュをクリアします。
+>    - **Clear browser's cookies and site data**  
+>    ブラウザのクッキーとサイトデータ（サーバ証明書等）をすべてクリアします。
+>    - **Clear browsing history**  
+>    ブラウザの履歴データをすべてクリアします。
+>    - **Clear cookies for the current domain**  
+>    アクティブなページのサイトと同じドメインのクッキーをすべてクリアします。
 > - Custom  
 >    - **Paste fixed text**  
->        登録した定型文を、クリップボードを経由して貼り付けます。  
+>    登録した定型文を、クリップボードを経由して貼り付けます。  
+>    - **Open URL from external program**  
+>    アクティブなタブのURLを引数に渡してOSのプログラムを実行します。  
+>    IEやFirefoxなどのブラウザや指定したプログラムを起動できます。  
+>    プログラムを指定する場合は、環境変数PATHからの相対パスか、または絶対パスを指定してください。  
 >    - **Inject CSS**  
->        登録したCSS(Cascading Style Sheet)を、アクティブなタブのページへ適用します。  
+>    登録したCSS(Cascading Style Sheet)を、アクティブなタブのページへ適用します。  
 >    - **Inject JavaScript**  
->        登録したJavaScript/CoffeeScriptコードを、アクティブなタブのページで実行します。  
->        なお、本来のページのDOMのwindowオブジェクトにはアクセスできません。
+>    登録したJavaScript/CoffeeScriptコードを、アクティブなタブのページで実行します。  
+>    なお、本来のページのDOMのwindowオブジェクトにはアクセスできません。
 
 <a name="commandOptions"></a>
 ###### 拡張コマンドのオプション
@@ -229,7 +239,7 @@
 > 
 > - Paste text、Inject CSS、Inject JavaScriptのオプション
 >    - **Caption(Optional)**  
->    オプションページのCommentに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
+>    オプションページのDescriptionに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
 >    - **Content**  
 >    貼り付ける文字列(Paste text時)や、CSS(Inject CSS時)、JavaScriptコード(Inject JavaScript時)を入力します。  
 > - Inject CSS、Inject JavaScriptのオプション
@@ -538,7 +548,7 @@
 > > - _icon(string)_  
 > > 
 > >    次の既定のアイコンの名前を指定します。  
-> >    アイコンを表示させない場合は、既定外の値やnullを指定します。
+> >    アイコンを表示させない場合は、既定外の値またはnullを指定します。
 > >    
 > >    <img src="../images/info.png">[info]<img src="../images/warn.png">[warn]<img src="../images/err.png">[err]<img src="../images/chk.png">[chk]<img src="../images/close.png">[close]<img src="../images/help.png">[help]<img src="../images/fav.png">[fav]  
 > >    <img src="../images/infostar.png">[star]<img src="../images/clip.png">[clip]<img src="../images/comment.png">[comment]<img src="../images/comments.png">[comments]<img src="../images/user.png">[user]<img src="../images/users.png">[users]
@@ -622,6 +632,26 @@
 > >  
 > > バッチ実行モードのときに、後続のコマンドの実行をすべてキャンセルします。
 > > 
+
+> ###### `scd.execShell(string filePath [, optional string parameter])`  
+> >  
+> > 指定したOSのプログラムを実行します。
+> > 
+> > - _filePath(string)_  
+> > 
+> >    実行するプログラムまたはファイルのOSのパスを指定します。  
+> >    環境変数PATHからの相対パスか、またはドライブから始まる絶対パスを指定します。  
+> >
+> > - _parameter(string)_  
+> > 
+> >    プログラムに渡す引数を指定します。  
+> > 
+> > Code Exsample  
+> > 
+> > 次のコードは、Linkに登録したコンテキストメニューからの呼び出しで、InternetExplorerを起動します。
+> > <pre>
+> > scd.execShell('iexplore', scd.ctxData);
+> > </pre>
 
 > **Properties**
 > 

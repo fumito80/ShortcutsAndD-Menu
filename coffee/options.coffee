@@ -422,7 +422,10 @@ KeyConfigView = Backbone.View.extend
       when "bookmark"
         @trigger "showPopup", "bookmarkOptions", @model.id
       when "command"
-        @trigger "showPopup", "commandOptions", @model.id
+        if @model.get("command").name is "openExtProg"
+          @trigger "showPopup", "optionExtProg", @model.id
+        else
+          @trigger "showPopup", "commandOptions", @model.id
       else #when "remap", "through", "disabled"
         (memo = @$("div.memo")).toggle()
         editing = (input$ = @$("form.memo").toggle().find("input.memo")).is(":visible")
@@ -471,23 +474,22 @@ KeyConfigView = Backbone.View.extend
   
   onClickDelete: ->
     if parentId = @model.get "parentId"
-      shortcut = ""
-      desc = "\"" + @getDescription() + "\""
       switch @model.get("mode")
         when "remap"
-          shortcut = decodeKbdEvent(@model.get "origin") + "\n\n "
+          desc = "Shortcut key: " + decodeKbdEvent(@model.get "origin") + "\n Description: \"#{@getDescription()}\""
         when "sleep"
-          shortcut = "Sleep " + @model.get("sleep") + " msec"
-          desc = ""
+          desc = "Sleep " + @model.get("sleep") + " msec"
+        else
+          desc = "Description: \"#{@getDescription()}\""
       children = []
-      msg = "Are you sure you want to delete this child command?\n\n #{shortcut}#{desc}"
+      msg = "Are you sure you want to delete this child command?\n\n " + desc
     else
       if (children = @model.collection.where(parentId: @model.id)).length > 0
-        msg = "Are you sure you want to delete this shortcut and all the child commands?"
+        msg = "Are you sure you want to delete this shortcut and all child commands?"
       else
         msg = "Are you sure you want to delete this shortcut?"
       shortcut = decodeKbdEvent @model.id
-      msg = msg +  "\n\n #{shortcut}\n\n \"#{@getDescription()}\""
+      msg += "\n\n Shortcut key: #{shortcut}\n Description: \"#{@getDescription()}\""
     if confirm msg
       children.forEach (child) =>
         @trigger "removeConfig", child
@@ -653,7 +655,7 @@ KeyConfigView = Backbone.View.extend
               ).find(".sectInit").tooltip position: {my: "left+10 top-60"}, tooltipClass: "tooltipClass"
     if tdDesc.html() is ""
       tdDesc.append @tmplMemo memo: @model.get("memo")
-      editOption = iconName: "icon-pencil", command: "Edit comment"
+      editOption = iconName: "icon-pencil", command: "Edit description"
     tdDesc.append @tmplDesc editOption
     if mode is "disabled"
       @$(".addKey,.copySC,.seprater.1st,div.ctxmenu,.addCommand").hide()
@@ -961,11 +963,12 @@ KeyConfigSetView = Backbone.View.extend
   
   # DOM Events
   onClickScrollEnd: (event) ->
+    scrollable = $(".fixed-table-container-inner")
     if /icon-double-angle-up/.test event.target.className
       scrollTop = 0
     else
-      scrollTop = 10000
-    $(".fixed-table-container-inner")[0].scrollTop = scrollTop
+      scrollTop = scrollable[0].scrollHeight
+    scrollable.animate {scrollTop: scrollTop}, 200
   
   onKeyDown: (event) ->
     unless @model.get "singleKey"
@@ -1106,6 +1109,7 @@ Router = Backbone.Router.extend
       "command"        : "popup"
       "bookmarkOptions": "editable"
       "commandOptions" : "editable"
+      "optionExtProg"  : "editable"
       "ctxMenuOptions" : "editable"
       "ctxMenuManager" : "editable"
       "settings"       : "editable"
@@ -1175,6 +1179,7 @@ $ ->
   new BookmarkOptionsView {}
   new CommandsView {}
   commandOptionsView = new CommandOptionsView {}
+  new OptionExtProgView {}
   ctxMenuFolderSet = new CtxMenuFolderSet()
   ctxMenuOptionsView = new CtxMenuOptionsView
     collection: ctxMenuFolderSet
@@ -1223,7 +1228,6 @@ $ ->
   windowOnResize()
   
   scrollContainer = $(".fixed-table-container-inner")[0]
-  console.log scrollContainer.scrollHeight - scrollContainer.offsetHeight
   if (scrollContainer.scrollHeight - scrollContainer.offsetHeight) > 40
     $(".footer").addClass("scrolling")
     $(".scrollEnd").show()

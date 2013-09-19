@@ -42,15 +42,17 @@
       <div class="panel1">Settings</span>
         <button class="done blue"><i class="icon-ok"></i> Done</button>
       </div>
-    </form>
     <div class="inputs">
       <label>
         <input type="checkbox" class="singleKey"> Enable single key keyboard shortcuts
       </label><br>
-      <label>Keyborad type<br>
+      <label>Time interval between keystrokes for keyboard macro:<br>
+        <input type="number" class="sleepMSec" min="0" max="1000" step="1" value="100" required> milliseconds
+      </label><br>
+      <label>Keyborad type:<br>
         <select class="kbdtype"></select>
       </label><br>
-      <label>Language of keyboard shortcuts help<br>
+      <label>Language of keyboard shortcuts help:<br>
         <select class="lang"></select>
       </label><br>
       <ul class="tabs">
@@ -72,6 +74,7 @@
         <button class="impReplace small orange"><i class="icon-download-alt"></i> Import</button>
         <!--<button class="impMerge small"><i class="icon-plus"></i> Merge</button>-->
       </div>
+    </form>
     </div>
   </div>
   <div class="popup bookmarks">
@@ -110,6 +113,23 @@
         <textarea class="content" placeholder="Content"></textarea>
       </div>
       <div class="otherinput"></div>
+    </form>
+  </div>
+  <div class="popup optionExtProg">
+    <i class="icon-remove" title="Cancel"></i>
+    <form>
+      <div class="panel1">
+        <span class="command">Open URL from external program</span> for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
+        <!--<input type="text" class="caption" placeholder="Caption(Optional)">-->
+      </div>
+      <div class="inputs">
+        <label><input type="radio" name="program" value="iexplore" checked="checked"> Internet Explorer</label><br>
+        <label><input type="radio" name="program" value="firefox"> Firefox</label><br>
+        <label>
+          <input type="radio" name="program" value="other"> Specified program<br>
+          <input type="text" class="progPath" placeholder="Enter the full path or relative path to the PATH env variable">
+        </label>
+      </div>
     </form>
   </div>
   <div class="popup bookmarkOptions">

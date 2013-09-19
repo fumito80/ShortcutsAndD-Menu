@@ -13,7 +13,8 @@ uses
   Math,
   KeyHookThread in 'KeyHookThread.pas',
   MouseHookThread in 'MouseHookThread.pas',
-  Common in 'Common.pas';
+  Common in 'Common.pas',
+  ShellApi;
 
 type
   TMyClass = class(TPlugin)
@@ -46,6 +47,7 @@ type
     procedure SetClipboard(const params: array of Variant);
     function GetClipboard(const params: array of Variant): Variant;
     procedure Sleep(const params: array of Variant);
+    procedure ExecUrl(const params: array of Variant);
   end;
 
 var
@@ -384,19 +386,6 @@ begin
   CallNamedPipe(PAnsiChar(keyPipeName), @g_pasteText, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
 end;
 
-procedure PasteText0(const params: array of Variant);
-begin
-  if params[0] = '' then Exit;
-  gpcStrToClipboard(params[0]);
-  KeyInputCount:= 0;
-  SetLength(KeyInputs, 0);
-  KeybdInput($1D, VK_CONTROL, 0);
-  KeybdInput($2F, $56, 0);
-  KeybdInput($2F, $56, KEYEVENTF_KEYUP);
-  KeybdInput($1D, VK_CONTROL, KEYEVENTF_KEYUP);
-  SendInput(KeyInputCount, KeyInputs[0], SizeOf(KeyInputs[0]));
-end;
-
 procedure TMyClass.SetClipboard(const params: array of Variant);
 begin
   gpcStrToClipboard(params[0]);
@@ -432,6 +421,17 @@ begin
       CallNamedPipe(PAnsiChar(keyPipeName), @scansInt64, SizeOf(UInt64), @dummyFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     end;
   except
+  end;
+end;
+
+procedure TMyClass.ExecUrl(const params: array of Variant);
+var
+  prog, url: string;
+begin
+  prog:= params[0];
+  url:= params[1];
+  if (prog <> '') then begin
+    ShellExecute(0, PChar('open'), PChar(prog), PChar(url), nil, SW_SHOWNORMAL);
   end;
 end;
 
