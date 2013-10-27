@@ -328,6 +328,12 @@ execBatchMode = (scCode) ->
       keyConfigs.push keyConfig
   # execute
   (dfdBatchQueue = dfdKicker = $.Deferred()).promise()
+  dfdBatchQueue = dfdBatchQueue.then ->
+    dfd = $.Deferred()
+    setTimeout((->
+      doneCallback dfd, 0, -1
+    ), 0)
+    dfd.promise()
   for i in [0...keyConfigs.length]
     dfdBatchQueue = dfdBatchQueue.then (batchIndex) ->
       dfd = $.Deferred()
@@ -375,7 +381,7 @@ execBatchMode = (scCode) ->
           console.log e.message
         ), 0)
       dfd.promise()
-  dfdKicker.resolve(0)
+  dfdKicker.resolve()
 
 notifications = {}
 notifications.state = "closed"
@@ -722,6 +728,8 @@ window.andy =
       if @local.config
         if @local.config.defaultSleep?
           @defaultSleep = @local.config.defaultSleep
+        else
+          @local.config.defaultSleep = @defaultSleep
         dfd.resolve()
       else
         chrome.i18n.getAcceptLanguages (langs) =>
@@ -729,10 +737,19 @@ window.andy =
             @local.config = {kbdtype: "JP", lang: "ja"}
           else
             @local.config = {kbdtype: "US", lang: "en"}
+          @local.config.defaultSleep = @defaultSleep
           $.Deferred().resolve()
     dfd.promise()
   ###
   setLocal: ->
+    # Clear localStorage
+    dfd = $.Deferred()
+    chrome.storage.local.clear =>
+      @local = {}
+      @local.config = {kbdtype: "JP", lang: "ja"}
+      $.Deferred().resolve()
+    dfd.promise()
+  setLocal0: ->
     dfd = $.Deferred()
     setTimeout((=>
       items = {}

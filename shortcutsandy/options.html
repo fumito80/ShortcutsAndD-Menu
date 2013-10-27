@@ -18,7 +18,7 @@
     </span>
     <button class="settings"><i class="icon-wrench"></i> Settings</button>
     <a href="#" target="scHelp" class="scHelp"></a>
-    <a href="helpview.html" target="helpview" class="helpview">Help</a>
+    <a href="helpview.html" target="_blank" class="helpview">Help</a>
     <button class="ctxmgr" title="Context menu manager"><i class="icon-reorder"></i> Ctx menu mgr</button>
     <button class="addKeyConfig"><i class="icon-plus-sign"></i> Add new</button>
   </div>
@@ -42,19 +42,22 @@
       <div class="panel1">Settings</span>
         <button class="done blue"><i class="icon-ok"></i> Done</button>
       </div>
-    <div class="inputs">
-      <label>
-        <input type="checkbox" class="singleKey"> Enable single key keyboard shortcuts
-      </label><br>
-      <label>Time interval between keystrokes for keyboard macro:<br>
-        <input type="number" class="sleepMSec" min="0" max="1000" step="1" value="100" required> milliseconds
-      </label><br>
-      <label>Keyborad type:<br>
-        <select class="kbdtype"></select>
-      </label><br>
-      <label>Language of keyboard shortcuts help:<br>
-        <select class="lang"></select>
-      </label><br>
+      <div class="inputs" style="padding-bottom: 0">
+        <label>
+          <input type="checkbox" class="singleKey"> Enable single key keyboard shortcuts
+        </label><br>
+        <label>Time interval between keystrokes for keyboard macro:<br>
+          <input type="number" class="sleepMSec" min="0" max="1000" step="1" value="100" required> milliseconds
+        </label><br>
+        <label>Keyboard type:<br>
+          <select class="kbdtype"></select>
+        </label><br>
+        <label>Language of keyboard shortcuts help:<br>
+          <select class="lang"></select>
+        </label><br>
+      </div>
+    </form>
+    <div class="inputs" style="padding-top: 0">
       <ul class="tabs">
         <li class="current"><a class="tabExp">Export</a></li>
         <li><a class="tabImp">Import</a></li>
@@ -74,7 +77,6 @@
         <button class="impReplace small orange"><i class="icon-download-alt"></i> Import</button>
         <!--<button class="impMerge small"><i class="icon-plus"></i> Merge</button>-->
       </div>
-    </form>
     </div>
   </div>
   <div class="popup bookmarks">
@@ -101,7 +103,7 @@
     <form>
       <div class="panel1">
         <span class="command"></span> for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
-        <input type="text" class="caption" placeholder="Caption(Optional)">
+        <input type="text" class="caption" placeholder="Title(Optional)">
       </div>
       <div class="inputs"></div>
       <!-- Tabs Right -->
@@ -120,7 +122,7 @@
     <form>
       <div class="panel1">
         <span class="command">Open URL from external program</span> for <span class="shortcut"></span><button type="submit" class="done blue"><i class="icon-ok"></i> Done</button><br>
-        <!--<input type="text" class="caption" placeholder="Caption(Optional)">-->
+        <!--<input type="text" class="caption" placeholder="Title(Optional)">-->
       </div>
       <div class="inputs">
         <label><input type="radio" name="program" value="iexplore" checked="checked"> Internet Explorer</label><br>
@@ -192,11 +194,11 @@
           <label><input type="radio" name="ctxType" value="link"> <strong>Link</strong> - Return the link URL</label><br>
           <label><input type="radio" name="ctxType" value="image"> <strong>Image</strong> - Return the image URL</label><br>
           <label><input type="radio" name="ctxType" value="all"> <strong>All</strong> - Return any of the above</label><br>
-          <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>cxtData</em>.</div>
+          <div class="note">Note:<br>&nbsp;&nbsp;The return value is assigned to the utility object's property <em>ctxData</em>.</div>
         </fieldset>
-        <label>Parent menu title:<br>
+        <label>Parent folder:<br>
           <div class="editableCombo">
-            <input type="text" class="parentName" placeholder="New parent menu title">
+            <input type="text" class="parentName" placeholder="Title of the new folder">
             <select class="selectParent"></select>
           </div>
         </label><br>

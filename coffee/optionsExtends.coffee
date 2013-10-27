@@ -42,8 +42,8 @@ PopupBaseView = Backbone.View.extend
       delay: 200
       cancel: "input,textarea,button,select,option,.bookmarkPanel,span.contexts,span.menuCaption,span.title,div.CodeMirror"
       stop: => @onStopDrag()
-    @el.style.pixelLeft = Math.round((window.innerWidth  - @el.offsetWidth)  / 2)
-    @el.style.pixelTop  = Math.max 0, Math.round((window.innerHeight - @el.offsetHeight) / 2)
+    @el.style.left = Math.round((window.innerWidth  - @el.offsetWidth)  / 2) + "px"
+    @el.style.top = Math.max(0, Math.round((window.innerHeight - @el.offsetHeight) / 2)) + "px"
     @$(".caption").focus()
     $(".backscreen").show()
     true
@@ -59,7 +59,7 @@ PopupBaseView = Backbone.View.extend
     #router.showRootPage()
     @trigger "hidePopup"
   tmplHelp: _.template """
-    <a href="helpview.html#<%=name%>" target="helpview" class="help" title="help">
+    <a href="helpview.html#<%=name%>" target="_blank" class="help" title="help">
       <i class="icon-question-sign" title="Help"></i>
     </a>
     """
@@ -146,7 +146,6 @@ class SettingsView extends PopupBaseView
     @trigger "getSaveData", container = {}
     @saveData = container.data
     @$(".export").val jsonstr = JSON.stringify @saveData
-    #unless @makeSyncData jsonstr, @saveData
     if (new Blob([jsonstr])).size >= 102400
       @$(".saveSync").attr "disabled", "disabled"
     else
@@ -226,7 +225,7 @@ class SettingsView extends PopupBaseView
       @$(".impRestore").removeAttr("disabled").removeClass "disabled"
       @trigger "setSaveData", saveData
       @lastSaveData = @saveData
-      @$(".export").val jsonstr = JSON.stringify @saveData = saveData
+      @render()
       alert "Settings imported"
     catch e
       alert e.message
@@ -783,7 +782,7 @@ class CtxMenuOptionsView extends PopupBaseView
     false
   tmplParentMenu: """
     <option value="route">None(Root)</option>
-    <option value="new">Create under new parent menu...</option>
+    <option value="new">Create a new folder...</option>
     """
 
 CtxMenuFolder = Backbone.Model.extend {}

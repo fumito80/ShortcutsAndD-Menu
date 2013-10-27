@@ -1136,8 +1136,8 @@ windowOnResize = ->
   if resizeTimer
     clearTimeout resizeTimer
   resizeTimer = setTimeout((->
-    tableHeight = window.innerHeight - document.querySelector(".header").offsetHeight - marginBottom;
-    document.querySelector(".fixed-table-container").style.pixelHeight = tableHeight;
+    tableHeight = window.innerHeight - document.querySelector(".header").offsetHeight - marginBottom
+    document.querySelector(".fixed-table-container").style.height = tableHeight + "px"
     $(".fixed-table-container-inner").getNiceScroll().resize()
     $(".result_outer").getNiceScroll().resize()
   ), 200)
