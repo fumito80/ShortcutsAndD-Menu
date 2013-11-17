@@ -40,6 +40,7 @@ type
   end;
 
 const
+  targetProg     = 'chrome.exe';
   keyPipeName    = '\\.\pipe\flexkbd';
   mousePipeName  = '\\.\pipe\flexmouse';
   SCAN_LCONTROL  =  $1D;

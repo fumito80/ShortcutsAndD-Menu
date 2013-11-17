@@ -995,7 +995,7 @@ KeyConfigSetView = Backbone.View.extend
       return
     if @collection.length > gMaxItems
       $("#tiptip_content").text("You have reached the maximum number of items. (Max #{gMaxItems} items)")
-      $(event.currentTarget).tipTip defaultPosition: "left"
+      $(event.currentTarget).tipTip defaultPosition: "bottom"
       return false
     newItem$ = $(@tmplAddNew placeholder: @placeholder)
     if /child/.test lastFocused?.className

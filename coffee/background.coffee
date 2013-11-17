@@ -235,6 +235,7 @@ sendMessage = (message) ->
 getActiveTab = (execJS) ->
   dfd = $.Deferred()
   #console.log(gCurrentTabId)
+  currentWindowId = chrome.windows.WINDOW_ID_CURRENT
   if gCurrentTabId #&& execJS
     chrome.tabs.query {}, (tabs) ->
       for i in [0...tabs.length]
@@ -243,21 +244,18 @@ getActiveTab = (execJS) ->
       if tabFound
         dfd.resolve currentTab, currentTab.windowId
       else
-        chrome.windows.getCurrent null, (win) ->
-          chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
-            dfd.resolve tabs[0], win.id
+        chrome.tabs.query {active: true, windowId: currentWindowId}, (tabs) ->
+          dfd.resolve tabs[0], currentWindowId
   else
-    chrome.windows.getCurrent null, (win) ->
-      chrome.tabs.query {active: true, windowId: win.id}, (tabs) ->
-        dfd.resolve tabs[0], win.id
+    chrome.tabs.query {active: true, windowId: currentWindowId}, (tabs) ->
+      dfd.resolve tabs[0], currentWindowId
   dfd.promise()
 
 getWindowTabs = (options) ->
   dfd = $.Deferred()
-  chrome.windows.getCurrent null, (win) ->
-    options.windowId = win.id
-    chrome.tabs.query options, (tabs) ->
-      dfd.resolve tabs
+  options.windowId = chrome.windows.WINDOW_ID_CURRENT
+  chrome.tabs.query options, (tabs) ->
+    dfd.resolve tabs
   dfd.promise()
 
 getAllTabs = ->
@@ -298,6 +296,12 @@ chrome.windows.onFocusChanged.addListener (windowId) ->
         flexkbd.StartConfigMode()
         optionsTabId = tab.id
 
+#chrome.tabs.onCreated.addListener (tab) ->
+#  chrome.tabs.executeScript tab.id, code: "history.replaceState('index')"
+
+#chrome.webNavigation.onHistoryStateUpdated.addListener (resp) ->
+#  console.log resp
+
 chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
   if changeInfo.status is "complete"
     if tab.url.indexOf(chrome.extension.getURL("options.html")) is 0
@@ -318,6 +322,7 @@ chrome.tabs.onUpdated.addListener (tabId, changeInfo, tab) ->
               runAt: "document_end"
 
 execBatchMode = (scCode) ->
+  #console.log scCode
   gCurrentTabId = null
   doneCallback = (dfd, sleepMSec, batchIndex) ->
     flexkbd.Sleep sleepMSec if sleepMSec > 0
@@ -698,7 +703,15 @@ execCommand = (keyEvent) ->
         when "openExtProg"
           getActiveTab().done (tab) ->
             flexkbd.ExecUrl item.command.content, tab.url
-          
+            dfd.resolve()
+        when "clearTabHistory"
+          getActiveTab().done (tab, windowId) ->
+            chrome.tabs.remove [tab.id]
+            chrome.tabs.create
+              windowId: windowId
+              index: tab.index
+              url: tab.url
+            dfd.resolve()
   dfd.promise()
 
 setConfigPlugin = (keyConfigSet) ->

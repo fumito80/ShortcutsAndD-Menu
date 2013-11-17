@@ -113,13 +113,13 @@ var
   hWindow: HWnd;
   buf: array[0..1000] of AnsiChar;
 begin
-  if (code <> HC_ACTION) then begin
+  if (code < HC_ACTION) then begin
     Result:= CallNextHookEx(HookKey, code, wPrm, lPrm);
     Exit;
   end;
   hWindow:= GetActiveWindow;
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText('chrome.exe', buf) then begin
+  if AnsiEndsText(targetProg, buf) then begin
     CallNamedPipe(PAnsiChar(keypipename), @wPrm, SizeOf(wPrm), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     if cancelFlag then
       Result:= 1
@@ -151,7 +151,7 @@ begin
   hWindow:= GetActiveWindow;
   //Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText('chrome.exe', buf) and (wPrm <> WM_MOUSEWHEEL) then begin
+  if AnsiEndsText(targetProg, buf) and (wPrm <> WM_MOUSEWHEEL) then begin
     msgFlag:= wPrm;
     CallNamedPipe(PAnsiChar(mousepipename), @msgFlag, SizeOf(msgFlag), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     if cancelFlag then
@@ -172,16 +172,16 @@ var
   msgFlag: UInt64;
   msg: TMsg;
 begin
-  if (code <> HC_ACTION) then begin
+  if (code <> HC_ACTION) or (wPrm <> HC_ACTION) then begin
     Result:= CallNextHookEx(hookMouseWheel, code, wPrm, lPrm);
     Exit;
   end;
   msg:= PMsg(lPrm)^;
-  if msg.message = WM_MOUSEWHEEL then begin
+  if (msg.message = WM_MOUSEWHEEL) then begin
     hWindow:= GetActiveWindow;
     GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-    if AnsiEndsText('chrome.exe', buf) then begin
-      //Write2EventLog('FlexKbd', IntToStr(msg.wParam));
+    if AnsiEndsText(targetProg, buf) then begin
+      //Write2EventLog('FlexKbd', IntToStr(wPrm) + ': ' + IntToStr(msg.pt.X));
       if msg.wParam > 0 then
         msgFlag:= WM_WHEEL_UP
       else

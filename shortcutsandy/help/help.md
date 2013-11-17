@@ -6,9 +6,9 @@
 
 ###### はじめに
 
-> この度は本ソフトをダウンロードいただきありがとうございます。  
+> この度は本Chrome拡張をインストールいただきありがとうございます。  
 > 
-> 本ソフトは、GoogleChromeの主にキーボードショートカットの機能を拡張するもので、以下の特徴・機能があります。
+> 本拡張は、GoogleChromeの主にキーボードショートカットの機能を拡張するもので、以下の特徴・機能があります。
 
 ###### Features
 
@@ -137,6 +137,7 @@
 >    チェックした場合、修飾キー（Ctrl、Alt、Winキー）なしで、ショートカットキーとして登録できます。  
 >
 >    次の点が、通常のショートカットキーと異なります。  
+>        - ページスクリプトを利用する為、ページ読み込み中はキー入力を受け付けません。  
 >        - テキスト入力欄では使用できません。 通常の文字入力になります。  
 >        - Shiftキーとの併用時は、キーリピートが効きません。  
 >        - 設定直後はすぐに使用できない場合があります。その際はページを読み込み直してください。   
@@ -220,6 +221,9 @@
 >    ブラウザの履歴データをすべてクリアします。
 >    - **Clear cookies for the current domain**  
 >    アクティブなページのサイトと同じドメインのクッキーをすべてクリアします。
+>    - **Clear tab history by duplicating the URL**  
+>    アクティブなタブの履歴をクリアします。  
+>    但し、単に同じURLのタブを新規作成して置き換えるだけなので、全体の閲覧履歴からは削除されません。  
 > - Custom  
 >    - **Paste fixed text**  
 >    登録した定型文を、クリップボードを経由して貼り付けます。  
@@ -647,6 +651,7 @@
 > > 
 > >    実行するプログラムまたはファイルのOSのパスを指定します。  
 > >    環境変数PATHからの相対パスか、またはドライブから始まる絶対パスを指定します。  
+> >    なお、パスの区切り文字は¥を2つ続けて記述してください。  
 > >
 > > - _parameter(string)_  
 > > 
@@ -656,7 +661,7 @@
 > > 
 > > 次のコードは、Linkに登録したコンテキストメニューからの呼び出しで、InternetExplorerを起動します。
 > > <pre>
-> > scd.execShell('iexplore', scd.ctxData);
+> > scd.execShell('C:¥¥Program Files (x86)¥¥Internet Explorer¥¥iexplore.exe', scd.ctxData);
 > > </pre>
 
 > **Properties**
@@ -671,31 +676,47 @@
 
 <a name="codeExsample1"></a>
 > Code Exsample  
-> 
-> バッチ実行モードでのコードサンプルです。  
-> 選択中の英文テキストを、Google翻訳に渡して翻訳結果をデスクトップ通知ウィンドウに表示します。  
-> コンテキストメニューのSelectionに登録する場合を想定しています。  
-> 
-> Inject JavaScript① Google翻訳ページに英文テキストを渡してバックグラウンドで開きます。  
-> <pre>
-> scd.openUrl('http://translate.google.co.jp/#en/ja/' + encodeURIComponent(scd.ctxData), true);
-> </pre>
-> Inject JavaScript② 翻訳結果を通知ウィンドウに表示してGoogle翻訳ページは閉じます。（CoffeeScriptとjQueryを併用した場合）
-> <pre>
-> timer = null
-> $('#result_box').on 'DOMSubtreeModified', (event) ->
->   if timer
->     clearTimeout timer
->   timer = setTimeout((->
->     scd.showNotify $('#source').val(), event.currentTarget.textContent, 'info'
->     window.close()
->   ), 100)
-> </pre>
-<br>
-> ショートカットキーからも実行する場合は、上記のInject JavaScript① を次のコードに置き換えます。（CoffeeScript）  
-> <pre>
-> if selection = scd.getSelection()
->   scd.openUrl 'http://translate.google.co.jp/#en/ja/' + encodeURIComponent(selection), true
-> else
->   scd.cancel()
-> </pre>
+> > 
+> > 次のコードは、GoogleやAmazon等で検索結果が複数ページのときに次のページへ移動します。(CoffeeScript)  
+> > <pre>
+> > expr = []
+> > expr.push [/www\.google/, "id('pnnext')"]
+> > expr.push [/www\.amazon/, "id('pagnNextLink')"]
+> > expr.push [/.*/, "//a[text()='次へ' or translate(text(), 'の> ', '')='次ページ']"]
+> > 
+> > url = location.href
+> > for i in [0...expr.length]
+> > 	if expr[i][0].test url
+> > 		xpath = expr[i][1]
+> > 		break
+> > if xpath
+> > 	result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+> > 	if el = result.singleNodeValue
+> >         #location.href = el.getAttribute("href") #直接リンクのURLへ移動する場合
+> > 		evt = document.createEvent "MouseEvents"
+> > 		evt.initEvent "click", true, true
+> > 		el.dispatchEvent evt
+> > </pre>
+> > <br>
+> > バッチ実行モードでのコードサンプルです。  
+> > 選択中の英文テキストを、Google翻訳に渡して翻訳結果をデスクトップ通知ウィンドウに表示します。  
+> > コンテキストメニューのSelectionに登録する場合を想定しています。  
+> > 
+> > Inject JavaScript① Google翻訳ページに英文テキストを渡してバックグラウンドで開きます。(CoffeeScript)  
+> > <pre>
+> > if selection = scd.getSelection()
+> >   scd.openUrl 'http://translate.google.co.jp/#en/ja/' + encodeURIComponent(selection), true
+> > else
+> >   scd.cancel()
+> > </pre>
+> > Inject JavaScript② 翻訳結果を通知ウィンドウに表示してGoogle翻訳ページは閉じます。（CoffeeScript、jQuery）
+> > <pre>
+> > timer = null
+> > $('#result_box').on 'DOMSubtreeModified', (event) ->
+> >   if timer
+> >     clearTimeout timer
+> >   timer = setTimeout((->
+> >     scd.showNotify $('#source').val(), event.currentTarget.textContent, 'info'
+> >     window.close()
+> >   ), 100)
+> > </pre>

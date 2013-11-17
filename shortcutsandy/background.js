@@ -1,1 +1,1593 @@
-(function(){var e,t,n,r,i,s,o,u,a,f,l,c,h,p,d,v,m,g,y,b,w,E,S,x,T,N,C,k,L,A,O,M,_,D,P,H,B,j,F,I,q,R=[].indexOf||function(e){for(var t=0,n=this.length;t<n;t++)if(t in this&&this[t]===e)return t;return-1};d=null,q={},I={},w={},p=document.getElementById("flexkbd"),x={info:"info.png",warn:"warn.png",err:"err.png",chk:"chk.png",fav:"fav.png",star:"infostar.png",clip:"clip.png",close:"close.png",user:"user.png",users:"users.png",help:"help.png",flag:"flag.png",none:"none.png",cancel:"cancel.png",comment:"comment.png",comments:"comments.png"},j={callbacks:{},completes:{},reset:function(e){return this.completes[e]=!1},register:function(e,t){return this.completes[e]?t():this.callbacks[e]=t},callComplete:function(e){var t;return(t=this.callbacks[e])?t():this.completes[e]=!0}},S=["c","a","s","w"],F=function(e,t){var n,r,i,s,o,u,a,f;s=andy.getKeyCodes()[t].keys,o=parseInt(e.substring(0,2),16),r=[];for(n=a=0,f=S.length;0<=f?a<f:a>f;n=0<=f?++a:--a)o&Math.pow(2,n)&&r.push(S[n]);return u=e.substring(2),i=s[u],"["+r.join("")+"]"+i[0]},b="",l=function(e){var t,n,r,i,s;b="scd.ctxData = '"+(e.selectionText||e.linkUrl||e.srcUrl||e.pageUrl||"").replace(/'/g,"\\'")+"';",s=[];for(t=r=0,i=andy.local.keyConfigSet.length;0<=i?r<i:r>i;t=0<=i?++r:--r){if((n=andy.local.keyConfigSet[t])["new"]===e.menuItemId){a(n["new"]);break}s.push(void 0)}return s},chrome.contextMenus.onClicked.addListener(function(e,t){return l(e)}),h=function(e,t,n,r,i,s,o){var u,a,l,c,h,d,v,m,g,y,b,w,E,S,x,T;if(n){m=0,y=n.match(/\[(\w*?)\](.+)/),y?(v=RegExp.$1,c=RegExp.$2,d=v.toLowerCase().split(""),R.call(d,"c")>=0&&(m=1),R.call(d,"a")>=0&&(m+=2),R.call(d,"s")>=0&&(m+=4),R.call(d,"w")>=0&&(m+=8)):(m=0,c=n),l=andy.local.config.kbdtype,h=andy.getKeyCodes()[l].keys,g=-1;for(u=b=0,S=h.length;0<=S?b<S:b>S;u=0<=S?++b:--b)if(h[u]&&(c===h[u][0]||c===h[u][1])){g=u;break}if(g===-1)throw new Error("Key identifier code '"+c+"' is unregistered code.");if(!(s==="keydown"||m!==0||R.call(function(){T=[];for(var e=59;e<=68;e++)T.push(e);return T}.apply(this),g)>=0||g===87||g===88))throw new Error("Modifier code is not included in '"+n+"'.");r="0"+m.toString(16)+g}else if(!r)throw new Error("Command argument is not found.");if(!s)for(u=E=0,x=andy.local.keyConfigSet.length;0<=x?E<x:E>x;u=0<=x?++E:--E)if((a=andy.local.keyConfigSet[u])["new"]===r){s=a.mode;break}switch(s){case"command":return f(r).done(function(){return t(e,i,o)});case"bookmark":return k(r).done(function(n){return n?j.register(n,function(){return t(e,i,o)}):t(e,i,o)});case"keydown":return setTimeout(function(){return p.CallShortcut(r,8),t(e,i,o)},0);default:return setTimeout(function(){return p.CallShortcut(r,4),t(e,i,o)},0)}},u=$.Deferred().resolve(),chrome.runtime.onMessage.addListener(function(e,t,n){var r;return r=function(e,t){return t>0&&p.Sleep(t),n({msg:"done"}),e.resolve()},u=u.then(function(){var t,i,s;t=$.Deferred(),setTimeout(function(){if(t.state()==="pending")return n({msg:"Command has been killed in a time-out."}),t.reject()},61e3);try{switch(e.action){case"callShortcut":return h(t,r,e.value1,null,e.value2);case"keydown":return h(t,r,e.value1,null,e.value2,"keydown");case"sleep":return setTimeout(function(){return p.Sleep(e.value1),r(t,0)},0);case"setData":return setTimeout(function(){return q[e.value1]=e.value2,r(t,0)},0);case"getData":return setTimeout(function(){return n({msg:"done",data:q[e.value1]||null}),t.resolve()},0);case"getTabInfo":return chrome.tabs.get(e.value1,function(e){return chrome.windows.get(e.windowId,{populate:!0},function(r){return e.tabCount=r.tabs.length,e.focused=r.focused,e.windowState=r.state,e.windowType=r.type,n({msg:"done",data:e}),t.resolve()})});case"setClipboard":return setTimeout(function(){return p.SetClipboard(e.value1),r(t,0)},0);case"getClipboard":return setTimeout(function(){var e,r,i;try{i=p.GetClipboard(),r="done"}catch(s){e=s,i="",r=e.message}return n({msg:r,data:i}),t.resolve()},0);case"showNotification":return B(t,r,e.value1,e.value2,e.value3,e.value4);case"openUrl":return s=e.value1,k(null,s).done(function(e){return e&&s.noActivate&&(d=e,j.callComplete(s.commandId)),r(t,0)});case"execShell":return setTimeout(function(){return p.ExecUrl(e.value1,e.value2),r(t,0)},0);case"clearActiveTab":return setTimeout(function(){return d=null,r(t,0)},0);case"clientOnKeyDown":return setTimeout(function(){var n,i,s,o,u,f,l;if(s=keyIdentifiers[andy.local.config.kbdtype][e.value1]){if(e.value2){if(!(i=s[1]))return;o="04"}else i=s[0],o="00";for(n=f=0,l=keys.length;0<=l?f<l:f>l;n=0<=l?++f:--f)if(keys[n]&&(i===keys[n][0]||i===keys[n][1])){u=n;break}u&&a(o+n)}return r(t,0)},0)}}catch(o){return i=o,setTimeout(function(){return n({msg:i.message}),t.resolve()},0),t.promise()}}),!0}),E='var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)==="done"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage("batch",n):new e("Argument is not Array.")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("callShortcut",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+" is not a number.");i=Math.round(r);if(i<0||i>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}return(new t).sendMessage("keydown",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+" is not a number.");n=Math.round(n);if(n<0||n>6e3)return new e("Range of Sleep millisecond is up to 6000-0.")}else n=100;return(new t).sendMessage("sleep",n)},setClipbd:function(e){return(new t).sendMessage("setClipboard",e)},getClipbd:function(){return(new t).sendMessage("getClipboard")},showNotify:function(e,n,r,i){return e==null&&(e=""),n==null&&(n=""),r==null&&(r="none"),i==null&&(i=!1),(new t).sendMessage("showNotification",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage("openUrl",u),this.returnValue.cid=s},execShell:function(e,n){if(e)return(new t).sendMessage("execShell",e,n)},clearCurrentTab:function(){return(new t).sendMessage("clearCurrentTab")},getSelection:function(){var e,t,n,r;n="";if(e=document.activeElement){if((r=e.nodeName)==="TEXTAREA"||r==="INPUT")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type==="Range")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage("setData",e,n)},getData:function(e){return(new t).sendMessage("getData",e)},getTabInfo:function(){return(new t).sendMessage("getTabInfo",this.tabId)}};',P=function(e){return chrome.tabs.query({active:!0},function(t){return chrome.tabs.sendMessage(t[0].id,e)})},v=function(e){var t;return t=$.Deferred(),d?chrome.tabs.query({},function(e){var n,r,i,s,o;for(r=s=0,o=e.length;0<=o?s<o:s>o;r=0<=o?++s:--s)if(i=(n=e[r]).id===d)break;return i?t.resolve(n,n.windowId):chrome.windows.getCurrent(null,function(e){return chrome.tabs.query({active:!0,windowId:e.id},function(n){return t.resolve(n[0],e.id)})})}):chrome.windows.getCurrent(null,function(e){return chrome.tabs.query({active:!0,windowId:e.id},function(n){return t.resolve(n[0],e.id)})}),t.promise()},y=function(e){var t;return t=$.Deferred(),chrome.windows.getCurrent(null,function(n){return e.windowId=n.id,chrome.tabs.query(e,function(e){return t.resolve(e)})}),t.promise()},m=function(){var e;return e=$.Deferred(),chrome.tabs.query({},function(t){return e.resolve(t)}),e.promise()},C=null,chrome.tabs.onActivated.addListener(function(e){return chrome.tabs.get(e.tabId,function(t){if(t.url.indexOf(chrome.extension.getURL("options.html"))===0){if(!/editable/.test(t.url))return p.StartConfigMode(),C=e.tabId}else{C&&(chrome.tabs.sendMessage(C,{action:"saveConfig"}),C=null);if(andy.local.config.singleKey&&!/^chrome|^about|^https:\/\/chrome.google.com/.test(t.url))return chrome.tabs.sendMessage(t.id,{action:"askAlive"},function(e){if(e!=="hello")return chrome.tabs.executeScript(t.id,{file:"kbdagent.js",allFrames:!0,runAt:"document_end"})})}})}),chrome.windows.onFocusChanged.addListener(function(e){return C?(chrome.tabs.sendMessage(C,{action:"saveConfig"}),C=null):v().done(function(e){if((e!=null?e.url.indexOf(chrome.extension.getURL("options.html")):void 0)===0&&!/editable/.test(e!=null?e.url:void 0))return p.StartConfigMode(),C=e.id})}),chrome.tabs.onUpdated.addListener(function(e,t,n){if(t.status==="complete"){if(n.url.indexOf(chrome.extension.getURL("options.html"))===0)return/editable/.test(n.url)?(p.EndConfigMode(),C=null):(p.StartConfigMode(),C=n.id);j.callComplete(e);if(andy.local.config.singleKey&&!/^chrome|^about|^https:\/\/chrome.google.com/.test(n.url))return chrome.tabs.sendMessage(n.id,{action:"askAlive"},function(e){if(e!=="hello")return chrome.tabs.executeScript(n.id,{file:"kbdagent.js",allFrames:!0,runAt:"document_end"})})}}),a=function(e){var t,n,r,i,s,o,u;d=null,r=function(e,t,n){return t>0&&p.Sleep(t),e.resolve(n+1)},s=[],andy.local.keyConfigSet.forEach(function(t){if(t["new"]===e||t.parentId===e)return s.push(t)}),(t=n=$.Deferred()).promise(),t=t.then(function(){var e;return e=$.Deferred(),setTimeout(function(){return r(e,0,-1)},0),e.promise()});for(i=o=0,u=s.length;0<=u?o<u:o>u;i=0<=u?++o:--o)t=t.then(function(e){var t,n,o;t=$.Deferred(),setTimeout(function(){if(t.state()==="pending")return t.reject(),console.log("Command has been killed in a time-out.")},61e3);try{o=s[e];switch(o.mode){case"remap":h(t,r,null,o.origin,andy.defaultSleep,"keydown",e);break;case"command":f(o["new"]).done(function(n){var s,o,u,a,f,l;if(n)for(i=u=0,a=n.length;0<=a?u<a:u>a;i=0<=a?++u:--u){if(o=(f=n[i])!=null?f.cid:void 0)break;if(s=(l=n[i])!=null?l.cancel:void 0)break}return s?t.reject():o?j.register(o,function(){return r(t,0,e)}):r(t,0,e)});break;case"sleep":setTimeout(function(){return p.Sleep(~~o.sleep),r(t,0,e)},0);break;case"comment":case"through":setTimeout(function(){return r(t,0,e)},0);break;default:h(t,r,null,o["new"],andy.defaultSleep,o.mode,e)}}catch(u){n=u,setTimeout(function(){return t.reject(),console.log(n.message)},0)}return t.promise()});return n.resolve()},T={},T.state="closed",s=function(e,t,n,r,i,s){var o,u;return s?u="s"+(new Date).getTime():u=chrome.runtime.id,(o=x[i])||(o=x.none),chrome.notifications.create(u,{type:"basic",iconUrl:"images/"+o,title:n,message:r,eventTime:6e4},function(){return T.state="opened",e.resolve()})},B=function(e,t,n,r,i,o){return T.state==="opened"&&!o?chrome.notifications.clear(chrome.runtime.id,function(){return s(e,t,n,r,i,o)}):s(e,t,n,r,i,o)},N=function(e,t,n,r){t==null&&(t="last"),r==null&&(r=!1);if(!n){setTimeout(function(){return e.resolve()},0);return}switch(t.toLowerCase()){case"newtab":case"left":case"right":case"first":case"last":return v().done(function(i,s){var o;return t==="first"?o=0:t==="last"||t==="newtab"?o=1e3:t==="left"?o=Math.max(0,i.index):t==="right"&&(o=i.index+1),chrome.tabs.create({url:n,index:o,active:!r},function(t){return e.resolve(t.id)})});case"current":return v().done(function(t,i){return j.reset(t.id),chrome.tabs.update(t.id,{url:n,active:!r},function(t){return e.resolve(t.id)})});case"newwin":return chrome.windows.create({url:n,focused:!r},function(t){return e.resolve(t.tabs[0].id)});case"incognito":return chrome.windows.create({url:n,focused:!r,incognito:!0},function(t){return e.resolve(t!=null?t.tabs[0].id:void 0)});default:return setTimeout(function(){return e.resolve()},0)}},k=function(e,t){var n,r,i,s,o,u,a,f,l,c;n=$.Deferred();for(s=l=0,c=andy.local.keyConfigSet.length;0<=c?l<c:l>c;s=0<=c?++l:--l){o=andy.local.keyConfigSet[s];if(o["new"]===e||t){t||(t=o.bookmark),a=t.openmode,f=t.url,i=t.findtab,r=t.findStr,u=t.noActivate,i||a==="findonly"?v().done(function(e){return m().done(function(t){var i,o,l,c,h,p,d;i=0;for(s=c=0,p=t.length;0<=p?c<p:c>p;s=0<=p?++c:--c)if(t[s].id===e.id){i=s;break}l=[],0<i&&i<t.length-1?l=t.slice(i+1).concat(t.slice(0,i+1)):l=t,o=!1;for(s=h=0,d=l.length;0<=d?h<d:h>d;s=0<=d?++h:--h)if((l[s].title+l[s].url).indexOf(r)!==-1){u?n.resolve(l[s].id):chrome.tabs.update(l[s].id,{active:!0},function(){return chrome.windows.update(l[s].windowId,{focused:!0},function(){return n.resolve()})}),o=!0;break}if(!o)return N(n,a,f,u)})}):N(n,a,f,u);break}}return n.promise()},A=function(e,t,n){var r;return(r=t[n])?chrome.cookies.remove({url:r.url,name:r.name},function(){return A(e,t,n+1)}):e.resolve()},o=function(e,t,n){var r;return(r=t[n])?chrome.history.deleteUrl({url:r},function(){return o(e,t,n+1)}):e.resolve()},n=function(e,t,r){var i;return(i=t[r])?i.focused?n(e,t,r+1):chrome.windows.remove(i.id,function(){return n(e,t,r+1)}):e.resolve()},t=function(e,t){return y({active:!1,currentWindow:!0,windowType:"normal"},t).done(function(n){var r;return r=[],n.forEach(function(e){if(t(e))return r.push(e.id)}),r.length>0?chrome.tabs.remove(r,function(){return e.resolve()}):e.resolve()})},c=function(e,t,n,r){return chrome.tabs.executeScript(t,{code:n,allFrames:r,runAt:"document_end"},function(t){return e.resolve(t)})},f=function(e){var r,i;return r=$.Deferred(),i=0,andy.local.keyConfigSet.forEach(function(s){var u,a,f;if(s["new"]===e)switch(a=s.command.name){case"createTab":return v().done(function(e,t){return chrome.tabs.create({windowId:t,index:e.index+1},function(e){return j.register(e.id,function(){return r.resolve()})})});case"createTabBG":return v().done(function(e,t){return chrome.tabs.create({windowId:t,index:e.index+1,active:!1},function(e){return j.register(e.id,function(){return r.resolve()})})});case"closeOtherTabs":return t(r,function(){return!0});case"closeTabsRight":case"closeTabsLeft":return v().done(function(e){return i=e.index,a==="closeTabsRight"?t(r,function(e){return e.index>i}):t(r,function(e){return e.index<i})});case"moveTabRight":case"moveTabLeft":return v().done(function(e,t){var n;return n=e.index,a==="moveTabRight"?n+=1:n-=1,n>-1?chrome.tabs.move(e.id,{windowId:t,index:n},function(){return r.resolve()}):r.resolve()});case"moveTabFirst":return v().done(function(e,t){return chrome.tabs.move(e.id,{windowId:t,index:0},function(){return r.resolve()})});case"moveTabLast":return v().done(function(e,t){return chrome.tabs.move(e.id,{windowId:t,index:1e3},function(){return r.resolve()})});case"detachTab":return v().done(function(e,t){return chrome.windows.create({tabId:e.id,focused:!0,type:"normal"},function(){return r.resolve()})});case"attachTab":return v().done(function(e,t){return chrome.windows.getAll({populate:!0},function(t){var n,i,s,o,u,a,f,l,c;for(i=a=0,l=t.length;0<=l?a<l:a>l;i=0<=l?++a:--a)for(s=f=0,c=t[i].tabs.length;0<=c?f<c:f>c;s=0<=c?++f:--f)if(e.id===t[i].tabs[s].id){n=i;break}return(u=t[++n])?o=u.id:o=t[0].id,chrome.tabs.move(e.id,{windowId:o,index:1e3},function(){return chrome.tabs.update(e.id,{active:!0},function(){return r.resolve()})})})});case"duplicateTab":return v().done(function(e,t){return chrome.tabs.duplicate(e.id,function(){return r.resolve()})});case"duplicateTabWin":return v().done(function(e,t){return chrome.tabs.duplicate(e.id,function(e){return chrome.windows.create({tabId:e.id,focused:!0,type:"normal"},function(){return r.resolve()})})});case"pinTab":return v().done(function(e,t){return chrome.tabs.update(e.id,{pinned:!e.pinned},function(){return r.resolve()})});case"switchNextWin":return chrome.windows.getAll(null,function(e){var t,n,i,s;s=[];for(t=n=0,i=e.length;0<=i?n<i:n>i;t=0<=i?++n:--n){if(e[t].focused){t===e.length-1?chrome.windows.update(e[0].id,{focused:!0},function(){return r.resolve()}):chrome.windows.update(e[t+1].id,{focused:!0},function(){return r.resolve()});break}s.push(void 0)}return s});case"switchPrevWin":return chrome.windows.getAll(null,function(e){var t,n,i,s;s=[];for(t=n=0,i=e.length;0<=i?n<i:n>i;t=0<=i?++n:--n){if(e[t].focused){t===0?chrome.windows.update(e[e.length-1].id,{focused:!0},function(){return r.resolve()}):chrome.windows.update(e[t-1].id,{focused:!0},function(){return r.resolve()});break}s.push(void 0)}return s});case"closeOtherWins":return chrome.windows.getAll(null,function(e){return n(r,e,0)});case"pasteText":return setTimeout(function(){return p.PasteText(s.command.content),r.resolve()},0);case"copyText":return v().done(function(e){return chrome.tabs.sendMessage(e.id,{action:"askAlive"},function(t){return t==="hello"?setClipboardWithHistory(r,e.id):chrome.tabs.executeScript(e.id,{file:"kbdagent.js",allFrames:!0,runAt:"document_end"},function(t){return setClipboardWithHistory(r,e.id)})})});case"showHistory":return v().done(function(e){return chrome.tabs.sendMessage(e.id,{action:"askAlive"},function(t){return t==="hello"?showCopyHistory(r,e.id):chrome.tabs.executeScript(e.id,{file:"kbdagent.js",allFrames:!0,runAt:"document_end"},function(t){return showCopyHistory(r,e.id)})})});case"insertCSS":return v().done(function(e){return chrome.tabs.insertCSS(e.id,{code:s.command.content,allFrames:s.command.allFrames},function(){return r.resolve()})});case"execJS":return s.command.coffee?u=w[s["new"]]:u=s.command.content,v(!0).done(function(e){return s.command.useUtilObj&&(u=E+b+(";scd.tabId="+e.id+";")+u+";scd.returnValue"),s.command.jquery?chrome.tabs.sendMessage(e.id,{action:"askJQuery"},function(t){return t==="hello"?c(r,e.id,u,s.command.allFrames):chrome.tabs.executeScript(e.id,{file:"lib/jquery.cli.min.js",allFrames:s.command.allFrames},function(t){return c(r,e.id,u,s.command.allFrames)})}):c(r,e.id,u,s.command.allFrames)});case"clearHistory":return chrome.browsingData.removeHistory({},function(){return r.resolve()});case"clearHistoryS":return f=s.command.content,chrome.history.search({text:"",startTime:0,maxResults:1e4},function(e){var t,n,i,s,u;t=[];for(i=s=0,u=e.length;0<=u?s<u:s>u;i=0<=u?++s:--s)n=e[i],(n.title+n.url).indexOf(f)!==-1&&t.push(n.url);if(t.length>0)return o(r,t,0)});case"clearCookiesAll":return chrome.browsingData.removeCookies({},function(){return r.resolve()});case"clearCookies":return v().done(function(e){var t,n;return t=e.url.match(/:\/\/(.[^/:]+)/)[1],n=[],chrome.cookies.getAll({},function(e){return e.forEach(function(e){var r,i;if(("."+t).indexOf(e.domain)!==-1)return r=e.secure?"s":"",i="http"+r+"://"+e.domain+e.path,n.push({url:i,name:e.name})}),A(r,n,0)})});case"clearCache":return chrome.browsingData.removeCache({},function(){return r.resolve()});case"openExtProg":return v().done(function(e){return p.ExecUrl(s.command.content,e.url)})}}),r.promise()},H=function(e){var t,n,r;r=[];if(e)return t=andy.local.config.kbdtype,n=andy.getKeyCodes()[t].keys,e.forEach(function(e){var t;t=~~e["new"].substring(2);if(/^00|^04/.test(e["new"])&&!/^F\d|^Application/.test(n[t]))return null;if(e.batch&&e["new"]&&e.mode!=="through")return r.push([e["new"],e.origin,"batch"].join(";"));if(!/^C/.test(e["new"]))return r.push([e["new"],e.origin,e.mode].join(";"))}),p.SetKeyConfig(r.join("|"))},window.andy={local:null,defaultSleep:100,setLocal:function(){var e,t=this;return e=$.Deferred(),chrome.storage.local.get(null,function(n){return t.local=n,t.local.ctxMenuFolderSet||(t.local.ctxMenuFolderSet=[]),t.local.config?(t.local.config.defaultSleep!=null?t.defaultSleep=t.local.config.defaultSleep:t.local.config.defaultSleep=t.defaultSleep,e.resolve()):chrome.i18n.getAcceptLanguages(function(e){return/^ja/.test(e)?t.local.config={kbdtype:"JP",lang:"ja"}:t.local.config={kbdtype:"US",lang:"en"},t.local.config.defaultSleep=t.defaultSleep,$.Deferred().resolve()})}),e.promise()},saveConfig:function(e){var t=this;return chrome.storage.local.set(e,function(){return t.local=e,t.defaultSleep=t.local.config.defaultSleep,H(t.local.keyConfigSet)})},updateCtxMenu:function(e,t,n){return t.id=e,n?t.type="update pause":t.type="update",L($.Deferred(),[t],0)},remakeCtxMenu:function(e){var t,n=this;return t=$.Deferred(),chrome.storage.local.set(e,function(){return n.local=e,r().done(function(){return t.resolve()})}),t.promise()},getKeyCodes:function(){return{US:{keys:keysUS,name:"US 104 Keyboard"},JP:{keys:keysJP,name:"JP 109 Keyboard"}}},getScHelp:function(){return O},getScHelpSect:function(){return _},startEdit:function(){p.EndConfigMode()},endEdit:function(){p.StartConfigMode()},getCtxMenus:function(){},getUndoData:function(e){return I[e]},setUndoData:function(e,t){return I[e]=t},changePK:function(e,t){if(w[e]=w[t])return w[t]=null},coffee2JS:function(e,t){var n;try{return w[e]=CoffeeScript.compile(t,{bare:"on"}),{success:!0}}catch(r){return n=r,w[e]="",{success:!1,err:n.message,errLine:n.location.first_line+1}}},helpFileName:"help/help.md"},window.pluginEvent=function(e,t){switch(e){case"log":return console.log(t);case"configKeyEvent":return P({action:"kbdEvent",value:t});case"bookmark":return k(t);case"command":return a(t);case"batch":return a(t)}},O={},_={},M="https://support.google.com/chrome/answer/157179?hl=",D=function(e,t,n){var r;return r=$(n).find("tr:has(td:first-child:has(strong))"),$.each(r,function(n,r){var i;return i=r.cells[1].textContent.replace(/^\s+|\s$/g,""),Array.prototype.forEach.call(r.childNodes[1].getElementsByTagName("strong"),function(n){var r,s;r=n.textContent.toUpperCase().replace(/\s/g,""),r=r.replace("PGUP","PAGEUP").replace("PGDOWN","PAGEDOWN").replace(/DEL$/,"DELETE").replace(/INS$/,"INSERT").replace("ホーム","HOME").replace("バー","");if((s=O[r])!=null?!s[e]:!void 0)O[r]||(O[r]={}),O[r][e]=[];return O[r][e].push(t+"^"+i)})})},e=function(e,t){var n,r,i;return n=$(e),r=n.find("div.main-section"),i="",Array.prototype.forEach.call(r[0].children,function(e){switch(e.tagName){case"H3":switch(e.textContent){case"Tab and window shortcuts":case"タブとウィンドウのショートカット":i="T";break;case"Google Chrome feature shortcuts":case"Google Chrome 機能のショートカット":i="C";break;case"Address bar shortcuts":case"アドレスバーのショートカット":i="A";break;case"Webpage shortcuts":case"ウェブページのショートカット":i="W";break;case"Text shortcuts":case"テキストのショートカット":i="Tx"}return _[i]=e.textContent;case"TABLE":return D(t,i,e)}})},L=function(e,t,n){var r,i,s,o,u,a,f,l;if(!(o=t[n]))return e.resolve();l=t[n],u=l.id,f=l.type,r=l.caption,i=l.contexts,a=l.parentId,/pause/.test(f)?s={type:"normal",enabled:!1}:s={type:"normal",enabled:!0},r&&(s.title=r,s.contexts=[i]),a!=="route"&&(s.parentId=a);if(/create/.test(f))return s.id=u,chrome.contextMenus.create(s,function(){return L(e,t,n+1)});if(/update/.test(f))return chrome.contextMenus.update(u,s,function(){return L(e,t,n+1)})},r=function(){var e,t,n;if(n=andy.local.keyConfigSet)return e=andy.local.ctxMenuFolderSet,t=$.Deferred(),chrome.contextMenus.removeAll(function(){var r,i;return i=[],n.forEach(function(e){var t;if(t=e.ctxMenu)return t.id=e["new"],t.order=t.order||999,e.mode==="through"?t.type="create pause":t.type="create",i.push(t)}),i.sort(function(e,t){return e.order-t.order}),r=[],i.forEach(function(t){var n,i,s,o,u,a,f;if(t.parentId!=="route"){n=!1;for(s=o=0,a=r.length;0<=a?o<a:o>a;s=0<=a?++o:--o)if(r[s].id===t.parentId){n=!0;break}if(!n)for(s=u=0,f=e.length;0<=f?u<f:u>f;s=0<=f?++u:--u)if(e[s].id===t.parentId){i=e[s],r.push({id:i.id,order:t.order,parentId:"route",type:"create",caption:i.title,contexts:i.contexts});break}}return r.push(t)}),L(t,r,0)}),t.promise()},g=function(t){var n;return $.get(M+t).done(function(r){return e(r,t),n.resolve()}),(n=$.Deferred()).promise()},i=function(e){return window.requestFileSystem=window.requestFileSystem||window.webkitRequestFileSystem,window.requestFileSystem(PERSISTENT,102400,function(t){return t.root.getFile("help.md",{create:!0,exclusive:!1},function(t){return t.createWriter(function(n){var r;return r=new Blob([e],{type:"text/plain"}),n.write(r),n.onwriteend=function(e){return andy.helpFileName=t.toURL()},n.onerror=function(e){return console.log(e)}})},function(e){return console.log({"FileApi error":e})})})},$(function(){var e;return andy.setLocal().done(function(){var e,t,n,i,s,o;if(n=andy.local.keyConfigSet){H(n),r(),o=[];for(e=i=0,s=n.length;0<=s?i<s:i>s;e=0<=s?++i:--i)(t=n[e]).mode==="command"&&t.command.name==="execJS"&&t.command.coffee?o.push(andy.coffee2JS(t["new"],t.command.content)):o.push(void 0);return o}}),g("ja").done(function(){return g("en").done(function(){return delete O["-"],delete O["+"],O["CTRL+;"]={ja:["W^ページ全体を拡大表示します。"]},O["CTRL+="]={en:["W^Enlarges everything on the page."]},O["CTRL+-"]={en:["W^Makes everything on the page smaller."],ja:["W^ページ全体を縮小表示します。"]}})}),e="https://dl.dropboxusercontent.com/u/41884666/help.md",$.get(e).done(function(e){return i(e)})})}).call(this);
+// Generated by CoffeeScript 1.6.3
+(function() {
+  var analyzeScHelpPage, closeTabs, closeWindow, createCtxMenus, createFileHelpMd, createNotification, deleteHistory, dfdCommandQueue, execBatchMode, execCommand, execCtxMenu, execJS, execShortcut, flexkbd, gCurrentTabId, getActiveTab, getAllTabs, getHelp, getWindowTabs, jsCtxData, jsTransCodes, jsUtilObj, modifierInits, notifIcons, notifications, openBookmark, optionsTabId, preOpenBookmark, registerCtxMenu, removeCookie, scHelp, scHelpPageUrl, scHelpSect, scrapeHelp, sendMessage, setConfigPlugin, showNotification, tabStateNotifier, transKbdEvent, undoData, userData,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  gCurrentTabId = null;
+
+  userData = {};
+
+  undoData = {};
+
+  jsTransCodes = {};
+
+  flexkbd = document.getElementById("flexkbd");
+
+  notifIcons = {
+    "info": "info.png",
+    "warn": "warn.png",
+    "err": "err.png",
+    "chk": "chk.png",
+    "fav": "fav.png",
+    "star": "infostar.png",
+    "clip": "clip.png",
+    "close": "close.png",
+    "user": "user.png",
+    "users": "users.png",
+    "help": "help.png",
+    "flag": "flag.png",
+    "none": "none.png",
+    "cancel": "cancel.png",
+    "comment": "comment.png",
+    "comments": "comments.png"
+  };
+
+  tabStateNotifier = {
+    callbacks: {},
+    completes: {},
+    reset: function(tabId) {
+      return this.completes[tabId] = false;
+    },
+    register: function(tabId, callback) {
+      if (this.completes[tabId]) {
+        return callback();
+      } else {
+        return this.callbacks[tabId] = callback;
+      }
+    },
+    callComplete: function(tabId) {
+      var callback;
+      if (callback = this.callbacks[tabId]) {
+        return callback();
+      } else {
+        return this.completes[tabId] = true;
+      }
+    }
+  };
+
+  modifierInits = ["c", "a", "s", "w"];
+
+  transKbdEvent = function(value, kbdtype) {
+    var i, keyCombo, keyIdenfiers, keys, modifiers, scanCode, _i, _ref;
+    keys = andy.getKeyCodes()[kbdtype].keys;
+    modifiers = parseInt(value.substring(0, 2), 16);
+    keyCombo = [];
+    for (i = _i = 0, _ref = modifierInits.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      if (modifiers & Math.pow(2, i)) {
+        keyCombo.push(modifierInits[i]);
+      }
+    }
+    scanCode = value.substring(2);
+    keyIdenfiers = keys[scanCode];
+    return "[" + keyCombo.join("") + "]" + keyIdenfiers[0];
+  };
+
+  jsCtxData = "";
+
+  execCtxMenu = function(info) {
+    var i, keyConfig, _i, _ref, _results;
+    jsCtxData = "scd.ctxData = '" + (info.selectionText || info.linkUrl || info.srcUrl || info.pageUrl || "").replace(/'/g, "\\'") + "';";
+    _results = [];
+    for (i = _i = 0, _ref = andy.local.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      if ((keyConfig = andy.local.keyConfigSet[i])["new"] === info.menuItemId) {
+        execBatchMode(keyConfig["new"]);
+        break;
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  chrome.contextMenus.onClicked.addListener(function(info, tab) {
+    return execCtxMenu(info);
+  });
+
+  execShortcut = function(dfd, doneCallback, transCode, scCode, sleepMSec, execMode, batchIndex) {
+    var i, item, kbdtype, keyIdentifier, keys, modifierChars, modifiers, modifiersCode, scanCode, test, _i, _j, _k, _ref, _ref1, _results;
+    if (transCode) {
+      modifiersCode = 0;
+      test = transCode.match(/\[(\w*?)\](.+)/);
+      if (test) {
+        modifiers = RegExp.$1;
+        keyIdentifier = RegExp.$2;
+        modifierChars = modifiers.toLowerCase().split("");
+        if ((__indexOf.call(modifierChars, "c") >= 0)) {
+          modifiersCode = 1;
+        }
+        if ((__indexOf.call(modifierChars, "a") >= 0)) {
+          modifiersCode += 2;
+        }
+        if ((__indexOf.call(modifierChars, "s") >= 0)) {
+          modifiersCode += 4;
+        }
+        if ((__indexOf.call(modifierChars, "w") >= 0)) {
+          modifiersCode += 8;
+        }
+      } else {
+        modifiersCode = 0;
+        keyIdentifier = transCode;
+      }
+      kbdtype = andy.local.config.kbdtype;
+      keys = andy.getKeyCodes()[kbdtype].keys;
+      scanCode = -1;
+      for (i = _i = 0, _ref = keys.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+        if (keys[i] && (keyIdentifier === keys[i][0] || keyIdentifier === keys[i][1])) {
+          scanCode = i;
+          break;
+        }
+      }
+      if (scanCode === -1) {
+        throw new Error("Key identifier code '" + keyIdentifier + "' is unregistered code.");
+      } else {
+        if (execMode !== "keydown" && modifiersCode === 0 && !(__indexOf.call((function() {
+          _results = [];
+          for (var _j = 0x3B; 0x3B <= 0x44 ? _j <= 0x44 : _j >= 0x44; 0x3B <= 0x44 ? _j++ : _j--){ _results.push(_j); }
+          return _results;
+        }).apply(this), scanCode) >= 0) && !(scanCode === 0x57 || scanCode === 0x58)) {
+          throw new Error("Modifier code is not included in '" + transCode + "'.");
+        } else {
+          scCode = "0" + modifiersCode.toString(16) + scanCode;
+        }
+      }
+    } else if (!scCode) {
+      throw new Error("Command argument is not found.");
+      return;
+    }
+    if (!execMode) {
+      for (i = _k = 0, _ref1 = andy.local.keyConfigSet.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; i = 0 <= _ref1 ? ++_k : --_k) {
+        if ((item = andy.local.keyConfigSet[i])["new"] === scCode) {
+          execMode = item.mode;
+          break;
+        }
+      }
+    }
+    switch (execMode) {
+      case "command":
+        return execCommand(scCode).done(function() {
+          return doneCallback(dfd, sleepMSec, batchIndex);
+        });
+      case "bookmark":
+        return preOpenBookmark(scCode).done(function(tabId) {
+          if (tabId) {
+            return tabStateNotifier.register(tabId, function() {
+              return doneCallback(dfd, sleepMSec, batchIndex);
+            });
+          } else {
+            return doneCallback(dfd, sleepMSec, batchIndex);
+          }
+        });
+      case "keydown":
+        return setTimeout((function() {
+          flexkbd.CallShortcut(scCode, 8);
+          return doneCallback(dfd, sleepMSec, batchIndex);
+        }), 0);
+      default:
+        return setTimeout((function() {
+          flexkbd.CallShortcut(scCode, 4);
+          return doneCallback(dfd, sleepMSec, batchIndex);
+        }), 0);
+    }
+  };
+
+  dfdCommandQueue = $.Deferred().resolve();
+
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    var doneCallback;
+    doneCallback = function(dfd, sleepMSec) {
+      if (sleepMSec > 0) {
+        flexkbd.Sleep(sleepMSec);
+      }
+      sendResponse({
+        msg: "done"
+      });
+      return dfd.resolve();
+    };
+    dfdCommandQueue = dfdCommandQueue.then(function() {
+      var dfd, e, params;
+      dfd = $.Deferred();
+      setTimeout((function() {
+        if (dfd.state() === "pending") {
+          sendResponse({
+            msg: "Command has been killed in a time-out."
+          });
+          return dfd.reject();
+        }
+      }), 61000);
+      try {
+        switch (request.action) {
+          case "callShortcut":
+            return execShortcut(dfd, doneCallback, request.value1, null, request.value2);
+          case "keydown":
+            return execShortcut(dfd, doneCallback, request.value1, null, request.value2, "keydown");
+          case "sleep":
+            return setTimeout((function() {
+              flexkbd.Sleep(request.value1);
+              return doneCallback(dfd, 0);
+            }), 0);
+          case "setData":
+            return setTimeout((function() {
+              userData[request.value1] = request.value2;
+              return doneCallback(dfd, 0);
+            }), 0);
+          case "getData":
+            return setTimeout((function() {
+              sendResponse({
+                msg: "done",
+                data: userData[request.value1] || null
+              });
+              return dfd.resolve();
+            }), 0);
+          case "getTabInfo":
+            return chrome.tabs.get(request.value1, function(tab) {
+              return chrome.windows.get(tab.windowId, {
+                populate: true
+              }, function(win) {
+                tab.tabCount = win.tabs.length;
+                tab.focused = win.focused;
+                tab.windowState = win.state;
+                tab.windowType = win.type;
+                sendResponse({
+                  msg: "done",
+                  data: tab
+                });
+                return dfd.resolve();
+              });
+            });
+          case "setClipboard":
+            return setTimeout((function() {
+              flexkbd.SetClipboard(request.value1);
+              return doneCallback(dfd, 0);
+            }), 0);
+          case "getClipboard":
+            return setTimeout((function() {
+              var e, result, text;
+              try {
+                text = flexkbd.GetClipboard();
+                result = "done";
+              } catch (_error) {
+                e = _error;
+                text = "";
+                result = e.message;
+              }
+              sendResponse({
+                msg: result,
+                data: text
+              });
+              return dfd.resolve();
+            }), 0);
+          case "showNotification":
+            return showNotification(dfd, doneCallback, request.value1, request.value2, request.value3, request.value4);
+          case "openUrl":
+            params = request.value1;
+            return preOpenBookmark(null, params).done(function(tabId) {
+              if (tabId && params.noActivate) {
+                gCurrentTabId = tabId;
+                tabStateNotifier.callComplete(params.commandId);
+              }
+              return doneCallback(dfd, 0);
+            });
+          case "execShell":
+            return setTimeout((function() {
+              flexkbd.ExecUrl(request.value1, request.value2);
+              return doneCallback(dfd, 0);
+            }), 0);
+          case "clearActiveTab":
+            return setTimeout((function() {
+              gCurrentTabId = null;
+              return doneCallback(dfd, 0);
+            }), 0);
+          case "clientOnKeyDown":
+            return setTimeout((function() {
+              var i, keyname, keynames, scCode, scanCode, _i, _ref;
+              if (keynames = keyIdentifiers[andy.local.config.kbdtype][request.value1]) {
+                if (request.value2) {
+                  if (!(keyname = keynames[1])) {
+                    return;
+                  }
+                  scCode = "04";
+                } else {
+                  keyname = keynames[0];
+                  scCode = "00";
+                }
+                for (i = _i = 0, _ref = keys.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                  if (keys[i] && (keyname === keys[i][0] || keyname === keys[i][1])) {
+                    scanCode = i;
+                    break;
+                  }
+                }
+                if (scanCode) {
+                  execBatchMode(scCode + i);
+                }
+              }
+              return doneCallback(dfd, 0);
+            }), 0);
+        }
+      } catch (_error) {
+        e = _error;
+        setTimeout((function() {
+          sendResponse({
+            msg: e.message
+          });
+          return dfd.resolve();
+        }), 0);
+        return dfd.promise();
+      }
+    });
+    return true;
+  });
+
+  jsUtilObj = "var e,t,scd;e=function(){function e(e){this.error=e}return e.prototype.done=function(e){return this},e.prototype.fail=function(e){return e(new Error(this.error)),this},e}(),t=function(){function e(){}return e.prototype.done=function(e){return this.doneCallback=e,this},e.prototype.fail=function(e){return this.failCallback=e,this},e.prototype.sendMessage=function(e,t,n,r,i){var s=this;return chrome.runtime.sendMessage({action:e,value1:t,value2:n,value3:r,value4:i},function(e){var t;if((e!=null?e.msg:void 0)===\"done\"){if(t=s.doneCallback)return setTimeout(function(){return t(e.data||e.msg)},0)}else if(t=s.failCallback)return setTimeout(function(){return t(e.msg)},0)}),this},e}(),scd={batch:function(n){return n instanceof Array?(new t).sendMessage(\"batch\",n):new e(\"Argument is not Array.\")},send:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"callShortcut\",n,i)},keydown:function(n,r){var i;i=100;if(r!=null){if(isNaN(i=r))return new e(r+\" is not a number.\");i=Math.round(r);if(i<0||i>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}return(new t).sendMessage(\"keydown\",n,i)},sleep:function(n){if(n!=null){if(isNaN(n))return new e(n+\" is not a number.\");n=Math.round(n);if(n<0||n>6e3)return new e(\"Range of Sleep millisecond is up to 6000-0.\")}else n=100;return(new t).sendMessage(\"sleep\",n)},setClipbd:function(e){return(new t).sendMessage(\"setClipboard\",e)},getClipbd:function(){return(new t).sendMessage(\"getClipboard\")},showNotify:function(e,n,r,i){return e==null&&(e=\"\"),n==null&&(n=\"\"),r==null&&(r=\"none\"),i==null&&(i=!1),(new t).sendMessage(\"showNotification\",e,n,r,i)},returnValue:{},cancel:function(){return this.returnValue.cancel=!0},openUrl:function(e,n,r,i){var s,o,u;return n&&(s=(new Date).getTime()),r&&(o=!0),u={url:e,noActivate:n,findStr:r,findtab:o,openmode:i,commandId:s},(new t).sendMessage(\"openUrl\",u),this.returnValue.cid=s},execShell:function(e,n){if(e)return(new t).sendMessage(\"execShell\",e,n)},clearCurrentTab:function(){return(new t).sendMessage(\"clearCurrentTab\")},getSelection:function(){var e,t,n,r;n=\"\";if(e=document.activeElement){if((r=e.nodeName)===\"TEXTAREA\"||r===\"INPUT\")return n=e.value.substring(e.selectionStart,e.selectionEnd);if((t=window.getSelection()).type===\"Range\")return n=t.getRangeAt(0).toString()}},setData:function(e,n){return(new t).sendMessage(\"setData\",e,n)},getData:function(e){return(new t).sendMessage(\"getData\",e)},getTabInfo:function(){return(new t).sendMessage(\"getTabInfo\",this.tabId)}};";
+
+  sendMessage = function(message) {
+    return chrome.tabs.query({
+      active: true
+    }, function(tabs) {
+      return chrome.tabs.sendMessage(tabs[0].id, message);
+    });
+  };
+
+  getActiveTab = function(execJS) {
+    var currentWindowId, dfd;
+    dfd = $.Deferred();
+    currentWindowId = chrome.windows.WINDOW_ID_CURRENT;
+    if (gCurrentTabId) {
+      chrome.tabs.query({}, function(tabs) {
+        var currentTab, i, tabFound, _i, _ref;
+        for (i = _i = 0, _ref = tabs.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          if (tabFound = (currentTab = tabs[i]).id === gCurrentTabId) {
+            break;
+          }
+        }
+        if (tabFound) {
+          return dfd.resolve(currentTab, currentTab.windowId);
+        } else {
+          return chrome.tabs.query({
+            active: true,
+            windowId: currentWindowId
+          }, function(tabs) {
+            return dfd.resolve(tabs[0], currentWindowId);
+          });
+        }
+      });
+    } else {
+      chrome.tabs.query({
+        active: true,
+        windowId: currentWindowId
+      }, function(tabs) {
+        return dfd.resolve(tabs[0], currentWindowId);
+      });
+    }
+    return dfd.promise();
+  };
+
+  getWindowTabs = function(options) {
+    var dfd;
+    dfd = $.Deferred();
+    options.windowId = chrome.windows.WINDOW_ID_CURRENT;
+    chrome.tabs.query(options, function(tabs) {
+      return dfd.resolve(tabs);
+    });
+    return dfd.promise();
+  };
+
+  getAllTabs = function() {
+    var dfd;
+    dfd = $.Deferred();
+    chrome.tabs.query({}, function(tabs) {
+      return dfd.resolve(tabs);
+    });
+    return dfd.promise();
+  };
+
+  optionsTabId = null;
+
+  chrome.tabs.onActivated.addListener(function(activeInfo) {
+    return chrome.tabs.get(activeInfo.tabId, function(tab) {
+      if (tab.url.indexOf(chrome.extension.getURL("options.html")) === 0) {
+        if (!/editable/.test(tab.url)) {
+          flexkbd.StartConfigMode();
+          return optionsTabId = activeInfo.tabId;
+        }
+      } else {
+        if (optionsTabId) {
+          chrome.tabs.sendMessage(optionsTabId, {
+            action: "saveConfig"
+          });
+          optionsTabId = null;
+        }
+        if (andy.local.config.singleKey && !/^chrome|^about|^https:\/\/chrome.google.com/.test(tab.url)) {
+          return chrome.tabs.sendMessage(tab.id, {
+            action: "askAlive"
+          }, function(resp) {
+            if (resp !== "hello") {
+              return chrome.tabs.executeScript(tab.id, {
+                file: "kbdagent.js",
+                allFrames: true,
+                runAt: "document_end"
+              });
+            }
+          });
+        }
+      }
+    });
+  });
+
+  chrome.windows.onFocusChanged.addListener(function(windowId) {
+    if (optionsTabId) {
+      chrome.tabs.sendMessage(optionsTabId, {
+        action: "saveConfig"
+      });
+      return optionsTabId = null;
+    } else {
+      return getActiveTab().done(function(tab) {
+        if ((tab != null ? tab.url.indexOf(chrome.extension.getURL("options.html")) : void 0) === 0 && !/editable/.test(tab != null ? tab.url : void 0)) {
+          flexkbd.StartConfigMode();
+          return optionsTabId = tab.id;
+        }
+      });
+    }
+  });
+
+  chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (changeInfo.status === "complete") {
+      if (tab.url.indexOf(chrome.extension.getURL("options.html")) === 0) {
+        if (/editable/.test(tab.url)) {
+          flexkbd.EndConfigMode();
+          return optionsTabId = null;
+        } else {
+          flexkbd.StartConfigMode();
+          return optionsTabId = tab.id;
+        }
+      } else {
+        tabStateNotifier.callComplete(tabId);
+        if (andy.local.config.singleKey && !/^chrome|^about|^https:\/\/chrome.google.com/.test(tab.url)) {
+          return chrome.tabs.sendMessage(tab.id, {
+            action: "askAlive"
+          }, function(resp) {
+            if (resp !== "hello") {
+              return chrome.tabs.executeScript(tab.id, {
+                file: "kbdagent.js",
+                allFrames: true,
+                runAt: "document_end"
+              });
+            }
+          });
+        }
+      }
+    }
+  });
+
+  execBatchMode = function(scCode) {
+    var dfdBatchQueue, dfdKicker, doneCallback, i, keyConfigs, _i, _ref;
+    gCurrentTabId = null;
+    doneCallback = function(dfd, sleepMSec, batchIndex) {
+      if (sleepMSec > 0) {
+        flexkbd.Sleep(sleepMSec);
+      }
+      return dfd.resolve(batchIndex + 1);
+    };
+    keyConfigs = [];
+    andy.local.keyConfigSet.forEach(function(keyConfig) {
+      if (keyConfig["new"] === scCode || keyConfig.parentId === scCode) {
+        return keyConfigs.push(keyConfig);
+      }
+    });
+    (dfdBatchQueue = dfdKicker = $.Deferred()).promise();
+    dfdBatchQueue = dfdBatchQueue.then(function() {
+      var dfd;
+      dfd = $.Deferred();
+      setTimeout((function() {
+        return doneCallback(dfd, 0, -1);
+      }), 0);
+      return dfd.promise();
+    });
+    for (i = _i = 0, _ref = keyConfigs.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      dfdBatchQueue = dfdBatchQueue.then(function(batchIndex) {
+        var dfd, e, keyConfig;
+        dfd = $.Deferred();
+        setTimeout((function() {
+          if (dfd.state() === "pending") {
+            dfd.reject();
+            return console.log("Command has been killed in a time-out.");
+          }
+        }), 61000);
+        try {
+          keyConfig = keyConfigs[batchIndex];
+          switch (keyConfig.mode) {
+            case "remap":
+              execShortcut(dfd, doneCallback, null, keyConfig.origin, andy.defaultSleep, "keydown", batchIndex);
+              break;
+            case "command":
+              execCommand(keyConfig["new"]).done(function(results) {
+                var cancel, commandId, _j, _ref1, _ref2, _ref3;
+                if (results) {
+                  for (i = _j = 0, _ref1 = results.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+                    if (commandId = (_ref2 = results[i]) != null ? _ref2.cid : void 0) {
+                      break;
+                    } else if (cancel = (_ref3 = results[i]) != null ? _ref3.cancel : void 0) {
+                      break;
+                    }
+                  }
+                }
+                if (cancel) {
+                  return dfd.reject();
+                } else {
+                  if (commandId) {
+                    return tabStateNotifier.register(commandId, function() {
+                      return doneCallback(dfd, 0, batchIndex);
+                    });
+                  } else {
+                    return doneCallback(dfd, 0, batchIndex);
+                  }
+                }
+              });
+              break;
+            case "sleep":
+              setTimeout((function() {
+                flexkbd.Sleep(~~keyConfig.sleep);
+                return doneCallback(dfd, 0, batchIndex);
+              }), 0);
+              break;
+            case "comment":
+            case "through":
+              setTimeout((function() {
+                return doneCallback(dfd, 0, batchIndex);
+              }), 0);
+              break;
+            default:
+              execShortcut(dfd, doneCallback, null, keyConfig["new"], andy.defaultSleep, keyConfig.mode, batchIndex);
+          }
+        } catch (_error) {
+          e = _error;
+          setTimeout((function() {
+            dfd.reject();
+            return console.log(e.message);
+          }), 0);
+        }
+        return dfd.promise();
+      });
+    }
+    return dfdKicker.resolve();
+  };
+
+  notifications = {};
+
+  notifications.state = "closed";
+
+  createNotification = function(dfd, doneCallback, title, message, icon, newNotif) {
+    var iconName, id;
+    if (newNotif) {
+      id = "s" + (new Date).getTime();
+    } else {
+      id = chrome.runtime.id;
+    }
+    if (!(iconName = notifIcons[icon])) {
+      iconName = notifIcons.none;
+    }
+    return chrome.notifications.create(id, {
+      type: "basic",
+      iconUrl: "images/" + iconName,
+      title: title,
+      message: message,
+      eventTime: 60000
+    }, function() {
+      notifications.state = "opened";
+      return dfd.resolve();
+    });
+  };
+
+  showNotification = function(dfd, doneCallback, title, message, icon, newNotif) {
+    if (notifications.state === "opened" && !newNotif) {
+      return chrome.notifications.clear(chrome.runtime.id, function() {
+        return createNotification(dfd, doneCallback, title, message, icon, newNotif);
+      });
+    } else {
+      return createNotification(dfd, doneCallback, title, message, icon, newNotif);
+    }
+  };
+
+  openBookmark = function(dfd, openmode, url, noActivate) {
+    if (openmode == null) {
+      openmode = "last";
+    }
+    if (noActivate == null) {
+      noActivate = false;
+    }
+    if (!url) {
+      setTimeout((function() {
+        return dfd.resolve();
+      }), 0);
+      return;
+    }
+    switch (openmode.toLowerCase()) {
+      case "newtab":
+      case "left":
+      case "right":
+      case "first":
+      case "last":
+        return getActiveTab().done(function(tab, windowId) {
+          var newIndex;
+          if (openmode === "first") {
+            newIndex = 0;
+          } else if (openmode === "last" || openmode === "newtab") {
+            newIndex = 1000;
+          } else if (openmode === "left") {
+            newIndex = Math.max(0, tab.index);
+          } else if (openmode === "right") {
+            newIndex = tab.index + 1;
+          }
+          return chrome.tabs.create({
+            url: url,
+            index: newIndex,
+            active: !noActivate
+          }, function(tab) {
+            return dfd.resolve(tab.id);
+          });
+        });
+      case "current":
+        return getActiveTab().done(function(tab, windowId) {
+          tabStateNotifier.reset(tab.id);
+          return chrome.tabs.update(tab.id, {
+            url: url,
+            active: !noActivate
+          }, function(tab) {
+            return dfd.resolve(tab.id);
+          });
+        });
+      case "newwin":
+        return chrome.windows.create({
+          url: url,
+          focused: !noActivate
+        }, function(win) {
+          return dfd.resolve(win.tabs[0].id);
+        });
+      case "incognito":
+        return chrome.windows.create({
+          url: url,
+          focused: !noActivate,
+          incognito: true
+        }, function(win) {
+          return dfd.resolve(win != null ? win.tabs[0].id : void 0);
+        });
+      default:
+        return setTimeout((function() {
+          return dfd.resolve();
+        }), 0);
+    }
+  };
+
+  preOpenBookmark = function(keyEvent, params) {
+    var dfd, findStr, findtab, i, item, noActivate, openmode, url, _i, _ref;
+    dfd = $.Deferred();
+    for (i = _i = 0, _ref = andy.local.keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      item = andy.local.keyConfigSet[i];
+      if (item["new"] === keyEvent || params) {
+        if (!params) {
+          params = item.bookmark;
+        }
+        openmode = params.openmode, url = params.url, findtab = params.findtab, findStr = params.findStr, noActivate = params.noActivate;
+        if (findtab || openmode === "findonly") {
+          getActiveTab().done(function(activeTab) {
+            return getAllTabs().done(function(tabs) {
+              var currentPos, found, orderedTabs, _j, _k, _ref1, _ref2;
+              currentPos = 0;
+              for (i = _j = 0, _ref1 = tabs.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+                if (tabs[i].id === activeTab.id) {
+                  currentPos = i;
+                  break;
+                }
+              }
+              orderedTabs = [];
+              if ((0 < currentPos && currentPos < (tabs.length - 1))) {
+                orderedTabs = tabs.slice(currentPos + 1).concat(tabs.slice(0, currentPos + 1));
+              } else {
+                orderedTabs = tabs;
+              }
+              found = false;
+              for (i = _k = 0, _ref2 = orderedTabs.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; i = 0 <= _ref2 ? ++_k : --_k) {
+                if ((orderedTabs[i].title + orderedTabs[i].url).indexOf(findStr) !== -1) {
+                  if (noActivate) {
+                    dfd.resolve(orderedTabs[i].id);
+                  } else {
+                    chrome.tabs.update(orderedTabs[i].id, {
+                      active: true
+                    }, function() {
+                      return chrome.windows.update(orderedTabs[i].windowId, {
+                        focused: true
+                      }, function() {
+                        return dfd.resolve();
+                      });
+                    });
+                  }
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                return openBookmark(dfd, openmode, url, noActivate);
+              }
+            });
+          });
+        } else {
+          openBookmark(dfd, openmode, url, noActivate);
+        }
+        break;
+      }
+    }
+    return dfd.promise();
+  };
+
+  removeCookie = function(dfd, removeSpecs, index) {
+    var removeSpec;
+    if (removeSpec = removeSpecs[index]) {
+      return chrome.cookies.remove({
+        "url": removeSpec.url,
+        "name": removeSpec.name
+      }, function() {
+        return removeCookie(dfd, removeSpecs, index + 1);
+      });
+    } else {
+      return dfd.resolve();
+    }
+  };
+
+  deleteHistory = function(dfd, deleteUrls, index) {
+    var url;
+    if (url = deleteUrls[index]) {
+      return chrome.history.deleteUrl({
+        url: url
+      }, function() {
+        return deleteHistory(dfd, deleteUrls, index + 1);
+      });
+    } else {
+      return dfd.resolve();
+    }
+  };
+
+  closeWindow = function(dfd, windows, index) {
+    var win;
+    if (win = windows[index]) {
+      if (win.focused) {
+        return closeWindow(dfd, windows, index + 1);
+      } else {
+        return chrome.windows.remove(win.id, function() {
+          return closeWindow(dfd, windows, index + 1);
+        });
+      }
+    } else {
+      return dfd.resolve();
+    }
+  };
+
+  closeTabs = function(dfd, fnWhere) {
+    return getWindowTabs({
+      active: false,
+      currentWindow: true,
+      windowType: "normal"
+    }, fnWhere).done(function(tabs) {
+      var tabIds;
+      tabIds = [];
+      tabs.forEach(function(tab) {
+        if (fnWhere(tab)) {
+          return tabIds.push(tab.id);
+        }
+      });
+      if (tabIds.length > 0) {
+        return chrome.tabs.remove(tabIds, function() {
+          return dfd.resolve();
+        });
+      } else {
+        return dfd.resolve();
+      }
+    });
+  };
+
+  execJS = function(dfd, tabId, code, allFrames) {
+    return chrome.tabs.executeScript(tabId, {
+      code: code,
+      allFrames: allFrames,
+      runAt: "document_end"
+    }, function(results) {
+      return dfd.resolve(results);
+    });
+  };
+
+  execCommand = function(keyEvent) {
+    var dfd, pos;
+    dfd = $.Deferred();
+    pos = 0;
+    andy.local.keyConfigSet.forEach(function(item) {
+      var code, command, findStr;
+      if (item["new"] === keyEvent) {
+        switch (command = item.command.name) {
+          case "createTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.create({
+                windowId: windowId,
+                index: tab.index + 1
+              }, function(tab) {
+                return tabStateNotifier.register(tab.id, function() {
+                  return dfd.resolve();
+                });
+              });
+            });
+          case "createTabBG":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.create({
+                windowId: windowId,
+                index: tab.index + 1,
+                active: false
+              }, function(tab) {
+                return tabStateNotifier.register(tab.id, function() {
+                  return dfd.resolve();
+                });
+              });
+            });
+          case "closeOtherTabs":
+            return closeTabs(dfd, function() {
+              return true;
+            });
+          case "closeTabsRight":
+          case "closeTabsLeft":
+            return getActiveTab().done(function(tab) {
+              pos = tab.index;
+              if (command === "closeTabsRight") {
+                return closeTabs(dfd, function(tab) {
+                  return tab.index > pos;
+                });
+              } else {
+                return closeTabs(dfd, function(tab) {
+                  return tab.index < pos;
+                });
+              }
+            });
+          case "moveTabRight":
+          case "moveTabLeft":
+            return getActiveTab().done(function(tab, windowId) {
+              var newpos;
+              newpos = tab.index;
+              if (command === "moveTabRight") {
+                newpos = newpos + 1;
+              } else {
+                newpos = newpos - 1;
+              }
+              if (newpos > -1) {
+                return chrome.tabs.move(tab.id, {
+                  windowId: windowId,
+                  index: newpos
+                }, function() {
+                  return dfd.resolve();
+                });
+              } else {
+                return dfd.resolve();
+              }
+            });
+          case "moveTabFirst":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.move(tab.id, {
+                windowId: windowId,
+                index: 0
+              }, function() {
+                return dfd.resolve();
+              });
+            });
+          case "moveTabLast":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.move(tab.id, {
+                windowId: windowId,
+                index: 1000
+              }, function() {
+                return dfd.resolve();
+              });
+            });
+          case "detachTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.windows.create({
+                tabId: tab.id,
+                focused: true,
+                type: "normal"
+              }, function() {
+                return dfd.resolve();
+              });
+            });
+          case "attachTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.windows.getAll({
+                populate: true
+              }, function(windows) {
+                var currentWindowId, i, j, newWindowId, newwin, _i, _j, _ref, _ref1;
+                for (i = _i = 0, _ref = windows.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                  for (j = _j = 0, _ref1 = windows[i].tabs.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
+                    if (tab.id === windows[i].tabs[j].id) {
+                      currentWindowId = i;
+                      break;
+                    }
+                  }
+                }
+                if (newwin = windows[++currentWindowId]) {
+                  newWindowId = newwin.id;
+                } else {
+                  newWindowId = windows[0].id;
+                }
+                return chrome.tabs.move(tab.id, {
+                  windowId: newWindowId,
+                  index: 1000
+                }, function() {
+                  return chrome.tabs.update(tab.id, {
+                    active: true
+                  }, function() {
+                    return dfd.resolve();
+                  });
+                });
+              });
+            });
+          case "duplicateTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.duplicate(tab.id, function() {
+                return dfd.resolve();
+              });
+            });
+          case "duplicateTabWin":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.duplicate(tab.id, function(tab) {
+                return chrome.windows.create({
+                  tabId: tab.id,
+                  focused: true,
+                  type: "normal"
+                }, function() {
+                  return dfd.resolve();
+                });
+              });
+            });
+          case "pinTab":
+            return getActiveTab().done(function(tab, windowId) {
+              return chrome.tabs.update(tab.id, {
+                pinned: !tab.pinned
+              }, function() {
+                return dfd.resolve();
+              });
+            });
+          case "switchNextWin":
+            return chrome.windows.getAll(null, function(windows) {
+              var i, _i, _ref, _results;
+              _results = [];
+              for (i = _i = 0, _ref = windows.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                if (windows[i].focused) {
+                  if (i === windows.length - 1) {
+                    chrome.windows.update(windows[0].id, {
+                      focused: true
+                    }, function() {
+                      return dfd.resolve();
+                    });
+                  } else {
+                    chrome.windows.update(windows[i + 1].id, {
+                      focused: true
+                    }, function() {
+                      return dfd.resolve();
+                    });
+                  }
+                  break;
+                } else {
+                  _results.push(void 0);
+                }
+              }
+              return _results;
+            });
+          case "switchPrevWin":
+            return chrome.windows.getAll(null, function(windows) {
+              var i, _i, _ref, _results;
+              _results = [];
+              for (i = _i = 0, _ref = windows.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                if (windows[i].focused) {
+                  if (i === 0) {
+                    chrome.windows.update(windows[windows.length - 1].id, {
+                      focused: true
+                    }, function() {
+                      return dfd.resolve();
+                    });
+                  } else {
+                    chrome.windows.update(windows[i - 1].id, {
+                      focused: true
+                    }, function() {
+                      return dfd.resolve();
+                    });
+                  }
+                  break;
+                } else {
+                  _results.push(void 0);
+                }
+              }
+              return _results;
+            });
+          case "closeOtherWins":
+            return chrome.windows.getAll(null, function(windows) {
+              return closeWindow(dfd, windows, 0);
+            });
+          case "pasteText":
+            return setTimeout((function() {
+              flexkbd.PasteText(item.command.content);
+              return dfd.resolve();
+            }), 0);
+          case "copyText":
+            return getActiveTab().done(function(tab) {
+              return chrome.tabs.sendMessage(tab.id, {
+                action: "askAlive"
+              }, function(resp) {
+                if (resp === "hello") {
+                  return setClipboardWithHistory(dfd, tab.id);
+                } else {
+                  return chrome.tabs.executeScript(tab.id, {
+                    file: "kbdagent.js",
+                    allFrames: true,
+                    runAt: "document_end"
+                  }, function(resp) {
+                    return setClipboardWithHistory(dfd, tab.id);
+                  });
+                }
+              });
+            });
+          case "showHistory":
+            return getActiveTab().done(function(tab) {
+              return chrome.tabs.sendMessage(tab.id, {
+                action: "askAlive"
+              }, function(resp) {
+                if (resp === "hello") {
+                  return showCopyHistory(dfd, tab.id);
+                } else {
+                  return chrome.tabs.executeScript(tab.id, {
+                    file: "kbdagent.js",
+                    allFrames: true,
+                    runAt: "document_end"
+                  }, function(resp) {
+                    return showCopyHistory(dfd, tab.id);
+                  });
+                }
+              });
+            });
+          case "insertCSS":
+            return getActiveTab().done(function(tab) {
+              return chrome.tabs.insertCSS(tab.id, {
+                code: item.command.content,
+                allFrames: item.command.allFrames
+              }, function() {
+                return dfd.resolve();
+              });
+            });
+          case "execJS":
+            if (item.command.coffee) {
+              code = jsTransCodes[item["new"]];
+            } else {
+              code = item.command.content;
+            }
+            return getActiveTab(true).done(function(tab) {
+              if (item.command.useUtilObj) {
+                code = jsUtilObj + jsCtxData + (";scd.tabId=" + tab.id + ";") + code + ";scd.returnValue";
+              }
+              if (item.command.jquery) {
+                return chrome.tabs.sendMessage(tab.id, {
+                  action: "askJQuery"
+                }, function(resp) {
+                  if (resp === "hello") {
+                    return execJS(dfd, tab.id, code, item.command.allFrames);
+                  } else {
+                    return chrome.tabs.executeScript(tab.id, {
+                      file: "lib/jquery.cli.min.js",
+                      allFrames: item.command.allFrames
+                    }, function(resp) {
+                      return execJS(dfd, tab.id, code, item.command.allFrames);
+                    });
+                  }
+                });
+              } else {
+                return execJS(dfd, tab.id, code, item.command.allFrames);
+              }
+            });
+          case "clearHistory":
+            return chrome.browsingData.removeHistory({}, function() {
+              return dfd.resolve();
+            });
+          case "clearHistoryS":
+            findStr = item.command.content;
+            return chrome.history.search({
+              text: "",
+              startTime: 0,
+              maxResults: 10000
+            }, function(histories) {
+              var deleteUrls, history, i, _i, _ref;
+              deleteUrls = [];
+              for (i = _i = 0, _ref = histories.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+                history = histories[i];
+                if ((history.title + history.url).indexOf(findStr) !== -1) {
+                  deleteUrls.push(history.url);
+                }
+              }
+              if (deleteUrls.length > 0) {
+                return deleteHistory(dfd, deleteUrls, 0);
+              }
+            });
+          case "clearCookiesAll":
+            return chrome.browsingData.removeCookies({}, function() {
+              return dfd.resolve();
+            });
+          case "clearCookies":
+            return getActiveTab().done(function(tab) {
+              var domain, removeSpecs;
+              domain = tab.url.match(/:\/\/(.[^/:]+)/)[1];
+              removeSpecs = [];
+              return chrome.cookies.getAll({}, function(cookies) {
+                cookies.forEach(function(cookie) {
+                  var secure, url;
+                  if (("." + domain).indexOf(cookie.domain) !== -1) {
+                    secure = cookie.secure ? "s" : "";
+                    url = ("http" + secure + "://") + cookie.domain + cookie.path;
+                    return removeSpecs.push({
+                      "url": url,
+                      "name": cookie.name
+                    });
+                  }
+                });
+                return removeCookie(dfd, removeSpecs, 0);
+              });
+            });
+          case "clearCache":
+            return chrome.browsingData.removeCache({}, function() {
+              return dfd.resolve();
+            });
+          case "openExtProg":
+            return getActiveTab().done(function(tab) {
+              flexkbd.ExecUrl(item.command.content, tab.url);
+              return dfd.resolve();
+            });
+          case "clearTabHistory":
+            return getActiveTab().done(function(tab, windowId) {
+              chrome.tabs.remove([tab.id]);
+              chrome.tabs.create({
+                windowId: windowId,
+                index: tab.index,
+                url: tab.url
+              });
+              return dfd.resolve();
+            });
+        }
+      }
+    });
+    return dfd.promise();
+  };
+
+  setConfigPlugin = function(keyConfigSet) {
+    var kbdtype, keys, sendData;
+    sendData = [];
+    if (keyConfigSet) {
+      kbdtype = andy.local.config.kbdtype;
+      keys = andy.getKeyCodes()[kbdtype].keys;
+      keyConfigSet.forEach(function(item) {
+        var scanCode;
+        scanCode = ~~item["new"].substring(2);
+        if (/^00|^04/.test(item["new"]) && !/^F\d|^Application/.test(keys[scanCode])) {
+          return null;
+        } else if (item.batch && item["new"] && item.mode !== "through") {
+          return sendData.push([item["new"], item.origin, "batch"].join(";"));
+        } else if (!/^C/.test(item["new"])) {
+          return sendData.push([item["new"], item.origin, item.mode].join(";"));
+        }
+      });
+      return flexkbd.SetKeyConfig(sendData.join("|"));
+    }
+  };
+
+  window.andy = {
+    local: null,
+    defaultSleep: 100,
+    setLocal: function() {
+      var dfd,
+        _this = this;
+      dfd = $.Deferred();
+      chrome.storage.local.get(null, function(items) {
+        _this.local = items;
+        if (!_this.local.ctxMenuFolderSet) {
+          _this.local.ctxMenuFolderSet = [];
+        }
+        if (_this.local.config) {
+          if (_this.local.config.defaultSleep != null) {
+            _this.defaultSleep = _this.local.config.defaultSleep;
+          } else {
+            _this.local.config.defaultSleep = _this.defaultSleep;
+          }
+          return dfd.resolve();
+        } else {
+          return chrome.i18n.getAcceptLanguages(function(langs) {
+            if (/^ja/.test(langs)) {
+              _this.local.config = {
+                kbdtype: "JP",
+                lang: "ja"
+              };
+            } else {
+              _this.local.config = {
+                kbdtype: "US",
+                lang: "en"
+              };
+            }
+            _this.local.config.defaultSleep = _this.defaultSleep;
+            return $.Deferred().resolve();
+          });
+        }
+      });
+      return dfd.promise();
+    },
+    /*
+    setLocal: ->
+      # Clear localStorage
+      dfd = $.Deferred()
+      chrome.storage.local.clear =>
+        @local = {}
+        @local.config = {kbdtype: "JP", lang: "ja"}
+        $.Deferred().resolve()
+      dfd.promise()
+    setLocal0: ->
+      dfd = $.Deferred()
+      setTimeout((=>
+        items = {}
+        unless items.config
+          items.config = {kbdtype: "JP"}
+        unless items.ctxMenuFolderSet
+          items.ctxMenuFolderSet = []
+        @local = items
+        dfd.resolve()
+      ), 0)
+      dfd.promise()
+    */
+
+    saveConfig: function(saveData) {
+      var _this = this;
+      return chrome.storage.local.set(saveData, function() {
+        _this.local = saveData;
+        _this.defaultSleep = _this.local.config.defaultSleep;
+        return setConfigPlugin(_this.local.keyConfigSet);
+      });
+    },
+    updateCtxMenu: function(id, ctxMenu, pause) {
+      ctxMenu.id = id;
+      if (pause) {
+        ctxMenu.type = "update pause";
+      } else {
+        ctxMenu.type = "update";
+      }
+      return registerCtxMenu($.Deferred(), [ctxMenu], 0);
+    },
+    remakeCtxMenu: function(saveData) {
+      var dfd,
+        _this = this;
+      dfd = $.Deferred();
+      chrome.storage.local.set(saveData, function() {
+        _this.local = saveData;
+        return createCtxMenus().done(function() {
+          return dfd.resolve();
+        });
+      });
+      return dfd.promise();
+    },
+    getKeyCodes: function() {
+      return {
+        US: {
+          keys: keysUS,
+          name: "US 104 Keyboard"
+        },
+        JP: {
+          keys: keysJP,
+          name: "JP 109 Keyboard"
+        }
+      };
+    },
+    getScHelp: function() {
+      return scHelp;
+    },
+    getScHelpSect: function() {
+      return scHelpSect;
+    },
+    startEdit: function() {
+      flexkbd.EndConfigMode();
+    },
+    endEdit: function() {
+      flexkbd.StartConfigMode();
+    },
+    getCtxMenus: function() {},
+    getUndoData: function(id) {
+      return undoData[id];
+    },
+    setUndoData: function(id, data) {
+      return undoData[id] = data;
+    },
+    changePK: function(id, prev) {
+      if (jsTransCodes[id] = jsTransCodes[prev]) {
+        return jsTransCodes[prev] = null;
+      }
+    },
+    coffee2JS: function(id, coffee) {
+      var e;
+      try {
+        jsTransCodes[id] = CoffeeScript.compile(coffee, {
+          bare: "on"
+        });
+        return {
+          success: true
+        };
+      } catch (_error) {
+        e = _error;
+        jsTransCodes[id] = "";
+        return {
+          success: false,
+          err: e.message,
+          errLine: e.location.first_line + 1
+        };
+      }
+    },
+    helpFileName: "help/help.md"
+  };
+
+  window.pluginEvent = function(action, value) {
+    switch (action) {
+      case "log":
+        return console.log(value);
+      case "configKeyEvent":
+        return sendMessage({
+          action: "kbdEvent",
+          value: value
+        });
+      case "bookmark":
+        return preOpenBookmark(value);
+      case "command":
+        return execBatchMode(value);
+      case "batch":
+        return execBatchMode(value);
+    }
+  };
+
+  scHelp = {};
+
+  scHelpSect = {};
+
+  scHelpPageUrl = "https://support.google.com/chrome/answer/157179?hl=";
+
+  scrapeHelp = function(lang, sectInit, elTab) {
+    var targets;
+    targets = $(elTab).find("tr:has(td:first-child:has(strong))");
+    return $.each(targets, function(i, elem) {
+      var content;
+      content = elem.cells[1].textContent.replace(/^\s+|\s$/g, "");
+      return Array.prototype.forEach.call(elem.childNodes[1].getElementsByTagName("strong"), function(strong) {
+        var scKey, _ref;
+        scKey = strong.textContent.toUpperCase().replace(/\s/g, "");
+        scKey = scKey.replace("PGUP", "PAGEUP").replace("PGDOWN", "PAGEDOWN").replace(/DEL$/, "DELETE").replace(/INS$/, "INSERT").replace("ホーム", "HOME").replace("バー", "");
+        if (!((_ref = scHelp[scKey]) != null ? _ref[lang] : void 0)) {
+          if (!scHelp[scKey]) {
+            scHelp[scKey] = {};
+          }
+          scHelp[scKey][lang] = [];
+        }
+        return scHelp[scKey][lang].push(sectInit + "^" + content);
+      });
+    });
+  };
+
+  analyzeScHelpPage = function(resp, lang) {
+    var doc, mainSection, sectInit;
+    doc = $(resp);
+    mainSection = doc.find("div.main-section");
+    sectInit = "";
+    return Array.prototype.forEach.call(mainSection[0].children, function(el) {
+      switch (el.tagName) {
+        case "H3":
+          switch (el.textContent) {
+            case "Tab and window shortcuts":
+            case "タブとウィンドウのショートカット":
+              sectInit = "T";
+              break;
+            case "Google Chrome feature shortcuts":
+            case "Google Chrome 機能のショートカット":
+              sectInit = "C";
+              break;
+            case "Address bar shortcuts":
+            case "アドレスバーのショートカット":
+              sectInit = "A";
+              break;
+            case "Webpage shortcuts":
+            case "ウェブページのショートカット":
+              sectInit = "W";
+              break;
+            case "Text shortcuts":
+            case "テキストのショートカット":
+              sectInit = "Tx";
+          }
+          return scHelpSect[sectInit] = el.textContent;
+        case "TABLE":
+          return scrapeHelp(lang, sectInit, el);
+      }
+    });
+  };
+
+  registerCtxMenu = function(dfd, ctxMenus, index) {
+    var caption, contexts, ctxData, ctxMenu, id, parentId, type, _ref;
+    if (ctxMenu = ctxMenus[index]) {
+      _ref = ctxMenus[index], id = _ref.id, type = _ref.type, caption = _ref.caption, contexts = _ref.contexts, parentId = _ref.parentId;
+      if (/pause/.test(type)) {
+        ctxData = {
+          type: "normal",
+          enabled: false
+        };
+      } else {
+        ctxData = {
+          type: "normal",
+          enabled: true
+        };
+      }
+      if (caption) {
+        ctxData.title = caption;
+        ctxData.contexts = [contexts];
+      }
+      if (parentId !== "route") {
+        ctxData.parentId = parentId;
+      }
+      if (/create/.test(type)) {
+        ctxData.id = id;
+        return chrome.contextMenus.create(ctxData, function() {
+          return registerCtxMenu(dfd, ctxMenus, index + 1);
+        });
+      } else if (/update/.test(type)) {
+        return chrome.contextMenus.update(id, ctxData, function() {
+          return registerCtxMenu(dfd, ctxMenus, index + 1);
+        });
+      }
+    } else {
+      return dfd.resolve();
+    }
+  };
+
+  createCtxMenus = function() {
+    var ctxMenuFolderSet, dfdMain, keyConfigSet;
+    if (keyConfigSet = andy.local.keyConfigSet) {
+      ctxMenuFolderSet = andy.local.ctxMenuFolderSet;
+      dfdMain = $.Deferred();
+      chrome.contextMenus.removeAll(function() {
+        var ctxMenus, targetCtxMenus;
+        targetCtxMenus = [];
+        keyConfigSet.forEach(function(keyConfig) {
+          var ctxMenu;
+          if ((ctxMenu = keyConfig.ctxMenu)) {
+            ctxMenu.id = keyConfig["new"];
+            ctxMenu.order = ctxMenu.order || 999;
+            if (keyConfig.mode === "through") {
+              ctxMenu.type = "create pause";
+            } else {
+              ctxMenu.type = "create";
+            }
+            return targetCtxMenus.push(ctxMenu);
+          }
+        });
+        targetCtxMenus.sort(function(a, b) {
+          return a.order - b.order;
+        });
+        ctxMenus = [];
+        targetCtxMenus.forEach(function(ctxMenu) {
+          var existsFolder, folder, i, _i, _j, _ref, _ref1;
+          if (ctxMenu.parentId !== "route") {
+            existsFolder = false;
+            for (i = _i = 0, _ref = ctxMenus.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+              if (ctxMenus[i].id === ctxMenu.parentId) {
+                existsFolder = true;
+                break;
+              }
+            }
+            if (!existsFolder) {
+              for (i = _j = 0, _ref1 = ctxMenuFolderSet.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+                if (ctxMenuFolderSet[i].id === ctxMenu.parentId) {
+                  folder = ctxMenuFolderSet[i];
+                  ctxMenus.push({
+                    id: folder.id,
+                    order: ctxMenu.order,
+                    parentId: "route",
+                    type: "create",
+                    caption: folder.title,
+                    contexts: folder.contexts
+                  });
+                  break;
+                }
+              }
+            }
+          }
+          return ctxMenus.push(ctxMenu);
+        });
+        return registerCtxMenu(dfdMain, ctxMenus, 0);
+      });
+      return dfdMain.promise();
+    }
+  };
+
+  getHelp = function(lang) {
+    var dfd;
+    $.get(scHelpPageUrl + lang).done(function(responseText) {
+      analyzeScHelpPage(responseText, lang);
+      return dfd.resolve();
+    });
+    return (dfd = $.Deferred()).promise();
+  };
+
+  createFileHelpMd = function(content) {
+    window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+    return window.requestFileSystem(PERSISTENT, 1024 * 100, function(fileSystem) {
+      return fileSystem.root.getFile("help.md", {
+        create: true,
+        exclusive: false
+      }, function(fileEntry) {
+        return fileEntry.createWriter(function(fileWriter) {
+          var blob;
+          blob = new Blob([content], {
+            "type": "text/plain"
+          });
+          fileWriter.write(blob);
+          fileWriter.onwriteend = function(e) {
+            return andy.helpFileName = fileEntry.toURL();
+          };
+          return fileWriter.onerror = function(e) {
+            return console.log(e);
+          };
+        });
+      }, function(error) {
+        return console.log({
+          "FileApi error": error
+        });
+      });
+    });
+  };
+
+  $(function() {
+    var urlHelpMd;
+    andy.setLocal().done(function() {
+      var i, item, keyConfigSet, _i, _ref, _results;
+      if (keyConfigSet = andy.local.keyConfigSet) {
+        setConfigPlugin(keyConfigSet);
+        createCtxMenus();
+        _results = [];
+        for (i = _i = 0, _ref = keyConfigSet.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          if ((item = keyConfigSet[i]).mode === "command" && item.command.name === "execJS" && item.command.coffee) {
+            _results.push(andy.coffee2JS(item["new"], item.command.content));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      }
+    });
+    getHelp("ja").done(function() {
+      return getHelp("en").done(function() {
+        delete scHelp["-"];
+        delete scHelp["+"];
+        scHelp["CTRL+;"] = {
+          ja: ["W^ページ全体を拡大表示します。"]
+        };
+        scHelp["CTRL+="] = {
+          en: ["W^Enlarges everything on the page."]
+        };
+        return scHelp["CTRL+-"] = {
+          en: ["W^Makes everything on the page smaller."],
+          ja: ["W^ページ全体を縮小表示します。"]
+        };
+      });
+    });
+    urlHelpMd = "https://dl.dropboxusercontent.com/u/41884666/help.md";
+    return $.get(urlHelpMd).done(function(respText) {
+      return createFileHelpMd(respText);
+    });
+  });
+
+}).call(this);

@@ -258,7 +258,6 @@ commandsDisp =
   closeTabsLeft:  ["tab", "Close tabs to the left"]
   closeTabsRight: ["tab", "Close tabs to the right"]
   duplicateTab:   ["tab", "Duplicate current tab"]
-  #duplicateTabWin:["tab", "Duplicate current tab to new window"]
   pinTab:         ["tab", "Pin/Unpin current tab"]
   detachTab:      ["tab", "Detach current tab"]
   attachTab:      ["tab", "Attach current tab to the next window"]
@@ -270,6 +269,7 @@ commandsDisp =
   clearHistory:   ["clr", "Clear browsing history"]
   clearCookies:   ["clr", "Clear cookies for the current domain"]
   #clearHistoryS:  ["clr", "Delete specific browsing history", [], "Clr"]
+  clearTabHistory:["clr", "Clear tab history by duplicating the URL"]
   pasteText:      ["custom", "Paste fixed text", [], "Clip"]
   #copyText:       ["clip", "Copy text with history", "Clip"]
   #showHistory:    ["clip", "Show copy history"     , "Clip"]
@@ -406,7 +406,7 @@ class CommandOptionsView extends ExplorerBaseView
             @options =
               name: "execJS"
               caption: node.title
-              content: $.trim node.url.substring(11)
+              content: decodeURIComponent $.trim(node.url.substring(11))
             @optionsName = null
             super(name, model)
             @showPopup2()
