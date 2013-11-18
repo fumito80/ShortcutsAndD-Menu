@@ -955,6 +955,12 @@ KeyConfigSetView = Backbone.View.extend
     loading = true
     @collection.set newData.keyConfigSet
     @redrawTable()
+    @collection.models.forEach (model) ->
+      if model.get("mode") is "command"
+        command = model.get("command")
+        if command.name is "execJS" && command.coffee
+          andy.coffee2JS model.get("new"), command.content
+    andy.remakeCtxMenu @getSaveData()
     loading = false
     windowOnResize()
   

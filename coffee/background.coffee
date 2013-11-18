@@ -844,6 +844,12 @@ window.pluginEvent = (action, value) ->
       execBatchMode value
     when "batch"
       execBatchMode value
+    when "singleKey"
+      if andy.local.config.singleKey
+        getActiveTab().done (tab) ->
+          chrome.tabs.sendMessage tab.id, action: "askEditable", (resp) ->
+            if resp is "no"
+              execBatchMode value
 
 scHelp = {}
 scHelpSect = {}
