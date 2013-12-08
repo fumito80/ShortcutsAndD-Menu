@@ -20,7 +20,7 @@ type
 
   TMouseHookTh = class(THookTh)
   protected
-    stateDownL, stateDownM, stateDownR, sysMouseButtonUp, cancelCtxMenu: Boolean;
+    stateDownL, stateDownM, stateDownR: Boolean;
     function VaridateEvent(wPrm: UInt64): Boolean; override;
   public
   end;
@@ -41,12 +41,6 @@ const
   FLAG_LDOWN = 16;
   FLAG_RDOWN = 32;
   FLAG_MDOWN = 64;
-  EVENT_MOUSE_LUP = $04;
-  EVENT_MOUSE_RUP = $10;
-  EVENT_MOUSE_MUP = $40;
-  EVENT_MOUSE_LDOWN = $02;
-  EVENT_MOUSE_RDOWN = $08;
-  EVENT_MOUSE_MDOWN = $20;
 
 implementation
 
@@ -87,23 +81,6 @@ var
       MakeKeyInputs(scans, index + 1);
     KeybdInput(scans[index], KEYEVENTF_KEYUP);
   end;
-  procedure MouseInput(flags: DWord);
-  var
-    mouseInput: TInput;
-  begin
-    mouseInput.Itype := INPUT_MOUSE;
-    with mouseInput.mi do
-    begin
-      dwFlags := flags;
-      dx := 0;
-      dy := 0;
-      mouseData := 0;
-      time := 0;
-      dwExtraInfo:= 0;
-    end;
-    sysMouseButtonUp:= True;
-    SendInput(1, mouseInput, SizeOf(mouseInput));
-  end;
   procedure  ReleaseModifier(vkCode, scanCode: Cardinal; Flags: DWord);
   begin
     Inc(KeyInputCount);
@@ -125,14 +102,6 @@ var
   end;
 begin
   Result:= False;
-  if (wPrm = WM_CONTEXTMENU) then begin
-Write2EventLog('FlexKbd', 'WM_CONTEXTMENU');
-    if cancelCtxMenu then begin
-      cancelCtxMenu:= False;
-      Result:= True;
-    end;
-    Exit;
-  end;
   GetKeyState(0);
   GetKeyboardState(KeyState);
   modifierFlags:= 0;
@@ -145,21 +114,18 @@ Write2EventLog('FlexKbd', 'WM_CONTEXTMENU');
   modifierFlags:= modifierFlags or (Ord(stateDownR) * FLAG_RDOWN);
   modifierFlags:= modifierFlags or (Ord(stateDownM) * FLAG_MDOWN);
   stateButton:= wPrm - $200;
-  if (not sysMouseButtonUp) and (wPrm <> WM_WHEEL_UP) and (wPrm <> WM_WHEEL_DOWN) then begin
-    case stateButton of
-      MSG_MOUSE_LDOWN: stateDownL:= True;
-      MSG_MOUSE_RDOWN: stateDownR:= True;
-      MSG_MOUSE_MDOWN: stateDownM:= True;
-      MSG_MOUSE_LUP  : stateDownL:= False;
-      MSG_MOUSE_RUP  : stateDownR:= False;
-      MSG_MOUSE_MUP  : stateDownM:= False;
-    end;
+  case stateButton of
+    MSG_MOUSE_LDOWN: stateDownL:= True;
+    MSG_MOUSE_RDOWN: stateDownR:= True;
+    MSG_MOUSE_MDOWN: stateDownM:= True;
+    MSG_MOUSE_LUP  : stateDownL:= False;
+    MSG_MOUSE_RUP  : stateDownR:= False;
+    MSG_MOUSE_MUP  : stateDownM:= False;
   end;
-  sysMouseButtonUp:= False;
   // Exit 1
   if (modifierFlags = 0) or (stateButton in [MSG_MOUSE_LUP, MSG_MOUSE_RUP, MSG_MOUSE_MUP]) then
     Exit;
-
+  
   scans:= IntToHex(modifierFlags, 2) + IntToStr(wPrm);
   
   if configMode then begin
@@ -171,14 +137,6 @@ Write2EventLog('FlexKbd', 'WM_CONTEXTMENU');
       Result:= True;
       keyConfig:= TKeyConfig(keyConfigList.Objects[index]);
       if keyConfig.mode = 'remap' then begin
-//Write2EventLog('FlexKbd', scans);
-        if stateDownL then MouseInput(EVENT_MOUSE_LUP)
-        else if stateDownR then begin
-          cancelCtxMenu:= True;
-          MouseInput(EVENT_MOUSE_RUP);
-        end
-        else if stateDownM then MouseInput(EVENT_MOUSE_MUP);
-
         modifiersBoth:= modifierFlags and keyConfig.modifierFlags;
         // CONTROL
         if (modifiersBoth and FLAG_CONTROL) <> 0 then begin
@@ -244,3 +202,4 @@ Write2EventLog('FlexKbd', 'WM_CONTEXTMENU');
 end;
 
 end.
+

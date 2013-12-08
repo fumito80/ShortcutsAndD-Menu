@@ -107,6 +107,7 @@ class ExplorerBaseView extends PopupBaseView
       @$(".folder,.contexts").addClass("opened expanded")
     else
       @$(".folder,.contexts").removeClass("opened expanded")
+      @$(".folder[data-id='1']").addClass "expanded"
     windowOnResize()
 
 langs =
@@ -361,7 +362,7 @@ class CommandOptionsView extends ExplorerBaseView
       minHeight: 100
   render: ->
     @optionsName = "command"
-    if @commandName && @commandName isnt "bookmarklet"
+    if @commandName
       @options = name: @commandName
     @trigger "getEditerSize", container = {}
     if container.width
@@ -398,21 +399,10 @@ class CommandOptionsView extends ExplorerBaseView
       @editer.focus()
     else
       @$(".caption").focus()
-  onShowPopup: (name, model, @commandName, bmId) ->
+  onShowPopup: (name, model, @commandName) ->
     if @name is name
-      if bmId
-        chrome.bookmarks.get bmId, (treeNode) =>
-          if node = treeNode[0]
-            @options =
-              name: "execJS"
-              caption: node.title
-              content: decodeURIComponent $.trim(node.url.substring(11))
-            @optionsName = null
-            super(name, model)
-            @showPopup2()
-      else
-        super(name, model)
-        @showPopup2()
+      super(name, model)
+      @showPopup2()
     else
       @$el.hide()
   onSubmitForm: ->
@@ -542,11 +532,21 @@ class BookmarkOptionsView extends PopupBaseView
   render: ->
     if @newSite
       @options = @newSite
-    @$(".bookmark")
-      .css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/#{@options.url}) 1x)")
-      .text @options.title
-    @$(".url").text @options.url
-    @$(".findStr").val @options.findStr || @options.url
+    @$(".bookmark").text @options.title
+    url = @options.url
+    if /^javascript:/i.test(url)
+      $.each @$(".inputs").children(), (i, elem) ->
+        $(elem).hide()
+      @$(".bookmarkPanel").show()
+    else
+      $.each @$(".inputs").children(), (i, elem) ->
+        $(elem).show()
+      @$(".bookmark").css("background-image", "-webkit-image-set(url(chrome://favicon/size/16@1x/#{@options.url}) 1x)")
+    if @options.url.length > 1024
+      @$(".url").text url.substring(0, 1024) + " ..."
+    else
+      @$(".url").text url
+    @$(".findStr").val @options.findStr || url
     @$("input[value='#{(@options.openmode || 'current')}']").get(0)?.checked = true
     @$(".tabpos").val "last"
     if @options.openmode in ["left", "right", "first", "last"]
@@ -667,10 +667,7 @@ class BookmarksView extends ExplorerBaseView
     event.stopPropagation()
   onClickBookmark: (event) ->
     target$ = $(event.currentTarget)
-    if /^javascript:/i.test target$.attr("title")
-      @trigger "showPopup", "commandOptions", @model.id, "bookmarklet", target$.attr("data-id")
-    else
-      @trigger "showPopup", "bookmarkOptions", @model.id, target$.attr("data-id")
+    @trigger "showPopup", "bookmarkOptions", @model.id, target$.attr("data-id")
     false
   tmplFolder: _.template """
     <div class="folder <%=state%>" style="text-indent:<%=indent%>em">

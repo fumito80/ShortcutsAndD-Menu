@@ -433,10 +433,22 @@ openBookmark = (dfd, openmode = "last", url, noActivate = false) ->
           newIndex = tab.index + 1
         chrome.tabs.create {url: url, index: newIndex, active: !noActivate}, (tab) -> dfd.resolve(tab.id)
     when "current"
-      #chrome.tabs.query {active: true}, (tabs) ->
       getActiveTab().done (tab, windowId) ->
         tabStateNotifier.reset(tab.id)
-        chrome.tabs.update tab.id, url: url, active: !noActivate, (tab) -> dfd.resolve(tab.id)
+        if /^javascript:/i.test url
+          code = """
+            var a = document.createElement("a");
+            a.setAttribute("href", "#{url}");
+            document.body.appendChild(a);
+            var evt = document.createEvent("MouseEvents");
+            evt.initEvent("click", true, true);
+            a.dispatchEvent(evt);
+            """
+          chrome.tabs.executeScript tab.id,
+            code: code
+            runAt: "document_end"
+        else
+          chrome.tabs.update tab.id, url: url, active: !noActivate, (tab) -> dfd.resolve(tab.id)
     when "newwin"
       chrome.windows.create url: url, focused: !noActivate, (win) -> dfd.resolve(win.tabs[0].id)
     when "incognito"
@@ -721,7 +733,7 @@ setConfigPlugin = (keyConfigSet) ->
     keys = andy.getKeyCodes()[kbdtype].keys
     keyConfigSet.forEach (item) ->
       scanCode = ~~item.new.substring(2)
-      if /^00|^04/.test(item.new) && !/^F\d|^Application/.test(keys[scanCode])
+      if /^00|^04/.test(item.new) && !/^F\d|^Application/.test(keys[scanCode]) && !/^045\d\d/.test(item.new)
         null
       else if item.batch && item.new && item.mode isnt "through"
         sendData.push [item.new, item.origin, "batch"].join(";")

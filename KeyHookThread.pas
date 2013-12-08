@@ -164,7 +164,12 @@ begin
     and not(scancode = $15D)
     and not((keyDownState = 0) and (virtualScanCode <> 0))
     and not(scriptMode) and not(keydownMode) then
-      Exit;
+  begin
+    // SingleKeyÇÃèàóù (Pending)
+    //if not(configMode) and (keyDownState = 0) and (virtualScanCode = 0) then
+    //  browser.Invoke('pluginEvent', ['singleKey', scans]);
+    Exit;
+  end;
 
   if configMode and (keyDownState = 0) then begin
     Result:= True;

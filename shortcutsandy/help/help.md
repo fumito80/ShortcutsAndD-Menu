@@ -682,7 +682,7 @@
 > > expr = []
 > > expr.push [/www\.google/, "id('pnnext')"]
 > > expr.push [/www\.amazon/, "id('pagnNextLink')"]
-> > expr.push [/.*/, "//a[text()='次へ' or translate(text(), 'の> ', '')='次ページ']"]
+> > expr.push [/.*/, "//a[translate(text(), 'のページへ> ', '')='次']"]
 > > 
 > > url = location.href
 > > for i in [0...expr.length]

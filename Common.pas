@@ -40,9 +40,17 @@ type
   end;
 
 const
-  targetProg     = 'chrome.exe';
+
+  exeNameChrome  = 'chrome.exe';
+  exeNameOpera   = 'opera.exe';
   keyPipeName    = '\\.\pipe\flexkbd';
   mousePipeName  = '\\.\pipe\flexmouse';
+
+  {
+  targetProg     = 'opera.exe';
+  keyPipeName    = '\\.\pipe\flexkbd_op';
+  mousePipeName  = '\\.\pipe\flexmouse_op';
+  }
   SCAN_LCONTROL  =  $1D;
   SCAN_RCONTROL  = $11D;
   SCAN_LMENU     =  $38;

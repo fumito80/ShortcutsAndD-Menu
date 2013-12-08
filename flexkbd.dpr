@@ -98,12 +98,13 @@ end;
 
 destructor TMyClass.Destroy;
 begin
+  //Write2EventLog('FlexKbd', 'Begin terminate', EVENTLOG_INFORMATION_TYPE);
   EndHook;
   CloseHandle(keyPipeHandle);
   CloseHandle(mousePipeHandle);
   keyConfigList.Free;
   inherited Destroy;
-  //Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
+  // Write2EventLog('FlexKbd', 'Terminated Shortcuts Remapper', EVENTLOG_INFORMATION_TYPE);
 end;
 
 function KeyHookFunc(code: Integer; wPrm: Int64; lPrm: Int64): LRESULT;
@@ -119,7 +120,8 @@ begin
   end;
   hWindow:= GetActiveWindow;
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText(targetProg, buf) then begin
+  //Write2EventLog('FlexKbd', buf, EVENTLOG_INFORMATION_TYPE);
+  if AnsiEndsText(exeNameChrome, buf) or AnsiEndsText(exeNameOpera, buf) then begin
     CallNamedPipe(PAnsiChar(keypipename), @wPrm, SizeOf(wPrm), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     if cancelFlag then
       Result:= 1
@@ -151,7 +153,7 @@ begin
   hWindow:= GetActiveWindow;
   //Write2EventLog('FlexKbd', IntToHex(mouseInfo.mouseData, 16));
   GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-  if AnsiEndsText(targetProg, buf) and (wPrm <> WM_MOUSEWHEEL) then begin
+  if (AnsiEndsText(exeNameChrome, buf) or AnsiEndsText(exeNameOpera, buf)) and (wPrm <> WM_MOUSEWHEEL) then begin
     msgFlag:= wPrm;
     CallNamedPipe(PAnsiChar(mousepipename), @msgFlag, SizeOf(msgFlag), @cancelFlag, SizeOf(Boolean), bytesRead, NMPWAIT_NOWAIT);
     if cancelFlag then
@@ -180,8 +182,9 @@ begin
   if (msg.message = WM_MOUSEWHEEL) then begin
     hWindow:= GetActiveWindow;
     GetWindowModuleFileName(hWindow, buf, SizeOf(buf));
-    if AnsiEndsText(targetProg, buf) then begin
-      //Write2EventLog('FlexKbd', IntToStr(wPrm) + ': ' + IntToStr(msg.pt.X));
+    if AnsiEndsText(exeNameChrome, buf) or AnsiEndsText(exeNameOpera, buf) then begin
+//Write2EventLog('FlexKbd', IntToStr(wPrm) + ': ' + IntToStr(msg.pt.X));
+//Write2EventLog('FlexKbd', 'WM_CONTEXTMENU');
       if msg.wParam > 0 then
         msgFlag:= WM_WHEEL_UP
       else
@@ -295,16 +298,6 @@ begin
       1,
       47
     ));
-    // For Copy Text
-    {
-    keyConfigList.AddObject('0085', TKeyConfig.Create(
-      'remap',
-      '0146',
-      '0185',
-      1,
-      46
-    ));
-    }
   finally
     paramsList.Free;
     paramList.Free;
