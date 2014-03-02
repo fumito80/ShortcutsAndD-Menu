@@ -396,7 +396,7 @@ button.cog.selecting {
   float: left;
 }
 .keyConfigSetView .desc div.commandCaption {
-  overflow: ellipsis;
+  text-overflow: ellipsis;
   color: #583521;
 }
 .desc .bookmark, .bookmarkOptions .bookmark {

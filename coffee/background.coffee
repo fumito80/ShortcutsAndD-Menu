@@ -436,19 +436,20 @@ openBookmark = (dfd, openmode = "last", url, noActivate = false) ->
       getActiveTab().done (tab, windowId) ->
         tabStateNotifier.reset(tab.id)
         if /^javascript:/i.test url
-          code = """
-            var a = document.createElement("a");
-            a.setAttribute("href", "#{url}");
-            document.body.appendChild(a);
-            var evt = document.createEvent("MouseEvents");
-            evt.initEvent("click", true, true);
-            a.dispatchEvent(evt);
-            """
-          chrome.tabs.executeScript tab.id,
-            code: code
-            runAt: "document_end"
-        else
-          chrome.tabs.update tab.id, url: url, active: !noActivate, (tab) -> dfd.resolve(tab.id)
+          #code = """
+          #  var a = document.createElement("a");
+          #  a.setAttribute("href", "#{url}");
+          #  document.body.appendChild(a);
+          #  var evt = document.createEvent("MouseEvents");
+          #  evt.initEvent("click", true, true);
+          #  a.dispatchEvent(evt);
+          #  """
+          #chrome.tabs.executeScript tab.id,
+          #  code: code
+          #  runAt: "document_end"
+          url = unescape(url)
+        #else
+        chrome.tabs.update tab.id, url: url, active: !noActivate, (tab) -> dfd.resolve(tab.id)
     when "newwin"
       chrome.windows.create url: url, focused: !noActivate, (win) -> dfd.resolve(win.tabs[0].id)
     when "incognito"

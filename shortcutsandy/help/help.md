@@ -242,7 +242,7 @@
 > 拡張コマンド（Command mode）に追加オプションが必要な場合は、オプション入力ダイアログが開きます。
 > 
 > - Paste text、Inject CSS、Inject JavaScriptのオプション
->    - **Title(Optional)**  
+>    - **Title**  
 >    オプションページのDescriptionに表示されます。 未入力の場合は、Contentに入力した1行目がセットされます。
 >    - **Content**  
 >    貼り付ける文字列(Paste text時)や、CSS(Inject CSS時)、JavaScriptコード(Inject JavaScript時)を入力します。  
@@ -255,9 +255,9 @@
 >    チェック時に、CoffeeScriptでコードを記述できます。  
 >    コンパイルオプションは"bare"で、コードはコンパイル済の状態で待機されます。  
 >  
->        チェックすると「**CoffeeS**」と「**To JS**」というタブが出現します。  
+>        チェックすると「**Coffee**」と「**To JS**」というタブが出現します。  
 >    「**To JS**」タブをクリックすると、事前にJavaScriptへの変換結果が確認できます。 変換結果の表示だけですので編集はできません。  
->    「**CoffeeS**」タブは、元のソースコードを表示します。（JavaScriptからの変換結果ではありません）  
+>    「**Coffee**」タブは、元のソースコードを表示します。（JavaScriptからの変換結果ではありません）  
 >  
 >        このチェックを外すと、現在表示されているコードがそのまま残ります。 JavaScriptへの変換結果を表示させたまま  
 >    チェックを外すと、元のCoffeeScriptのコードは失われますので、ご注意ください。  
